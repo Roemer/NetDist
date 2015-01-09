@@ -40,6 +40,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfClient", "WpfClient\WpfC
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfServerAdmin", "WpfServerAdmin\WpfServerAdmin.csproj", "{ACAD2BD7-9658-49CD-B885-EF95B34D3D1C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetDist.Logging", "NetDist.Logging\NetDist.Logging.csproj", "{DE600B9A-C488-40E1-8D0E-E0E6D64FFB90}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -98,6 +100,10 @@ Global
 		{ACAD2BD7-9658-49CD-B885-EF95B34D3D1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ACAD2BD7-9658-49CD-B885-EF95B34D3D1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ACAD2BD7-9658-49CD-B885-EF95B34D3D1C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE600B9A-C488-40E1-8D0E-E0E6D64FFB90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE600B9A-C488-40E1-8D0E-E0E6D64FFB90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE600B9A-C488-40E1-8D0E-E0E6D64FFB90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE600B9A-C488-40E1-8D0E-E0E6D64FFB90}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -116,5 +122,6 @@ Global
 		{610A37DE-BE28-4C98-AE68-FE98EBA4D86E} = {7943E07F-764B-443D-87F7-3727A8CA0434}
 		{AA3AAE42-B02B-49D4-883E-20B559683B3D} = {7943E07F-764B-443D-87F7-3727A8CA0434}
 		{ACAD2BD7-9658-49CD-B885-EF95B34D3D1C} = {7943E07F-764B-443D-87F7-3727A8CA0434}
+		{DE600B9A-C488-40E1-8D0E-E0E6D64FFB90} = {8C9A7E3F-E54F-48F2-B446-C47033F88966}
 	EndGlobalSection
 EndGlobal

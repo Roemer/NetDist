@@ -66,13 +66,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controllers\AdminController.cs" />
+    <Compile Include="Controllers\ClientController.cs" />
+    <Compile Include="Controllers\JobController.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Startup.cs" />
+    <Compile Include="WebApiServer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NetDist.Logging\NetDist.Logging.csproj">
+      <Project>{de600b9a-c488-40e1-8d0e-e0e6d64ffb90}</Project>
+      <Name>NetDist.Logging</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NetDist.Server\NetDist.Server.csproj">
       <Project>{ec8ed506-d584-4c08-a827-dfe301f775f7}</Project>
       <Name>NetDist.Server</Name>

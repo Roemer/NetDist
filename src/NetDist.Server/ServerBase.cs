@@ -1,4 +1,5 @@
 ﻿using System;
+using NetDist.Logging;
 
 namespace NetDist.Server
 {
@@ -8,7 +9,24 @@ namespace NetDist.Server
     /// <typeparam name="TSer">Type of the serialized values</typeparam>
     public abstract class ServerBase<TSer>
     {
-        public abstract TSer Serialize(object obj);
+        /// <summary>
+        /// Logger object
+        /// </summary>
+        public LoggerBase Logger { get; set; }
+
+        /// <summary>
+        /// Abstract method to start the server
+        /// </summary>
+        protected abstract bool StartServer();
+
+        /// <summary>
+        /// Abstract method to stop the server
+        /// </summary>
+        protected abstract void StopServer();
+
+
+        // TODO: This is in concept phase
+        /*public abstract TSer Serialize(object obj);
 
         public virtual T Deserialize<T>(TSer serializedObject)
         {
@@ -24,6 +42,6 @@ namespace NetDist.Server
         public T Deserialize<T>(TSer serializedObject, T example)
         {
             return Deserialize<T>(serializedObject);
-        }
+        }*/
     }
 }
