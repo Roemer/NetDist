@@ -5,7 +5,7 @@ using System.Collections.Generic;
 namespace NetDist.Handlers
 {
     /// <summary>
-    /// Interface for all handlers
+    /// Interface for the handlers
     /// </summary>
     public interface IHandler
     {
@@ -13,7 +13,7 @@ namespace NetDist.Handlers
         void InitializeCustomSettings(string customSettingsString);
         void Initialize();
         List<Job> GetJobs();
-        void ProcessResult(Job originalJob, string jobResultString);
+        void ProcessResult(Job originalJob, IJobOutput jobOutput);
         bool IsSameAs(IHandler otherHandler);
     }
 }

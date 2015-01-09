@@ -14,7 +14,6 @@ namespace NetDist.Jobs
         /// <returns>Serialized string</returns>
         public static string Serialize(object obj, bool useObjectTypeName = false, bool indented = false)
         {
-            // Special settings so that interfaces and abstract objects are serialized correctly
             var serializerSettings = new JsonSerializerSettings();
             if (useObjectTypeName)
             {

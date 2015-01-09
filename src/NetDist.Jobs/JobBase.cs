@@ -12,12 +12,6 @@ namespace NetDist.Jobs
     {
         public abstract TOut Process(TIn input);
 
-        public IJobOutput Process(string jobInputString)
-        {
-            var input = JobObjectSerializer.Deserialize<TIn>(jobInputString, false);
-            return Process(input);
-        }
-
         public IJobOutput Process(IJobInput input)
         {
             return Process((TIn)input);
