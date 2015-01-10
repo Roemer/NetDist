@@ -1,4 +1,34 @@
-﻿using NetDist.Jobs;
+﻿#if COMPILERSETTINGS
+{
+    Libraries: [
+        'System.dll'
+        , 'NetDist.Jobs.dll'
+    ],
+    LibrariesToLoad: [
+        'SimpleCalculator.dll'
+    ]
+}
+#endif
+
+#if HANDLERSETTINGS
+{
+    "PluginName": "SimpleCalculator",
+    "HandlerName": "Calculator",
+    "JobName": "Calculator - Sub",
+}
+#endif
+
+#if HANDLERCUSTOMSETTINGS
+#endif
+
+#if EXAMPLEINPUT
+{
+    Number1: 10
+    , Number2: 20
+}
+#endif
+
+using NetDist.Jobs;
 using SimpleCalculator.Shared;
 
 namespace SimpleCalculator.Jobs

@@ -1,5 +1,6 @@
 ﻿using NetDist.Logging;
 using System;
+using System.Collections.Concurrent;
 
 namespace NetDist.Server
 {
@@ -15,6 +16,11 @@ namespace NetDist.Server
         public Logger Logger { get; private set; }
 
         /// <summary>
+        /// Dictionary which holds all currently loaded handlers
+        /// </summary>
+        private readonly ConcurrentDictionary<Guid, Tuple<AppDomain, LoadedHandler>> _loadedHandlers;
+
+        /// <summary>
         /// Abstract method to start the server
         /// </summary>
         protected abstract bool InternalStart();
@@ -27,6 +33,7 @@ namespace NetDist.Server
         protected ServerBase()
         {
             Logger = new Logger();
+            _loadedHandlers = new ConcurrentDictionary<Guid, Tuple<AppDomain, LoadedHandler>>();
         }
 
         /// <summary>
@@ -60,7 +67,7 @@ namespace NetDist.Server
         /// </summary>
         public bool AddJobLogic()
         {
-            // TODO: Get handler
+            // Create an additional app-domain
             var domain = AppDomain.CreateDomain(Guid.NewGuid().ToString(), null, new AppDomainSetup
             {
                 ApplicationBase = AppDomain.CurrentDomain.SetupInformation.ApplicationBase,
@@ -70,10 +77,26 @@ namespace NetDist.Server
                 ShadowCopyFiles = "true",
                 AppDomainInitializerArguments = null
             });
-            var loadedHandler = domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName);
-
-            // TODO: Init / start handler
+            // Create a loaded handler wrapper in the new app-domain
+            var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName);
+            // Add the loaded handler to the dictionary
+            _loadedHandlers[loadedHandler.HandlerId] = new Tuple<AppDomain, LoadedHandler>(domain, loadedHandler);
+            Logger.Info("Added Handler: '{0}' (Id '{1}')", "Name", loadedHandler.HandlerId);
             return true;
+        }
+
+        public bool RemoveJobLogic(Guid handlerId)
+        {
+            Tuple<AppDomain, LoadedHandler> removedItem;
+            var success = _loadedHandlers.TryRemove(handlerId, out removedItem);
+            if (success)
+            {
+                // Stop the handler
+                //removedItem.Item2.Stop();
+                // Unload the domain
+                AppDomain.Unload(removedItem.Item1);
+            }
+            return success;
         }
 
 

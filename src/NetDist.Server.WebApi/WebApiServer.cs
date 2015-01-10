@@ -13,7 +13,9 @@ namespace NetDist.Server.WebApi
             Logger.Info("Starting OWIN at '{0}'", baseAddress);
             _app = WebApp.Start<Startup>(new StartOptions(baseAddress));
 
-            this.AddJobLogic();
+            AddJobLogic();
+            var guid = Guid.NewGuid();
+            RemoveJobLogic(guid);
 
             return true;
         }

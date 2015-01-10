@@ -10,13 +10,20 @@ namespace NetDist.Server
     /// </summary>
     public class LoadedHandler : MarshalByRefObject
     {
+        /// <summary>
+        /// ID of the loaded handler
+        /// </summary>
+        public Guid HandlerId { get; private set; }
+
         private IHandler _handler;
 
         public LoadedHandler()
         {
-            var pathToDll = @"E:\Development\MyGitHub\NetDist\src\SimpleCalculator\bin\Debug\SimpleCalculator.dll";
-            var handlerAssembly = Assembly.LoadFile(pathToDll);
-            var handlerToLoad = "Calculator";
+            var pluginName = "SimpleCalculator";
+            var handlerName = "Calculator";
+
+            var pluginPath = String.Format(@"E:\Development\MyGitHub\NetDist\src\{0}\bin\Debug\{0}.dll", pluginName);
+            var handlerAssembly = Assembly.LoadFile(pluginPath);
 
             Type typeToLoad = null;
             foreach (var type in handlerAssembly.GetTypes())
@@ -26,7 +33,7 @@ namespace NetDist.Server
                     var att = type.GetCustomAttribute<HandlerNameAttribute>(true);
                     if (att != null)
                     {
-                        if (att.HandlerName == handlerToLoad)
+                        if (att.HandlerName == handlerName)
                         {
                             typeToLoad = type;
                             break;
@@ -37,7 +44,7 @@ namespace NetDist.Server
 
             var handlerInstance = (IHandler)Activator.CreateInstance(typeToLoad);
             _handler = handlerInstance;
-            Console.WriteLine(_handler.Id);
+            HandlerId = _handler.Id;
         }
 
         public override object InitializeLifetimeService()
