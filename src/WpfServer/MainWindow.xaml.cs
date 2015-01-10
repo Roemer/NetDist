@@ -1,17 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using NetDist.Logging;
+using NetDist.Server.WebApi;
+using System;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace WpfServer
 {
@@ -20,9 +10,35 @@ namespace WpfServer
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly WebApiServer _server;
+
         public MainWindow()
         {
             InitializeComponent();
+            _server = new WebApiServer();
+
+            _server.Logger.LogEvent += new ConsoleLogger(LogLevel.Debug).Log;
+            _server.Logger.LogEvent += LoggerOnLogEvent;
+        }
+
+        private void StartButton_Click(object sender, RoutedEventArgs e)
+        {
+            _server.Start();
+        }
+
+        private void StopButton_Click(object sender, RoutedEventArgs e)
+        {
+            _server.Stop();
+        }
+
+        private void LoggerOnLogEvent(object sender, LogEventArgs logEventArgs)
+        {
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.Invoke(new EventHandler<LogEventArgs>(LoggerOnLogEvent), sender, logEventArgs);
+                return;
+            }
+            LogList.Items.Insert(0, logEventArgs.Message);
         }
     }
 }

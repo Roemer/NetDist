@@ -8,7 +8,7 @@ namespace NetDist.Logging
         public ConsoleLogger(LogLevel maxLevel = LogLevel.Warn)
             : base(maxLevel) { }
 
-        protected override void InternalLog(LogLevel logLevel, string message, Exception exception = null)
+        protected override void Log(LogLevel logLevel, string message, Exception exception = null)
         {
             if (exception != null)
             {

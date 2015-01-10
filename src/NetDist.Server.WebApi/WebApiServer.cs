@@ -1,5 +1,4 @@
 ﻿using Microsoft.Owin.Hosting;
-using NetDist.Logging;
 using System;
 
 namespace NetDist.Server.WebApi
@@ -8,12 +7,7 @@ namespace NetDist.Server.WebApi
     {
         private IDisposable _app;
 
-        public WebApiServer()
-        {
-            Logger = new ConsoleLogger();
-        }
-
-        protected override bool StartServer()
+        protected override bool InternalStart()
         {
             const string baseAddress = "http://localhost:9000/";
             Logger.Info("Starting OWIN at '{0}'", baseAddress);
@@ -21,12 +15,13 @@ namespace NetDist.Server.WebApi
             return true;
         }
 
-        protected override void StopServer()
+        protected override bool InternalStop()
         {
             if (_app != null)
             {
                 _app.Dispose();
             }
+            return true;
         }
     }
 }

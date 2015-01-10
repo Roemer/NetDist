@@ -1,5 +1,4 @@
-﻿using System;
-using NetDist.Logging;
+﻿using NetDist.Logging;
 
 namespace NetDist.Server
 {
@@ -12,17 +11,47 @@ namespace NetDist.Server
         /// <summary>
         /// Logger object
         /// </summary>
-        public LoggerBase Logger { get; set; }
+        public Logger Logger { get; private set; }
 
         /// <summary>
         /// Abstract method to start the server
         /// </summary>
-        protected abstract bool StartServer();
+        protected abstract bool InternalStart();
 
         /// <summary>
         /// Abstract method to stop the server
         /// </summary>
-        protected abstract void StopServer();
+        protected abstract bool InternalStop();
+
+        protected ServerBase()
+        {
+            Logger = new Logger();
+        }
+
+        /// <summary>
+        /// Starts the server
+        /// </summary>
+        public void Start()
+        {
+            var success = InternalStart();
+            if (!success)
+            {
+                Logger.Info("Server failed to start");
+            }
+        }
+
+        /// <summary>
+        /// Stops the server and all handlers
+        /// </summary>
+        public void Stop()
+        {
+            var success = InternalStop();
+            if (!success)
+            {
+                Logger.Info("Server failed to stop");
+            }
+            // TODO: Stop all handlers
+        }
 
 
         // TODO: This is in concept phase

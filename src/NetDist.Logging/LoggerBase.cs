@@ -14,57 +14,14 @@ namespace NetDist.Logging
             MaxLevel = maxLevel;
         }
 
-        public void Debug(string message, params object[] messageParams)
-        {
-            Log(LogLevel.Debug, message, messageParams);
-        }
+        protected abstract void Log(LogLevel logLevel, string message, Exception exception = null);
 
-        public void Info(string message, params object[] messageParams)
+        public void Log(object sender, LogEventArgs eventArgs)
         {
-            Log(LogLevel.Info, message, messageParams);
-        }
-
-        public void Warn(string message, params object[] messageParams)
-        {
-            Warn(null, message, messageParams);
-        }
-        public void Warn(Exception exception, string message = null, params object[] messageParams)
-        {
-            Log(LogLevel.Warn, exception, message, messageParams);
-        }
-
-        public void Error(string message, params object[] messageParams)
-        {
-            Error(null, message, messageParams);
-        }
-        public void Error(Exception exception, string message = null, params object[] messageParams)
-        {
-            Log(LogLevel.Error, exception, message, messageParams);
-        }
-
-        public void Fatal(string message, params object[] messageParams)
-        {
-            Error(null, message, messageParams);
-        }
-        public void Fatal(Exception exception, string message = null, params object[] messageParams)
-        {
-            Log(LogLevel.Fatal, exception, message, messageParams);
-        }
-
-        public void Log(LogLevel logLevel, string message, params object[] messageParams)
-        {
-            Log(logLevel, null, message, messageParams);
-        }
-
-        public void Log(LogLevel logLevel, Exception exception, string message = null, params object[] messageParams)
-        {
-            if (logLevel >= MaxLevel)
+            if (eventArgs.LogLevel >= MaxLevel)
             {
-                var messageString = (messageParams == null || messageParams.Length == 0 || message == null) ? message : String.Format(message, messageParams);
-                InternalLog(logLevel, messageString, exception);
+                Log(eventArgs.LogLevel, eventArgs.Message, eventArgs.Exception);
             }
         }
-
-        protected abstract void InternalLog(LogLevel logLevel, string message, Exception exception = null);
     }
 }

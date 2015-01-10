@@ -93,6 +93,20 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NetDist.Logging\NetDist.Logging.csproj">
+      <Project>{de600b9a-c488-40e1-8d0e-e0e6d64ffb90}</Project>
+      <Name>NetDist.Logging</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NetDist.Server.WebApi\NetDist.Server.WebApi.csproj">
+      <Project>{75c86772-1079-4ff0-9c69-268131872b0d}</Project>
+      <Name>NetDist.Server.WebApi</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NetDist.Server\NetDist.Server.csproj">
+      <Project>{ec8ed506-d584-4c08-a827-dfe301f775f7}</Project>
+      <Name>NetDist.Server</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
