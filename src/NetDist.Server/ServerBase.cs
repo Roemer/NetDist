@@ -1,4 +1,5 @@
 ﻿using NetDist.Logging;
+using System;
 
 namespace NetDist.Server
 {
@@ -51,6 +52,28 @@ namespace NetDist.Server
                 Logger.Info("Server failed to stop");
             }
             // TODO: Stop all handlers
+        }
+
+        /// <summary>
+        /// Called when a new job-logic is added
+        /// Initializes and starts the appropriate handler
+        /// </summary>
+        public bool AddJobLogic()
+        {
+            // TODO: Get handler
+            var domain = AppDomain.CreateDomain(Guid.NewGuid().ToString(), null, new AppDomainSetup
+            {
+                ApplicationBase = AppDomain.CurrentDomain.SetupInformation.ApplicationBase,
+                ConfigurationFile = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile,
+                ApplicationName = AppDomain.CurrentDomain.SetupInformation.ApplicationName,
+                LoaderOptimization = LoaderOptimization.MultiDomainHost,
+                ShadowCopyFiles = "true",
+                AppDomainInitializerArguments = null
+            });
+            var loadedHandler = domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName);
+
+            // TODO: Init / start handler
+            return true;
         }
 
 

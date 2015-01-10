@@ -6,6 +6,7 @@ using SimpleCalculator.Shared;
 
 namespace SimpleCalculator.Handlers
 {
+    [HandlerNameAttribute("Calculator")]
     public class CalculatorHandler : HandlerBase<CalculatorHandlerSettings, CalculatorJobInput, CalculatorJobOutput>
     {
         public override List<Job> GetJobs()

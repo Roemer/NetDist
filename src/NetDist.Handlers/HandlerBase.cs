@@ -50,15 +50,6 @@ namespace NetDist.Handlers
         public virtual void Initialize() { }
 
         /// <summary>
-        /// Called when a new job-logic is added
-        /// Initializes and starts the appropriate handler
-        /// </summary>
-        public bool AddJobLogic()
-        {
-            return true;
-        }
-
-        /// <summary>
         /// Method to create a new job item
         /// </summary>
         /// <param name="input">The input object to pass into the job</param>
