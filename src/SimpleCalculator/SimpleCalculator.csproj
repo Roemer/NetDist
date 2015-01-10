@@ -39,8 +39,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Jobs\CalculatorJobAdd.cs" />
-    <Compile Include="Jobs\CalculatorJobSub.cs" />
+    <Compile Include="Jobs\CalculatorJobLogicAdd.cs" />
+    <Compile Include="Jobs\CalculatorJobLogicSub.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Handlers\CalculatorHandler.cs" />
     <Compile Include="Handlers\CalculatorHandlerSettings.cs" />

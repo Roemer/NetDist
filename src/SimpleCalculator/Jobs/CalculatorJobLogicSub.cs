@@ -3,7 +3,7 @@ using SimpleCalculator.Shared;
 
 namespace SimpleCalculator.Jobs
 {
-    public class CalculatorJobSub : JobBase<CalculatorJobInput, CalculatorJobOutput>
+    public class CalculatorJobLogicSub : JobLogicBase<CalculatorJobInput, CalculatorJobOutput>
     {
         public override CalculatorJobOutput Process(CalculatorJobInput input)
         {

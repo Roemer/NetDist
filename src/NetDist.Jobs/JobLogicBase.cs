@@ -6,7 +6,7 @@ namespace NetDist.Jobs
     /// </summary>
     /// <typeparam name="TIn">Type of job input object</typeparam>
     /// <typeparam name="TOut">Type of job output object</typeparam>
-    public abstract class JobBase<TIn, TOut> : IJob
+    public abstract class JobLogicBase<TIn, TOut> : IJob
         where TIn : IJobInput
         where TOut : IJobOutput
     {
