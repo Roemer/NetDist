@@ -1,5 +1,6 @@
 ﻿using NetDist.Handlers;
 using System;
+using System.IO;
 using System.Reflection;
 
 namespace NetDist.Server
@@ -55,12 +56,12 @@ namespace NetDist.Server
         /// <summary>
         /// Tries to initialize the appropriate handler
         /// </summary>
-        public bool InitializeHandler()
+        public bool InitializeHandler(string handlersFolder)
         {
             var pluginName = HandlerSettings.PluginName;
             var handlerName = HandlerSettings.HandlerName;
 
-            var pluginPath = String.Format(@"E:\Plugins\{0}.dll", pluginName);
+            var pluginPath = Path.Combine(handlersFolder, String.Format("{0}.dll", pluginName));
             var handlerAssembly = Assembly.LoadFile(pluginPath);
 
             Type typeToLoad = null;

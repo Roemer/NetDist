@@ -2,6 +2,7 @@
 using NetDist.Logging;
 using System;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Reflection;
 
 namespace NetDist.Server
@@ -32,6 +33,14 @@ namespace NetDist.Server
         /// </summary>
         protected abstract bool InternalStop();
 
+        /// <summary>
+        /// Path to the handlers folder
+        /// </summary>
+        protected string HandlersFolder { get { return Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath), "handlers"); } }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
         protected ServerBase()
         {
             Logger = new Logger();
@@ -65,7 +74,7 @@ namespace NetDist.Server
 
         public bool AddHandler(byte[] zipcontent)
         {
-            new ZipUtility().Extract(zipcontent, @"E:\Plugins");
+            new ZipUtility().Extract(zipcontent, HandlersFolder);
             return true;
         }
 
@@ -96,7 +105,7 @@ namespace NetDist.Server
             });
             // Create a loaded handler wrapper in the new app-domain
             var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new object[] { jobLogicFile.HandlerSettingsString }, null, null);
-            var success = loadedHandler.InitializeHandler();
+            var success = loadedHandler.InitializeHandler(HandlersFolder);
             if (!success)
             {
                 AppDomain.Unload(domain);

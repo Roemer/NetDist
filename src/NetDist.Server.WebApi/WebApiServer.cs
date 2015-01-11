@@ -17,8 +17,8 @@ namespace NetDist.Server.WebApi
 
 
 
-            AddHandler(new ZipUtility().Compress(@"E:\Development\MyGitHub\NetDist\src\SimpleCalculator\bin\Debug\SimpleCalculator.dll"));
-            AddJobLogic(File.ReadAllText(@"E:\Development\MyGitHub\NetDist\src\SimpleCalculator\Jobs\CalculatorJobLogicAdd.cs"));
+            AddHandler(new ZipUtility().Compress(@"..\..\..\SimpleCalculator\bin\Debug\SimpleCalculator.dll"));
+            AddJobLogic(File.ReadAllText(@"..\..\..\SimpleCalculator\Jobs\CalculatorJobLogicAdd.cs"));
             var guid = Guid.NewGuid();
             RemoveJobLogic(guid);
 
