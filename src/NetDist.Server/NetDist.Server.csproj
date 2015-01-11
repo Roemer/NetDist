@@ -39,11 +39,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="JobLogicFile.cs" />
+    <Compile Include="JobLogicFileParser.cs" />
     <Compile Include="LoadedHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerBase.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NetDist.Core\NetDist.Core.csproj">
+      <Project>{af2925d1-e039-4d6b-ae81-2f5fe56faf4e}</Project>
+      <Name>NetDist.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NetDist.Handlers\NetDist.Handlers.csproj">
       <Project>{f972362e-b0bd-461d-950a-5a3ea19bf120}</Project>
       <Name>NetDist.Handlers</Name>

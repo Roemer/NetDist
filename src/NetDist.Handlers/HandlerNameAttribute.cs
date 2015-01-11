@@ -10,7 +10,7 @@ namespace NetDist.Handlers
     {
         public readonly string HandlerName;
 
-         public HandlerNameAttribute(string handlerName)
+        public HandlerNameAttribute(string handlerName)
         {
             HandlerName = handlerName;
         }

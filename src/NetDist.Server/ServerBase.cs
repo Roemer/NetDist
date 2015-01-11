@@ -1,6 +1,8 @@
-﻿using NetDist.Logging;
+﻿using NetDist.Core.Utilities;
+using NetDist.Logging;
 using System;
 using System.Collections.Concurrent;
+using System.Reflection;
 
 namespace NetDist.Server
 {
@@ -61,12 +63,27 @@ namespace NetDist.Server
             // TODO: Stop all handlers
         }
 
+        public bool AddHandler(byte[] zipcontent)
+        {
+            new ZipUtility().Extract(zipcontent, @"E:\Plugins");
+            return true;
+        }
+
         /// <summary>
         /// Called when a new job-logic is added
         /// Initializes and starts the appropriate handler
         /// </summary>
-        public bool AddJobLogic()
+        /// <param name="jobLogicFileContent">The full content of the job logic file</param>
+        public bool AddJobLogic(string jobLogicFileContent)
         {
+            // Parse the content
+            var jobLogicFile = JobLogicFileParser.ParseJob(jobLogicFileContent);
+            if (jobLogicFile.ParsingFailed)
+            {
+                Logger.Error("Failed to parse job: {0}", jobLogicFile.ErrorMessage);
+                return false;
+            }
+
             // Create an additional app-domain
             var domain = AppDomain.CreateDomain(Guid.NewGuid().ToString(), null, new AppDomainSetup
             {
@@ -78,10 +95,17 @@ namespace NetDist.Server
                 AppDomainInitializerArguments = null
             });
             // Create a loaded handler wrapper in the new app-domain
-            var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName);
+            var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new object[] { jobLogicFile.HandlerSettingsString }, null, null);
+            var success = loadedHandler.InitializeHandler();
+            if (!success)
+            {
+                AppDomain.Unload(domain);
+                Logger.Warn("Failed to add handler: '{0}", loadedHandler.FullName);
+                return false;
+            }
             // Add the loaded handler to the dictionary
             _loadedHandlers[loadedHandler.HandlerId] = new Tuple<AppDomain, LoadedHandler>(domain, loadedHandler);
-            Logger.Info("Added Handler: '{0}' (Id '{1}')", "Name", loadedHandler.HandlerId);
+            Logger.Info("Added handler: '{0}' (Id '{1}')", loadedHandler.FullName, loadedHandler.HandlerId);
             return true;
         }
 

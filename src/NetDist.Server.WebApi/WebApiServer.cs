@@ -1,5 +1,7 @@
 ﻿using Microsoft.Owin.Hosting;
 using System;
+using System.IO;
+using NetDist.Core.Utilities;
 
 namespace NetDist.Server.WebApi
 {
@@ -13,9 +15,13 @@ namespace NetDist.Server.WebApi
             Logger.Info("Starting OWIN at '{0}'", baseAddress);
             _app = WebApp.Start<Startup>(new StartOptions(baseAddress));
 
-            AddJobLogic();
+
+
+            AddHandler(new ZipUtility().Compress(@"E:\Development\MyGitHub\NetDist\src\SimpleCalculator\bin\Debug\SimpleCalculator.dll"));
+            AddJobLogic(File.ReadAllText(@"E:\Development\MyGitHub\NetDist\src\SimpleCalculator\Jobs\CalculatorJobLogicAdd.cs"));
             var guid = Guid.NewGuid();
             RemoveJobLogic(guid);
+
 
             return true;
         }

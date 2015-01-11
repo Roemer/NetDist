@@ -14,15 +14,53 @@ namespace NetDist.Server
         /// ID of the loaded handler
         /// </summary>
         public Guid HandlerId { get; private set; }
+        /// <summary>
+        /// Object which holds the handler settings
+        /// </summary>
+        public HandlerSettings HandlerSettings { get; private set; }
 
+        /// <summary>
+        /// Full name of the handler: PluginName/HandlerName/JobName
+        /// </summary>
+        public string FullName
+        {
+            get
+            {
+                return String.Format("{0}/{1}/{2}", HandlerSettings.PluginName, HandlerSettings.HandlerName, HandlerSettings.JobName);
+            }
+        }
+
+        /// <summary>
+        /// Instance of the effective handler
+        /// </summary>
         private IHandler _handler;
 
-        public LoadedHandler()
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public LoadedHandler(string handlerSettingsString)
         {
-            var pluginName = "SimpleCalculator";
-            var handlerName = "Calculator";
+            HandlerSettings = JobObjectSerializer.Deserialize<HandlerSettings>(handlerSettingsString);
+        }
 
-            var pluginPath = String.Format(@"E:\Development\MyGitHub\NetDist\src\{0}\bin\Debug\{0}.dll", pluginName);
+        /// <summary>
+        /// Lifetime override of the proxy object
+        /// </summary>
+        public override object InitializeLifetimeService()
+        {
+            // Infinite lifetime
+            return null;
+        }
+
+        /// <summary>
+        /// Tries to initialize the appropriate handler
+        /// </summary>
+        public bool InitializeHandler()
+        {
+            var pluginName = HandlerSettings.PluginName;
+            var handlerName = HandlerSettings.HandlerName;
+
+            var pluginPath = String.Format(@"E:\Plugins\{0}.dll", pluginName);
             var handlerAssembly = Assembly.LoadFile(pluginPath);
 
             Type typeToLoad = null;
@@ -41,16 +79,14 @@ namespace NetDist.Server
                     }
                 }
             }
-
-            var handlerInstance = (IHandler)Activator.CreateInstance(typeToLoad);
-            _handler = handlerInstance;
-            HandlerId = _handler.Id;
-        }
-
-        public override object InitializeLifetimeService()
-        {
-            // Infinite lifetime
-            return null;
+            if (typeToLoad != null)
+            {
+                var handlerInstance = (IHandler)Activator.CreateInstance(typeToLoad);
+                _handler = handlerInstance;
+                HandlerId = _handler.Id;
+                return true;
+            }
+            return false;
         }
     }
 }

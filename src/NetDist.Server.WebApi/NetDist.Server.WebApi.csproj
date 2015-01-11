@@ -78,6 +78,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NetDist.Core\NetDist.Core.csproj">
+      <Project>{af2925d1-e039-4d6b-ae81-2f5fe56faf4e}</Project>
+      <Name>NetDist.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NetDist.Logging\NetDist.Logging.csproj">
       <Project>{de600b9a-c488-40e1-8d0e-e0e6d64ffb90}</Project>
       <Name>NetDist.Logging</Name>

@@ -1,8 +1,11 @@
 ﻿using Newtonsoft.Json;
 using System.Runtime.Serialization.Formatters;
 
-namespace NetDist.Jobs
+namespace NetDist.Handlers
 {
+    /// <summary>
+    /// Simple serializer for the job objects (eg: handler-settings, custom handler-settings, compiler-settings)
+    /// </summary>
     public static class JobObjectSerializer
     {
         /// <summary>

@@ -47,7 +47,6 @@
     <Compile Include="IJobOutput.cs" />
     <Compile Include="Job.cs" />
     <Compile Include="JobLogicBase.cs" />
-    <Compile Include="JobObjectSerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
