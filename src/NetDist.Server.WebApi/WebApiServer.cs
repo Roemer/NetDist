@@ -5,7 +5,7 @@ using NetDist.Core.Utilities;
 
 namespace NetDist.Server.WebApi
 {
-    public class WebApiServer : ServerBase<string>
+    public class WebApiServer : ServerBase
     {
         private IDisposable _app;
 
