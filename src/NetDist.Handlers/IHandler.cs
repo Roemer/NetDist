@@ -1,5 +1,4 @@
 ﻿using NetDist.Jobs;
-using System;
 using System.Collections.Generic;
 
 namespace NetDist.Handlers
@@ -9,7 +8,6 @@ namespace NetDist.Handlers
     /// </summary>
     public interface IHandler
     {
-        Guid Id { get; }
         void InitializeCustomSettings(string customSettingsString);
         void Initialize();
         List<IJobInput> GetJobs();

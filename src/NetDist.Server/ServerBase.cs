@@ -105,7 +105,7 @@ namespace NetDist.Server
             });
             // Create a loaded handler wrapper in the new app-domain
             var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new object[] { jobLogicFile.HandlerSettingsString }, null, null);
-            var success = loadedHandler.InitializeHandler(HandlersFolder);
+            var success = loadedHandler.InitializeHandler(HandlersFolder, jobLogicFile.HandlerCustomSettingsString);
             if (!success)
             {
                 AppDomain.Unload(domain);
@@ -113,8 +113,8 @@ namespace NetDist.Server
                 return false;
             }
             // Add the loaded handler to the dictionary
-            _loadedHandlers[loadedHandler.HandlerId] = new Tuple<AppDomain, LoadedHandler>(domain, loadedHandler);
-            Logger.Info("Added handler: '{0}' (Id '{1}')", loadedHandler.FullName, loadedHandler.HandlerId);
+            _loadedHandlers[loadedHandler.Id] = new Tuple<AppDomain, LoadedHandler>(domain, loadedHandler);
+            Logger.Info("Added handler: '{0}' (Id '{1}')", loadedHandler.FullName, loadedHandler.Id);
             return true;
         }
 

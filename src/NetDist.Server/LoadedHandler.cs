@@ -14,7 +14,7 @@ namespace NetDist.Server
         /// <summary>
         /// ID of the loaded handler
         /// </summary>
-        public Guid HandlerId { get; private set; }
+        public Guid Id { get; private set; }
         /// <summary>
         /// Object which holds the handler settings
         /// </summary>
@@ -42,6 +42,7 @@ namespace NetDist.Server
         public LoadedHandler(string handlerSettingsString)
         {
             HandlerSettings = JobObjectSerializer.Deserialize<HandlerSettings>(handlerSettingsString);
+            Id = Guid.NewGuid();
         }
 
         /// <summary>
@@ -56,7 +57,7 @@ namespace NetDist.Server
         /// <summary>
         /// Tries to initialize the appropriate handler
         /// </summary>
-        public bool InitializeHandler(string handlersFolder)
+        public bool InitializeHandler(string handlersFolder, string handlerCustomSettingsString)
         {
             var pluginName = HandlerSettings.PluginName;
             var handlerName = HandlerSettings.HandlerName;
@@ -83,8 +84,12 @@ namespace NetDist.Server
             if (typeToLoad != null)
             {
                 var handlerInstance = (IHandler)Activator.CreateInstance(typeToLoad);
+                // Initialize the handler with the custom settings
+                handlerInstance.InitializeCustomSettings(handlerCustomSettingsString);
+                // Call the virtual initialize method
+                handlerInstance.Initialize();
+                // Assign the handler
                 _handler = handlerInstance;
-                HandlerId = _handler.Id;
                 return true;
             }
             return false;

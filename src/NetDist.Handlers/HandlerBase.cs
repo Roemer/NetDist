@@ -1,6 +1,5 @@
-﻿using System;
+﻿using NetDist.Jobs;
 using System.Collections.Generic;
-using NetDist.Jobs;
 
 namespace NetDist.Handlers
 {
@@ -16,31 +15,17 @@ namespace NetDist.Handlers
         where TOut : IJobOutput
     {
         /// <summary>
-        /// The ID of the instance of this handler
-        /// </summary>
-        public Guid Id { get; private set; }
-
-        /// <summary>
         /// Instance of the settings for this handler
         /// </summary>
         public TSet Settings { get; private set; }
 
         /// <summary>
-        /// Constructor
-        /// WARNING: Custom settings are not yet initialized here
-        /// </summary>
-        protected HandlerBase()
-        {
-            Id = Guid.NewGuid();
-        }
-
-        /// <summary>
         /// Converts the passed settings string to the generic settings object
         /// </summary>
-        /// <param name="settingsString">String representation of the settings</param>
-        public void InitializeCustomSettings(string settingsString)
+        /// <param name="customSettingsString">String representation of the settings</param>
+        public void InitializeCustomSettings(string customSettingsString)
         {
-            var settings = JobObjectSerializer.Deserialize<TSet>(settingsString, false);
+            var settings = JobObjectSerializer.Deserialize<TSet>(customSettingsString, false);
             Settings = settings;
         }
 

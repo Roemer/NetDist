@@ -19,6 +19,9 @@
 #endif
 
 #if HANDLERCUSTOMSETTINGS
+{
+    "NegateResult": false
+}
 #endif
 
 #if EXAMPLEINPUT

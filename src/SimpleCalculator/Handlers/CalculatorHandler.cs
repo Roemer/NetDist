@@ -8,6 +8,11 @@ namespace SimpleCalculator.Handlers
     [HandlerNameAttribute("Calculator")]
     public class CalculatorHandler : HandlerBase<CalculatorHandlerSettings, CalculatorJobInput, CalculatorJobOutput>
     {
+        public override void Initialize()
+        {
+            Console.WriteLine(Settings.NegateResult);
+        }
+
         public override List<CalculatorJobInput> GetJobs()
         {
             var jobList = new List<CalculatorJobInput>();
