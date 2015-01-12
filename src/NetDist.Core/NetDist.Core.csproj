@@ -43,6 +43,7 @@
     <Compile Include="Extensions\DictionaryExtensionMethods.cs" />
     <Compile Include="HandlerState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities\RandomGenerator.cs" />
     <Compile Include="Utilities\ZipUtility.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

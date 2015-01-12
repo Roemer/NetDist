@@ -1,9 +1,13 @@
-﻿using NetDist.Core.Utilities;
+﻿using NetDist.Core.Extensions;
+using NetDist.Core.Utilities;
+using NetDist.Jobs;
 using NetDist.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace NetDist.Server
 {
@@ -69,12 +73,12 @@ namespace NetDist.Server
                 Logger.Info("Server failed to stop");
             }
             // Stop the handlers
-            foreach (var handler in _loadedHandlers)
-            {
-                handler.Value.Item2.StopJoblogic();
-            }
+            Parallel.ForEach(_loadedHandlers, kvp => kvp.Value.Item2.StopJoblogic());
         }
 
+        /// <summary>
+        /// Register a new handler
+        /// </summary>
         public bool AddHandler(byte[] zipcontent)
         {
             new ZipUtility().Extract(zipcontent, HandlersFolder);
@@ -138,6 +142,9 @@ namespace NetDist.Server
             return success;
         }
 
+        /// <summary>
+        /// Starts the handler so jobs are being distributed
+        /// </summary>
         public void StartJobLogic(Guid id)
         {
             Logger.Info("Starting Handler: '{0}'", id);
@@ -147,12 +154,56 @@ namespace NetDist.Server
             }
         }
 
+        /// <summary>
+        /// Stops a handler so no more jobs are distributed and processed
+        /// </summary>
         public void StopJoblogic(Guid id)
         {
             Logger.Info("Stopping Handler: '{0}'", id);
             if (_loadedHandlers.ContainsKey(id))
             {
                 _loadedHandlers[id].Item2.StopJoblogic();
+            }
+        }
+
+        /// <summary>
+        /// Get a job from the current pending jobs in the handlers
+        /// </summary>
+        public Job GetJob()
+        {
+            Logger.Info("Client '{0}' requested a job", "TODO");
+            lock (_loadedHandlers.GetSyncRoot())
+            {
+                var handlersWithJobs = _loadedHandlers.Where(x => x.Value.Item2.HasAvailableJobs).ToArray();
+                if (handlersWithJobs.Length == 0)
+                {
+                    return null;
+                }
+                var nextRandNumber = RandomGenerator.Instance.Next(handlersWithJobs.Length);
+                var randomHandler = handlersWithJobs[nextRandNumber];
+                var nextJob = randomHandler.Value.Item2.GetNextJob();
+                Logger.Info("Client '{0}' got job '{1}' for handler '{2}'", "client.Id", nextJob.Id, randomHandler.Value.Item2.HandlerSettings.HandlerName);
+                return nextJob;
+            }
+        }
+
+        /// <summary>
+        /// Received a result for one of the jobs from a client
+        /// </summary>
+        public void ReceiveResult(JobResult result)
+        {
+            lock (_loadedHandlers.GetSyncRoot())
+            {
+                // Search the appropriate handler
+                var handlerId = result.HandlerId;
+                if (!_loadedHandlers.ContainsKey(handlerId))
+                {
+                    Logger.Error("Got result for unknown handler: '{0}'", handlerId);
+                    return;
+                }
+                var handler = _loadedHandlers[handlerId];
+                // Forward the result to the handler
+                handler.Item2.ReceivedResult(result);
             }
         }
     }

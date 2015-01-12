@@ -40,6 +40,14 @@ namespace NetDist.Server
         public HandlerState HandlerState { get; private set; }
 
         /// <summary>
+        /// Flag to check if there are available jobs
+        /// </summary>
+        public bool HasAvailableJobs
+        {
+            get { return HandlerState == HandlerState.Running && !AvailableJobs.IsEmpty; }
+        }
+
+        /// <summary>
         /// Queue for the available jobs
         /// </summary>
         protected ConcurrentQueue<Job> AvailableJobs;
