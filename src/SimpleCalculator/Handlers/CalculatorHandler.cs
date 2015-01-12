@@ -10,7 +10,7 @@ namespace SimpleCalculator.Handlers
     {
         public override void Initialize()
         {
-            Console.WriteLine(Settings.NegateResult);
+            Console.WriteLine("NegateResult: {0}", Settings.NegateResult);
         }
 
         public override List<CalculatorJobInput> GetJobs()

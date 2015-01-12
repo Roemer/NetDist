@@ -3,6 +3,7 @@ using System;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 using System.Web.Http;
+using Newtonsoft.Json.Serialization;
 
 namespace NetDist.Server.WebApi
 {
@@ -28,6 +29,10 @@ namespace NetDist.Server.WebApi
             // Set JSON as default formatter for text/html
             config.Formatters.JsonFormatter.SupportedMediaTypes.Add(new MediaTypeHeaderValue("text/html"));
             config.Formatters.JsonFormatter.MediaTypeMappings.Add(new RequestHeaderMapping("Accept", "text/html", StringComparison.InvariantCultureIgnoreCase, true, "application/json"));
+            // Tell the serializer to ignore the serializable attribute to get rid of the "k__BackingField"
+            var serializerSettings = config.Formatters.JsonFormatter.SerializerSettings;
+            var contractResolver = (DefaultContractResolver)serializerSettings.ContractResolver;
+            contractResolver.IgnoreSerializableAttribute = true;
             // Add the configuration
             appBuilder.UseWebApi(config);
         }

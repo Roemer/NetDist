@@ -1,12 +1,19 @@
 ﻿using Microsoft.Owin.Hosting;
+using NetDist.Core.Utilities;
 using System;
 using System.IO;
-using NetDist.Core.Utilities;
 
 namespace NetDist.Server.WebApi
 {
     public class WebApiServer : ServerBase
     {
+        // Singleton
+        public static readonly WebApiServer Instance = new WebApiServer();
+        private WebApiServer() { }
+
+        /// <summary>
+        /// Reference to the web-api server object
+        /// </summary>
         private IDisposable _app;
 
         protected override bool InternalStart()

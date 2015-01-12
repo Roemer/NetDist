@@ -1,4 +1,5 @@
 ﻿using NetDist.Core;
+using NetDist.Core.Extensions;
 using NetDist.Handlers;
 using NetDist.Jobs;
 using NetDist.Logging;
@@ -9,7 +10,6 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using NetDist.Core.Extensions;
 
 namespace NetDist.Server
 {
@@ -116,7 +116,7 @@ namespace NetDist.Server
             var handlerName = HandlerSettings.HandlerName;
 
             var pluginPath = Path.Combine(handlersFolder, String.Format("{0}.dll", pluginName));
-            var handlerAssembly = Assembly.LoadFile(pluginPath);
+            var handlerAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(pluginPath));
 
             Type typeToLoad = null;
             foreach (var type in handlerAssembly.GetTypes())
@@ -146,6 +146,22 @@ namespace NetDist.Server
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Get information about this handler
+        /// </summary>
+        public HandlerInfo GetInfo()
+        {
+            var hInfo = new HandlerInfo
+            {
+                Id = Id,
+                Name = HandlerSettings.HandlerName,
+                AvailableJobs = AvailableJobs.Count,
+                PendingJobs = PendingJobs.Count,
+                HandlerState = HandlerState
+            };
+            return hInfo;
         }
 
         /// <summary>

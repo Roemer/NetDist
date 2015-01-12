@@ -15,7 +15,7 @@ namespace WpfServer
         public MainWindow()
         {
             InitializeComponent();
-            _server = new WebApiServer();
+            _server = WebApiServer.Instance;
 
             _server.Logger.LogEvent += new ConsoleLogger(LogLevel.Debug).Log;
             _server.Logger.LogEvent += LoggerOnLogEvent;

@@ -1,4 +1,6 @@
-﻿using NetDist.Core.Extensions;
+﻿using Microsoft.VisualBasic.Devices;
+using NetDist.Core;
+using NetDist.Core.Extensions;
 using NetDist.Core.Utilities;
 using NetDist.Jobs;
 using NetDist.Logging;
@@ -77,6 +79,25 @@ namespace NetDist.Server
         }
 
         /// <summary>
+        /// Get statistics about the server and the job-logics
+        /// </summary>
+        public ServerInfo GetStatistics()
+        {
+            var info = new ServerInfo();
+            // RAM information
+            var ci = new ComputerInfo();
+            info.TotalMemory = ci.TotalPhysicalMemory;
+            info.UsedMemory = ci.TotalPhysicalMemory - ci.AvailablePhysicalMemory;
+            // Handler information
+            foreach (var kvp in _loadedHandlers)
+            {
+                var loadedHandler = kvp.Value.Item2;
+                info.Handlers.Add(loadedHandler.GetInfo());
+            }
+            return info;
+        }
+
+        /// <summary>
         /// Register a new handler
         /// </summary>
         public bool AddHandler(byte[] zipcontent)
@@ -108,7 +129,8 @@ namespace NetDist.Server
                 ApplicationName = AppDomain.CurrentDomain.SetupInformation.ApplicationName,
                 LoaderOptimization = LoaderOptimization.MultiDomainHost,
                 ShadowCopyFiles = "true",
-                AppDomainInitializerArguments = null
+                AppDomainInitializerArguments = null,
+                //TODO: needed for folders? ShadowCopyDirectories = AppDomain.CurrentDomain.SetupInformation.ApplicationBase
             });
             // Create a loaded handler wrapper in the new app-domain
             var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new object[] { jobLogicFile.HandlerSettingsString }, null, null);
@@ -145,25 +167,29 @@ namespace NetDist.Server
         /// <summary>
         /// Starts the handler so jobs are being distributed
         /// </summary>
-        public void StartJobLogic(Guid id)
+        public bool StartJobLogic(Guid id)
         {
             Logger.Info("Starting Handler: '{0}'", id);
             if (_loadedHandlers.ContainsKey(id))
             {
                 _loadedHandlers[id].Item2.StartJobLogic();
+                return true;
             }
+            return false;
         }
 
         /// <summary>
         /// Stops a handler so no more jobs are distributed and processed
         /// </summary>
-        public void StopJoblogic(Guid id)
+        public bool StopJoblogic(Guid id)
         {
             Logger.Info("Stopping Handler: '{0}'", id);
             if (_loadedHandlers.ContainsKey(id))
             {
                 _loadedHandlers[id].Item2.StopJoblogic();
+                return true;
             }
+            return false;
         }
 
         /// <summary>
