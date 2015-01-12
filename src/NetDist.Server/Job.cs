@@ -1,6 +1,7 @@
-﻿using System;
+﻿using NetDist.Jobs;
+using System;
 
-namespace NetDist.Jobs
+namespace NetDist.Server
 {
     /// <summary>
     /// Class for job instances which should be executed

@@ -42,10 +42,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="IJob.cs" />
+    <Compile Include="IJobLogic.cs" />
     <Compile Include="IJobInput.cs" />
     <Compile Include="IJobOutput.cs" />
-    <Compile Include="Job.cs" />
     <Compile Include="JobLogicBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Job.cs" />
     <Compile Include="JobLogicFile.cs" />
     <Compile Include="JobLogicFileParser.cs" />
     <Compile Include="LoadedHandler.cs" />
@@ -53,6 +54,10 @@
     <ProjectReference Include="..\NetDist.Handlers\NetDist.Handlers.csproj">
       <Project>{f972362e-b0bd-461d-950a-5a3ea19bf120}</Project>
       <Name>NetDist.Handlers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NetDist.Jobs\NetDist.Jobs.csproj">
+      <Project>{ff8e83d4-62d9-4e0f-908c-9fd2c2c9c229}</Project>
+      <Name>NetDist.Jobs</Name>
     </ProjectReference>
     <ProjectReference Include="..\NetDist.Logging\NetDist.Logging.csproj">
       <Project>{de600b9a-c488-40e1-8d0e-e0e6d64ffb90}</Project>
