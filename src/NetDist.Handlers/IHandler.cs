@@ -12,8 +12,8 @@ namespace NetDist.Handlers
         Guid Id { get; }
         void InitializeCustomSettings(string customSettingsString);
         void Initialize();
-        List<Job> GetJobs();
-        void ProcessResult(Job originalJob, IJobOutput jobOutput);
+        List<IJobInput> GetJobs();
+        void ProcessResult(IJobInput jobInput, IJobOutput jobOutput);
         bool IsSameAs(IHandler otherHandler);
     }
 }

@@ -50,34 +50,33 @@ namespace NetDist.Handlers
         public virtual void Initialize() { }
 
         /// <summary>
-        /// Method to create a new job item
-        /// </summary>
-        /// <param name="input">The input object to pass into the job</param>
-        /// <returns>A job item</returns>
-        public Job CreateJob(TIn input)
-        {
-            return new Job(Id, input);
-        }
-
-        /// <summary>
         /// Method to get the next batch of pending jobs
         /// </summary>
-        /// <returns>A list of jobs which should be processed</returns>
-        public abstract List<Job> GetJobs();
+        /// <returns>A list of input parameters which should be processed as jobs</returns>
+        public abstract List<TIn> GetJobs();
+
+        /// <summary>
+        /// Interface implementation to get a list of jobs
+        /// </summary>
+        /// <returns>A list of input parameters</returns>
+        List<IJobInput> IHandler.GetJobs()
+        {
+            return GetJobs().ConvertAll(x => (IJobInput)x);
+        }
 
         /// <summary>
         /// Converts the result to the generic result object and calls the abstract method
         /// to process the data
         /// </summary>
-        public void ProcessResult(Job originalJob, IJobOutput jobOutput)
+        public void ProcessResult(IJobInput jobInput, IJobOutput jobOutput)
         {
-            ProcessResult(originalJob, (TOut)jobOutput);
+            ProcessResult((TIn)jobInput, (TOut)jobOutput);
         }
 
         /// <summary>
         /// Method to process the result of a finished job
         /// </summary>
-        public abstract void ProcessResult(Job originalJob, TOut jobResult);
+        public abstract void ProcessResult(TIn jobInput, TOut jobResult);
 
         public bool IsSameAs(IHandler otherHandler)
         {
