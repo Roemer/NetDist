@@ -40,6 +40,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Job.cs" />
+    <Compile Include="JobAssigned.cs" />
+    <Compile Include="JobFinished.cs" />
     <Compile Include="JobLogicFile.cs" />
     <Compile Include="JobLogicFileParser.cs" />
     <Compile Include="LoadedHandler.cs" />

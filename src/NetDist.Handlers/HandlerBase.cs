@@ -20,6 +20,11 @@ namespace NetDist.Handlers
         public TSet Settings { get; private set; }
 
         /// <summary>
+        /// Flag to indicate if the handler is finished or not
+        /// </summary>
+        public bool IsFinished { get; protected set; }
+
+        /// <summary>
         /// Converts the passed settings string to the generic settings object
         /// </summary>
         /// <param name="customSettingsString">String representation of the settings</param>
@@ -53,9 +58,10 @@ namespace NetDist.Handlers
         /// Converts the result to the generic result object and calls the abstract method
         /// to process the data
         /// </summary>
-        public void ProcessResult(IJobInput jobInput, IJobOutput jobOutput)
+        public void ProcessResult(IJobInput jobInput, string jobResultString)
         {
-            ProcessResult((TIn)jobInput, (TOut)jobOutput);
+            var output = JobObjectSerializer.Deserialize<TOut>(jobResultString);
+            ProcessResult((TIn)jobInput, output);
         }
 
         /// <summary>
@@ -94,5 +100,9 @@ namespace NetDist.Handlers
         {
             return true;
         }
+
+        public virtual void OnStart() { }
+        public virtual void OnStop() { }
+        public virtual void OnFinished() { }
     }
 }

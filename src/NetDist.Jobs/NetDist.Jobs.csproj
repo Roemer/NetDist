@@ -45,7 +45,9 @@
     <Compile Include="IJobLogic.cs" />
     <Compile Include="IJobInput.cs" />
     <Compile Include="IJobOutput.cs" />
+    <Compile Include="JobError.cs" />
     <Compile Include="JobLogicBase.cs" />
+    <Compile Include="JobResult.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

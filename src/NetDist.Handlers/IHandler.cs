@@ -8,10 +8,50 @@ namespace NetDist.Handlers
     /// </summary>
     public interface IHandler
     {
+        /// <summary>
+        /// Used to check if a handler has finished all it's work
+        /// </summary>
+        /// <returns>True if finished, false otherwise</returns>
+        bool IsFinished { get; }
+
+        /// <summary>
+        /// Initializes the custom settings object from the serialized string
+        /// </summary>
         void InitializeCustomSettings(string customSettingsString);
+
+        /// <summary>
+        /// Allows custom initialization to be called which need the custom settings object
+        /// </summary>
         void Initialize();
+
+        /// <summary>
+        /// Get a list of the next input objects which should be processed
+        /// </summary>
         List<IJobInput> GetJobs();
-        void ProcessResult(IJobInput jobInput, IJobOutput jobOutput);
+
+        /// <summary>
+        /// Process a result
+        /// </summary>
+        void ProcessResult(IJobInput jobInput, string jobResultString);
+
+        /// <summary>
+        /// Check if a handler is the same (to update it)
+        /// </summary>
         bool IsSameAs(IHandler otherHandler);
+
+        /// <summary>
+        /// Method which is called when the handler is started
+        /// </summary>
+        void OnStart();
+
+        /// <summary>
+        /// Method which is called when the handler is stopped
+        /// </summary>
+        void OnStop();
+
+        /// <summary>
+        /// Method which is called when the handler is finished
+        /// </summary>
+        void OnFinished();
     }
 }
