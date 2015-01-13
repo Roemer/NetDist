@@ -53,6 +53,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Models\ServerModel.cs" />
+    <Compile Include="SampleDataContext.cs" />
+    <Compile Include="ViewModels\HandlerInfoViewModel.cs" />
+    <Compile Include="ViewModels\MainInfoViewModel.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -93,6 +97,33 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\cpu.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NetDist.Core\NetDist.Core.csproj">
+      <Project>{af2925d1-e039-4d6b-ae81-2f5fe56faf4e}</Project>
+      <Name>NetDist.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NetDist.ServerAdmin.WebApi\NetDist.ServerAdmin.WebApi.csproj">
+      <Project>{fd99738a-616d-41df-a4a7-4dd6abeb5deb}</Project>
+      <Name>NetDist.ServerAdmin.WebApi</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Wpf.Shared\Wpf.Shared.csproj">
+      <Project>{761276f7-95d2-4faf-97a0-deb2ff0691a8}</Project>
+      <Name>Wpf.Shared</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\ram.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\button_green.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\button_red.png" />
+  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

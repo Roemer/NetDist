@@ -1,17 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.ComponentModel;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using WpfServerAdmin.Models;
+using WpfServerAdmin.ViewModels;
 
 namespace WpfServerAdmin
 {
@@ -20,9 +13,52 @@ namespace WpfServerAdmin
     /// </summary>
     public partial class MainWindow : Window
     {
+        private readonly MainInfoViewModel _model;
+        private bool _isExiting;
+
         public MainWindow()
         {
             InitializeComponent();
+
+            // Initialize the model
+            var serverModel = new ServerModel();
+            // Initialize the view model
+            _model = new MainInfoViewModel();
+            _model.ServerModel = serverModel;
+
+            // Assign the view model
+            DataContext = _model;
+
+            // Start thread for auto refresh
+            Task.Factory.StartNew(() =>
+            {
+                while (!_isExiting)
+                {
+                    GetStatistics();
+                    Thread.Sleep(5000);
+                }
+            });
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            base.OnClosing(e);
+            _isExiting = true;
+        }
+
+        private void GetStatistics()
+        {
+            try
+            {
+                var info = _model.ServerModel.Server.GetStatistics();
+                Dispatcher.Invoke(() => _model.Update(info));
+                _model.IsConnected = true;
+            }
+            catch (Exception exception)
+            {
+                // TODO catch only timeout exceptions
+                _model.IsConnected = false;
+            }
         }
     }
 }

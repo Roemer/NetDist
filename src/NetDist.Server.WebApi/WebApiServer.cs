@@ -18,14 +18,14 @@ namespace NetDist.Server.WebApi
 
         protected override bool InternalStart()
         {
-            const string baseAddress = "http://localhost:9000/";
+            const string baseAddress = "http://*:9000/";
             Logger.Info("Starting OWIN at '{0}'", baseAddress);
             _app = WebApp.Start<Startup>(new StartOptions(baseAddress));
 
 
 
             RegisterPackage(new ZipUtility().Compress(@"..\..\..\SimpleCalculator\bin\Debug\SimpleCalculator.dll"));
-            AddJobLogic(File.ReadAllText(@"..\..\..\SimpleCalculator\Jobs\CalculatorJobLogicAdd.cs"));
+            //AddJobLogic(File.ReadAllText(@"..\..\..\SimpleCalculator\Jobs\CalculatorJobLogicAdd.cs"));
             var guid = Guid.NewGuid();
             RemoveJobLogic(guid);
 

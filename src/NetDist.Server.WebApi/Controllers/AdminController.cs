@@ -16,8 +16,9 @@ namespace NetDist.Server.WebApi.Controllers
 
         [HttpPost]
         [Route("addjoblogic")]
-        public IHttpActionResult AddJobLogic(string jobLogic)
+        public IHttpActionResult AddJobLogic(/*[FromBody]string jobLogic*/)
         {
+            var jobLogic = Request.Content.ReadAsStringAsync().Result;
             var success = WebApiServer.Instance.AddJobLogic(jobLogic);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
@@ -31,7 +32,7 @@ namespace NetDist.Server.WebApi.Controllers
         }
 
         [HttpGet]
-        [Route("startjobhandler")]
+        [Route("startjobhandler/{id}")]
         public IHttpActionResult StartJobHandler(Guid id)
         {
             var success = WebApiServer.Instance.StartJobHandler(id);
@@ -39,7 +40,7 @@ namespace NetDist.Server.WebApi.Controllers
         }
 
         [HttpGet]
-        [Route("stopjobhandler")]
+        [Route("stopjobhandler/{id}")]
         public IHttpActionResult StopJobHandler(Guid id)
         {
             var success = WebApiServer.Instance.StopJobHandler(id);

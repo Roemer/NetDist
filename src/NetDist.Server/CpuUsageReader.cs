@@ -27,7 +27,7 @@ namespace NetDist.Server
         private static float ReadNextValue()
         {
             _lastRead = DateTime.Now;
-            return CpuCounter.NextValue() / Environment.ProcessorCount;
+            return CpuCounter.NextValue();
         }
     }
 }

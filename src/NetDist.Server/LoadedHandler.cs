@@ -91,6 +91,7 @@ namespace NetDist.Server
         public LoadedHandler(string handlerSettingsString)
         {
             Id = Guid.NewGuid();
+            Logger = new Logger();
             HandlerSettings = JobObjectSerializer.Deserialize<HandlerSettings>(handlerSettingsString);
             AvailableJobs = new ConcurrentQueue<JobWrapper>();
             PendingJobs = new Dictionary<Guid, JobWrapper>();
@@ -156,7 +157,9 @@ namespace NetDist.Server
             var hInfo = new HandlerInfo
             {
                 Id = Id,
-                Name = HandlerSettings.HandlerName,
+                PluginName = HandlerSettings.PluginName,
+                HandlerName = HandlerSettings.HandlerName,
+                JobName = HandlerSettings.JobName,
                 AvailableJobs = AvailableJobs.Count,
                 PendingJobs = PendingJobs.Count,
                 HandlerState = HandlerState

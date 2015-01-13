@@ -48,12 +48,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WebApiServerAdmin.cs" />
+    <Compile Include="WebApiServerAdminSettings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NetDist.Core\NetDist.Core.csproj">
+      <Project>{af2925d1-e039-4d6b-ae81-2f5fe56faf4e}</Project>
+      <Name>NetDist.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NetDist.ServerAdmin\NetDist.ServerAdmin.csproj">
       <Project>{4e175507-9c76-4b55-bb86-680e974271fc}</Project>
       <Name>NetDist.ServerAdmin</Name>
