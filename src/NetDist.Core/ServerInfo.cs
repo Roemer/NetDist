@@ -6,6 +6,7 @@ namespace NetDist.Core
     {
         public ulong TotalMemory { get; set; }
         public ulong UsedMemory { get; set; }
+        public float CpuUsage { get; set; }
         public List<HandlerInfo> Handlers { get; set; }
 
         public ServerInfo()

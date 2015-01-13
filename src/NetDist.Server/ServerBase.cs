@@ -89,6 +89,8 @@ namespace NetDist.Server
             var ci = new ComputerInfo();
             info.TotalMemory = ci.TotalPhysicalMemory;
             info.UsedMemory = ci.TotalPhysicalMemory - ci.AvailablePhysicalMemory;
+            // CPU information
+            info.CpuUsage = CpuUsageReader.GetValue();
             // Handler information
             foreach (var kvp in _loadedHandlers)
             {
