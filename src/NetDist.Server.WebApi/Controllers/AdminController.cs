@@ -31,18 +31,18 @@ namespace NetDist.Server.WebApi.Controllers
         }
 
         [HttpGet]
-        [Route("startjoblogic")]
-        public IHttpActionResult StartJobLogic(Guid id)
+        [Route("startjobhandler")]
+        public IHttpActionResult StartJobHandler(Guid id)
         {
-            var success = WebApiServer.Instance.StartJobLogic(id);
+            var success = WebApiServer.Instance.StartJobHandler(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
         [HttpGet]
-        [Route("stopjoblogic")]
-        public IHttpActionResult StopJobLogic(Guid id)
+        [Route("stopjobhandler")]
+        public IHttpActionResult StopJobHandler(Guid id)
         {
-            var success = WebApiServer.Instance.StopJoblogic(id);
+            var success = WebApiServer.Instance.StopJobHandler(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
     }

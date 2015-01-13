@@ -6,6 +6,7 @@ using NetDist.Jobs;
 using NetDist.Logging;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -41,7 +42,7 @@ namespace NetDist.Server
         /// <summary>
         /// Path to the handlers folder
         /// </summary>
-        protected string HandlersFolder { get { return Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath), "handlers"); } }
+        protected string PackagesFolder { get { return Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath), "packages"); } }
 
         /// <summary>
         /// Constructor
@@ -98,11 +99,20 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Register a new handler
+        /// Get information about currently registered packages
         /// </summary>
-        public bool AddHandler(byte[] zipcontent)
+        public List<PackageInfo> GetRegisteredPackages()
         {
-            new ZipUtility().Extract(zipcontent, HandlersFolder);
+            var info = new List<PackageInfo>();
+            return info;
+        }
+
+        /// <summary>
+        /// Register a new package (handlers, dependencies, ...)
+        /// </summary>
+        public bool RegisterPackage(byte[] zipcontent)
+        {
+            new ZipUtility().Extract(zipcontent, PackagesFolder);
             return true;
         }
 
@@ -134,7 +144,7 @@ namespace NetDist.Server
             });
             // Create a loaded handler wrapper in the new app-domain
             var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new object[] { jobLogicFile.HandlerSettingsString }, null, null);
-            var success = loadedHandler.InitializeHandler(HandlersFolder, jobLogicFile.HandlerCustomSettingsString);
+            var success = loadedHandler.InitializeHandler(PackagesFolder, jobLogicFile.HandlerCustomSettingsString);
             if (!success)
             {
                 AppDomain.Unload(domain);
@@ -167,7 +177,7 @@ namespace NetDist.Server
         /// <summary>
         /// Starts the handler so jobs are being distributed
         /// </summary>
-        public bool StartJobLogic(Guid id)
+        public bool StartJobHandler(Guid id)
         {
             Logger.Info("Starting Handler: '{0}'", id);
             if (_loadedHandlers.ContainsKey(id))
@@ -181,7 +191,7 @@ namespace NetDist.Server
         /// <summary>
         /// Stops a handler so no more jobs are distributed and processed
         /// </summary>
-        public bool StopJoblogic(Guid id)
+        public bool StopJobHandler(Guid id)
         {
             Logger.Info("Stopping Handler: '{0}'", id);
             if (_loadedHandlers.ContainsKey(id))
@@ -195,7 +205,7 @@ namespace NetDist.Server
         /// <summary>
         /// Get a job from the current pending jobs in the handlers
         /// </summary>
-        public Job GetJob()
+        public Job GetJob(Guid clientId)
         {
             Logger.Info("Client '{0}' requested a job", "TODO");
             lock (_loadedHandlers.GetSyncRoot())
@@ -207,7 +217,7 @@ namespace NetDist.Server
                 }
                 var nextRandNumber = RandomGenerator.Instance.Next(handlersWithJobs.Length);
                 var randomHandler = handlersWithJobs[nextRandNumber];
-                var nextJob = randomHandler.Value.Item2.GetNextJob();
+                var nextJob = randomHandler.Value.Item2.GetNextJob(clientId);
                 Logger.Info("Client '{0}' got job '{1}' for handler '{2}'", "client.Id", nextJob.Id, randomHandler.Value.Item2.HandlerSettings.HandlerName);
                 return nextJob;
             }

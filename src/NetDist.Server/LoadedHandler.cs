@@ -50,17 +50,17 @@ namespace NetDist.Server
         /// <summary>
         /// Queue for the available jobs
         /// </summary>
-        protected ConcurrentQueue<Job> AvailableJobs;
+        protected ConcurrentQueue<JobWrapper> AvailableJobs;
 
         /// <summary>
         /// List for jobs which are in progress
         /// </summary>
-        protected Dictionary<Guid, JobAssigned> PendingJobs;
+        protected Dictionary<Guid, JobWrapper> PendingJobs;
 
         /// <summary>
         /// List for jobs which are finished and waiting to be collected
         /// </summary>
-        protected ConcurrentQueue<JobFinished> FinishedJobs;
+        protected ConcurrentQueue<JobWrapper> FinishedJobs;
 
         /// <summary>
         /// Full name of the handler: PluginName/HandlerName/JobName
@@ -92,9 +92,9 @@ namespace NetDist.Server
         {
             Id = Guid.NewGuid();
             HandlerSettings = JobObjectSerializer.Deserialize<HandlerSettings>(handlerSettingsString);
-            AvailableJobs = new ConcurrentQueue<Job>();
-            PendingJobs = new Dictionary<Guid, JobAssigned>();
-            FinishedJobs = new ConcurrentQueue<JobFinished>();
+            AvailableJobs = new ConcurrentQueue<JobWrapper>();
+            PendingJobs = new Dictionary<Guid, JobWrapper>();
+            FinishedJobs = new ConcurrentQueue<JobWrapper>();
             HandlerState = HandlerState.Stopped;
         }
 
@@ -211,12 +211,12 @@ namespace NetDist.Server
                         // Reset the control task
                         _controlTask = null;
                         // Clear the various queues/lists
-                        AvailableJobs = new ConcurrentQueue<Job>();
+                        AvailableJobs = new ConcurrentQueue<JobWrapper>();
                         lock (PendingJobs.GetSyncRoot())
                         {
-                            PendingJobs = new Dictionary<Guid, JobAssigned>();
+                            PendingJobs = new Dictionary<Guid, JobWrapper>();
                         }
-                        FinishedJobs = new ConcurrentQueue<JobFinished>();
+                        FinishedJobs = new ConcurrentQueue<JobWrapper>();
                         // Signal the handler to stop
                         _handler.OnStop();
                         HandlerState = HandlerState.Stopped;
@@ -228,17 +228,15 @@ namespace NetDist.Server
         /// <summary>
         /// Gets the next job from the available queue
         /// </summary>
-        public Job GetNextJob()
+        public Job GetNextJob(Guid clientId)
         {
-            Job nextJob;
-            var success = AvailableJobs.TryDequeue(out nextJob);
+            JobWrapper assignedJob;
+            var success = AvailableJobs.TryDequeue(out assignedJob);
             if (success)
             {
-                var assignedJob = new JobAssigned
-                {
-                    Job = nextJob,
-                    StartTime = DateTime.Now
-                };
+                // Set the assigned values
+                assignedJob.AssignedTime = DateTime.Now;
+                assignedJob.AssignedCliendId = clientId;
                 // Add it to pending jobs
                 lock (PendingJobs.GetSyncRoot())
                 {
@@ -250,7 +248,7 @@ namespace NetDist.Server
                     // If not, set the waithandle to get new jobs
                     _jobsEmptyWaitHandle.Set();
                 }
-                return nextJob;
+                return assignedJob.Job;
             }
             return null;
         }
@@ -262,49 +260,46 @@ namespace NetDist.Server
                 // Catch case where we receive results for an already stopped handler
                 if (HandlerState == HandlerState.Stopped)
                 {
-                    Logger.Warn("Got job '{0}' result for stopped handler", result.Id);
+                    Logger.Warn("Got job '{0}' result for stopped handler", result.JobId);
                     return;
                 }
 
-                // Check if there was an error processing the job
-                if (result.HasError)
+                lock (PendingJobs.GetSyncRoot())
                 {
-                    Logger.Error("Got failed result for job '{0}': {1}", result.Id, result.Error.ToString());
-                    // If so, remove it from the in-progress list
-                    var jobFailed = RemoveJobFromInProgress(result.Id);
-                    // Add the job to the queue again
-                    AvailableJobs.Enqueue(jobFailed.Job);
-                    return;
+                    // Get the job which is in progress
+                    var jobInProgress = PendingJobs[result.JobId];
+                    // Check if the clientid mismatches
+                    if (jobInProgress.AssignedCliendId != result.ClientId)
+                    {
+                        Logger.Warn("Got job '{0}' result for differet client ('{1}' instead '{2}')", result.JobId, result.ClientId, jobInProgress.AssignedCliendId);
+                        return;
+                    }
+
+                    // Check if there was an error processing the job
+                    if (result.HasError)
+                    {
+                        Logger.Error("Got failed result for job '{0}': {1}", result.JobId, result.Error.ToString());
+                        // If so, remove it from the in-progress list
+                        PendingJobs.Remove(result.JobId);
+                        // Reset the assigned values
+                        jobInProgress.Reset();
+                        // Add the job to the queue again
+                        AvailableJobs.Enqueue(jobInProgress);
+                        return;
+                    }
+
+                    Logger.Info("Got result for job '{0}': {1}", result.JobId, result.JobOutputString);
+
+                    // Remove job from in-progress list
+                    PendingJobs.Remove(result.JobId);
+                    // Set the result values
+                    jobInProgress.ResultTime = DateTime.Now;
+                    jobInProgress.ResultString = result.JobOutputString;
+                    // Add it to the finished queue
+                    FinishedJobs.Enqueue(jobInProgress);
+                    _resultAvailableWaitHandle.Set();
                 }
-
-                Logger.Info("Got result for job '{0}': {1}", result.Id, result.JobOutputString);
-
-                // Remove Job from in-progress list
-                var jobInProgress = RemoveJobFromInProgress(result.Id);
-
-                // Add job to finished list
-                var finishedJob = new JobFinished
-                {
-                    Job = jobInProgress.Job,
-                    ResultString = result.JobOutputString
-                };
-                FinishedJobs.Enqueue(finishedJob);
-                _resultAvailableWaitHandle.Set();
             });
-        }
-
-        /// <summary>
-        /// Removes a job from the in-progress list and returns the job
-        /// </summary>
-        private JobAssigned RemoveJobFromInProgress(Guid jobId)
-        {
-            JobAssigned jobInProgress;
-            lock (PendingJobs.GetSyncRoot())
-            {
-                jobInProgress = PendingJobs[jobId];
-                PendingJobs.Remove(jobId);
-            }
-            return jobInProgress;
         }
 
         /// <summary>
@@ -321,33 +316,33 @@ namespace NetDist.Server
             while (!_controlTaskCancelToken.IsCancellationRequested)
             {
                 // Collect results
-                JobFinished finishedJob;
+                JobWrapper finishedJob;
                 while (FinishedJobs.TryDequeue(out finishedJob))
                 {
-                    Logger.Info("Collecting finished job '{0}' with result '{1}'", finishedJob.Job.Id, finishedJob.ResultString);
+                    Logger.Debug("Collecting finished job '{0}' with result '{1}'", finishedJob.Job.Id, finishedJob.ResultString);
                     _handler.ProcessResult(finishedJob.Job.JobInput, finishedJob.ResultString);
                 }
 
                 // Check for jobs with a timeout
-                var jobTimeout = 900; // TODO: needs to be a config somewhere
-                if (jobTimeout > 0)
+                if (HandlerSettings.JobTimeout > 0)
                 {
                     var now = DateTime.Now;
-                    var jobsToRequeue = new List<Job>();
+                    var jobsToRequeue = new List<JobWrapper>();
                     lock (PendingJobs.GetSyncRoot())
                     {
                         foreach (var kvp in PendingJobs)
                         {
-                            if (now - kvp.Value.StartTime > TimeSpan.FromSeconds(jobTimeout))
+                            if (now - kvp.Value.AssignedTime > TimeSpan.FromSeconds(HandlerSettings.JobTimeout))
                             {
                                 // Job had a timeout
-                                jobsToRequeue.Add(kvp.Value.Job);
+                                jobsToRequeue.Add(kvp.Value);
                             }
                         }
                         foreach (var job in jobsToRequeue)
                         {
-                            Logger.Warn("Job '{0}' had a timeout", job.Id);
-                            PendingJobs.Remove(job.Id);
+                            Logger.Warn("Job '{0}' had a timeout", job.Job.Id);
+                            PendingJobs.Remove(job.Job.Id);
+                            job.Reset();
                             AvailableJobs.Enqueue(job);
                         }
                     }
@@ -362,7 +357,12 @@ namespace NetDist.Server
                     foreach (var input in newJobInputs)
                     {
                         var job = new Job(Id, input);
-                        AvailableJobs.Enqueue(job);
+                        var jobWrapper = new JobWrapper
+                        {
+                            Job = job,
+                            EnqueueTime = DateTime.Now
+                        };
+                        AvailableJobs.Enqueue(jobWrapper);
                     }
                 }
 

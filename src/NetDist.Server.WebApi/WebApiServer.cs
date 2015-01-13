@@ -24,7 +24,7 @@ namespace NetDist.Server.WebApi
 
 
 
-            AddHandler(new ZipUtility().Compress(@"..\..\..\SimpleCalculator\bin\Debug\SimpleCalculator.dll"));
+            RegisterPackage(new ZipUtility().Compress(@"..\..\..\SimpleCalculator\bin\Debug\SimpleCalculator.dll"));
             AddJobLogic(File.ReadAllText(@"..\..\..\SimpleCalculator\Jobs\CalculatorJobLogicAdd.cs"));
             var guid = Guid.NewGuid();
             RemoveJobLogic(guid);

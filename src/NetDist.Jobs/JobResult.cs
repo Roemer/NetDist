@@ -10,12 +10,17 @@ namespace NetDist.Jobs
         /// <summary>
         /// The ID of the job
         /// </summary>
-        public Guid Id { get; set; }
+        public Guid JobId { get; set; }
 
         /// <summary>
         /// The ID of the handler which wanted the job to be done
         /// </summary>
         public Guid HandlerId { get; set; }
+
+        /// <summary>
+        /// The Id of the client which processed the job
+        /// </summary>
+        public Guid ClientId { get; set; }
 
         /// <summary>
         /// Flag to indicate if the job finished correctly or not
@@ -36,26 +41,27 @@ namespace NetDist.Jobs
         {
         }
 
-        private JobResult(Guid jobId, Guid handlerId)
+        private JobResult(Guid jobId, Guid handlerId, Guid clientId)
         {
-            Id = jobId;
+            JobId = jobId;
             HandlerId = handlerId;
+            ClientId = clientId;
         }
 
-        public JobResult(Guid jobId, Guid handlerId, IJobOutput output)
-            : this(jobId, handlerId)
+        public JobResult(Guid jobId, Guid handlerId, Guid clientId, IJobOutput output)
+            : this(jobId, handlerId, clientId)
         {
             //TODO?: JobOutputString = JobObjectSerializer.Serialize(output);
         }
 
-        public JobResult(Guid jobId, Guid handlerId, string outputString)
-            : this(jobId, handlerId)
+        public JobResult(Guid jobId, Guid handlerId, Guid clientId, string outputString)
+            : this(jobId, handlerId, clientId)
         {
             JobOutputString = outputString;
         }
 
-        public JobResult(Guid jobId, Guid handlerId, Exception ex)
-            : this(jobId, handlerId)
+        public JobResult(Guid jobId, Guid handlerId, Guid clientId, Exception ex)
+            : this(jobId, handlerId, clientId)
         {
             HasError = true;
             Error = new JobError(ex);
