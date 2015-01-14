@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace NetDist.Server
 {
-    public static class JobLogicFileParser
+    public static class JobScriptFileParser
     {
         // Prepare regex to parse the file
         private static readonly Regex RegCompilerSettings = new Regex(@"#if COMPILERSETTINGS\s*(.*?)\s*#endif", RegexOptions.Singleline | RegexOptions.Compiled);
@@ -15,7 +15,7 @@ namespace NetDist.Server
         /// <summary>
         /// Parse the file by path
         /// </summary>
-        public static JobLogicFile ParseFile(string filePath)
+        public static JobScriptFile ParseFile(string filePath)
         {
             // Check for empty file path
             if (String.IsNullOrWhiteSpace(filePath))
@@ -45,7 +45,7 @@ namespace NetDist.Server
         /// <summary>
         /// Parse the file by content
         /// </summary>
-        public static JobLogicFile ParseJob(string jobContent)
+        public static JobScriptFile ParseJob(string jobContent)
         {
             // Check for empty content
             if (String.IsNullOrWhiteSpace(jobContent))
@@ -70,7 +70,7 @@ namespace NetDist.Server
             var jobLogic = jobContent;
 
             // Build the JobFile
-            var jobFile = new JobLogicFile
+            var jobFile = new JobScriptFile
             {
                 HandlerSettingsString = handlerSettings,
                 HandlerCustomSettingsString = handlerCustomSettings,
@@ -84,9 +84,9 @@ namespace NetDist.Server
         /// <summary>
         /// Return a job file with the given error
         /// </summary>
-        private static JobLogicFile CreateWithError(string errorMessage)
+        private static JobScriptFile CreateWithError(string errorMessage)
         {
-            var jobFile = new JobLogicFile();
+            var jobFile = new JobScriptFile();
             jobFile.SetError(errorMessage);
             return jobFile;
         }

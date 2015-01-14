@@ -41,7 +41,7 @@ namespace NetDist.ServerAdmin.WebApi
             return null;
         }
 
-        public void AddJobLogic(string jobLogic)
+        public void AddJobScript(string jobScript)
         {
             using (var client = new HttpClient())
             {
@@ -50,7 +50,7 @@ namespace NetDist.ServerAdmin.WebApi
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 // HTTP POST
-                var response = client.PostAsync("api/admin/addjoblogic", new StringContent(jobLogic)).Result;
+                var response = client.PostAsync("api/admin/addjobscript", new StringContent(jobScript)).Result;
                 if (response.IsSuccessStatusCode)
                 {
                     var content = response.Content.ReadAsStringAsync().Result;

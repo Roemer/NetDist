@@ -1,7 +1,7 @@
 ﻿
 namespace NetDist.Jobs
 {
-    public interface IJobLogic
+    public interface IJobScript
     {
         IJobOutput Process(IJobInput jobInput);
     }

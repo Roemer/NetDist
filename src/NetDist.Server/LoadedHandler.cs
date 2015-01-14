@@ -174,9 +174,9 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Starts the job-logic so jobs are generated and processed
+        /// Starts the job handler so jobs are generated and processed
         /// </summary>
-        public void StartJobLogic()
+        public void StartJobHandler()
         {
             lock (_lockObject)
             {
@@ -189,7 +189,7 @@ namespace NetDist.Server
                     _controlTask.ContinueWith(t =>
                     {
                         Logger.Error(t.Exception, "Exception in handler '{0}'", Id);
-                        StopJoblogic();
+                        StopJobHandler();
                     }, TaskContinuationOptions.OnlyOnFaulted);
                     HandlerState = HandlerState.Running;
                     _controlTask.Start();
@@ -198,9 +198,9 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Stops the job-logic
+        /// Stops the job handler
         /// </summary>
-        public void StopJoblogic()
+        public void StopJobHandler()
         {
             // Use an own task since this might take a little longer
             Task.Run(() =>

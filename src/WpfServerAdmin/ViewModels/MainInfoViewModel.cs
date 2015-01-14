@@ -64,21 +64,21 @@ namespace WpfServerAdmin.ViewModels
         //public ObservableCollection<ClientInfoViewModel> Clients { get; set; }
         //public ObservableCollection<PackageInfoViewModel> Packages { get; set; }
 
-        public ICommand UploadJobHandlerCommand { get; private set; }
+        public ICommand UploadJobScriptCommand { get; private set; }
 
         public MainInfoViewModel()
         {
             Handlers = new ObservableCollection<HandlerInfoViewModel>();
             Handlers.CollectionChanged += Handlers_CollectionChanged;
 
-            UploadJobHandlerCommand = new RelayCommand(o =>
+            UploadJobScriptCommand = new RelayCommand(o =>
             {
                 string selectedFile;
-                var fileSelected = JobLogicFileBrowser.BrowseForScriptFile(String.Empty, out selectedFile);
+                var fileSelected = JobScriptFileBrowser.BrowseForScriptFile(String.Empty, out selectedFile);
                 if (fileSelected)
                 {
                     var fileContent = File.ReadAllText(selectedFile);
-                    ServerModel.Server.AddJobLogic(fileContent);
+                    ServerModel.Server.AddJobScript(fileContent);
                 }
             });
         }

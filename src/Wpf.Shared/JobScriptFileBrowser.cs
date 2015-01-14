@@ -3,7 +3,7 @@ using System;
 
 namespace Wpf.Shared
 {
-    public static class JobLogicFileBrowser
+    public static class JobScriptFileBrowser
     {
         public static bool BrowseForScriptFile(string initialDir, out string fileName)
         {

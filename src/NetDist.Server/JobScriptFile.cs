@@ -1,7 +1,7 @@
 ﻿
 namespace NetDist.Server
 {
-    public class JobLogicFile
+    public class JobScriptFile
     {
         public bool ParsingFailed { get; private set; }
         public string ErrorMessage { get; private set; }

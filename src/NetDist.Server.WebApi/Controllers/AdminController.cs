@@ -15,19 +15,19 @@ namespace NetDist.Server.WebApi.Controllers
         }
 
         [HttpPost]
-        [Route("addjoblogic")]
-        public IHttpActionResult AddJobLogic(/*[FromBody]string jobLogic*/)
+        [Route("addjobscript")]
+        public IHttpActionResult AddJobScript()
         {
-            var jobLogic = Request.Content.ReadAsStringAsync().Result;
-            var success = WebApiServer.Instance.AddJobLogic(jobLogic);
+            var jobScript = Request.Content.ReadAsStringAsync().Result;
+            var success = WebApiServer.Instance.AddJobScript(jobScript);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
         [HttpGet]
-        [Route("removejoblogic")]
-        public IHttpActionResult RemoveJobLogic(Guid id)
+        [Route("removejobscript")]
+        public IHttpActionResult RemoveJobScript(Guid id)
         {
-            var success = WebApiServer.Instance.RemoveJobLogic(id);
+            var success = WebApiServer.Instance.RemoveJobScript(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 

@@ -76,11 +76,11 @@ namespace NetDist.Server
                 Logger.Info("Server failed to stop");
             }
             // Stop the handlers
-            Parallel.ForEach(_loadedHandlers, kvp => kvp.Value.Item2.StopJoblogic());
+            Parallel.ForEach(_loadedHandlers, kvp => kvp.Value.Item2.StopJobHandler());
         }
 
         /// <summary>
-        /// Get statistics about the server and the job-logics
+        /// Get statistics about the server and the job handlers
         /// </summary>
         public ServerInfo GetStatistics()
         {
@@ -119,17 +119,17 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Called when a new job-logic is added
+        /// Called when a new job script is added
         /// Initializes and starts the appropriate handler
         /// </summary>
-        /// <param name="jobLogicFileContent">The full content of the job logic file</param>
-        public bool AddJobLogic(string jobLogicFileContent)
+        /// <param name="jobScriptFileContent">The full content of the job script file</param>
+        public bool AddJobScript(string jobScriptFileContent)
         {
             // Parse the content
-            var jobLogicFile = JobLogicFileParser.ParseJob(jobLogicFileContent);
-            if (jobLogicFile.ParsingFailed)
+            var jobScriptFile = JobScriptFileParser.ParseJob(jobScriptFileContent);
+            if (jobScriptFile.ParsingFailed)
             {
-                Logger.Error("Failed to parse job: {0}", jobLogicFile.ErrorMessage);
+                Logger.Error("Failed to parse job script: {0}", jobScriptFile.ErrorMessage);
                 return false;
             }
 
@@ -145,8 +145,8 @@ namespace NetDist.Server
                 //TODO: needed for folders? ShadowCopyDirectories = AppDomain.CurrentDomain.SetupInformation.ApplicationBase
             });
             // Create a loaded handler wrapper in the new app-domain
-            var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new object[] { jobLogicFile.HandlerSettingsString }, null, null);
-            var success = loadedHandler.InitializeHandler(PackagesFolder, jobLogicFile.HandlerCustomSettingsString);
+            var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new object[] { jobScriptFile.HandlerSettingsString }, null, null);
+            var success = loadedHandler.InitializeHandler(PackagesFolder, jobScriptFile.HandlerCustomSettingsString);
             if (!success)
             {
                 AppDomain.Unload(domain);
@@ -160,16 +160,16 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Stops and removes a job-logic
+        /// Stops and removes a job script
         /// </summary>
-        public bool RemoveJobLogic(Guid handlerId)
+        public bool RemoveJobScript(Guid handlerId)
         {
             Tuple<AppDomain, LoadedHandler> removedItem;
             var success = _loadedHandlers.TryRemove(handlerId, out removedItem);
             if (success)
             {
                 // Stop the handler
-                removedItem.Item2.StopJoblogic();
+                removedItem.Item2.StopJobHandler();
                 // Unload the domain
                 AppDomain.Unload(removedItem.Item1);
             }
@@ -184,7 +184,7 @@ namespace NetDist.Server
             Logger.Info("Starting Handler: '{0}'", id);
             if (_loadedHandlers.ContainsKey(id))
             {
-                _loadedHandlers[id].Item2.StartJobLogic();
+                _loadedHandlers[id].Item2.StartJobHandler();
                 return true;
             }
             return false;
@@ -198,7 +198,7 @@ namespace NetDist.Server
             Logger.Info("Stopping Handler: '{0}'", id);
             if (_loadedHandlers.ContainsKey(id))
             {
-                _loadedHandlers[id].Item2.StopJoblogic();
+                _loadedHandlers[id].Item2.StopJobHandler();
                 return true;
             }
             return false;

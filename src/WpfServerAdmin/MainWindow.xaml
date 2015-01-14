@@ -23,7 +23,7 @@
         <ToolBarTray DockPanel.Dock="Top" IsLocked="True">
             <ToolBar>
                 <Button Command="New" Content="Upload Package" />
-                <Button Command="{Binding UploadJobHandlerCommand}" Content="Upload Job Logic" />
+                <Button Command="{Binding UploadJobScriptCommand}" Content="Upload Job Script" />
             </ToolBar>
         </ToolBarTray>
         <StatusBar Height="27" DockPanel.Dock="Bottom" Padding="0,0,12,0">

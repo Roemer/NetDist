@@ -42,8 +42,8 @@
   <ItemGroup>
     <Compile Include="CpuUsageReader.cs" />
     <Compile Include="Job.cs" />
-    <Compile Include="JobLogicFile.cs" />
-    <Compile Include="JobLogicFileParser.cs" />
+    <Compile Include="JobScriptFile.cs" />
+    <Compile Include="JobScriptFileParser.cs" />
     <Compile Include="JobWrapper.cs" />
     <Compile Include="LoadedHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
