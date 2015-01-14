@@ -96,24 +96,38 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Pending" Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                                <DataGridTemplateColumn Header="Pend." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                            <Label Content="{Binding PendingJobs}" />
+                                            <Label Content="{Binding JobsPending}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Available" Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                                <DataGridTemplateColumn Header="Av." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                            <Label Content="{Binding AvailableJobs}" />
+                                            <Label Content="{Binding JobsAvailable}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Total" Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                                <DataGridTemplateColumn Header="Tot.Av." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                            <Label Content="{Binding TotalJobs}" />
+                                            <Label Content="{Binding TotalJobsAvailable}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Proc." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                            <Label Content="{Binding TotalJobsProcessed}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn Header="Error" Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                            <Label Content="{Binding TotalJobsFailed}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

@@ -75,6 +75,9 @@ namespace NetDist.Server
         /// </summary>
         private IHandler _handler;
 
+        private long _totalProcessedJobs;
+        private long _totalFailedJobs;
+
         /// <summary>
         /// Object used for stuff that should be thread-safe
         /// </summary>
@@ -160,8 +163,11 @@ namespace NetDist.Server
                 PluginName = HandlerSettings.PluginName,
                 HandlerName = HandlerSettings.HandlerName,
                 JobName = HandlerSettings.JobName,
-                AvailableJobs = AvailableJobs.Count,
-                PendingJobs = PendingJobs.Count,
+                TotalJobsAvailable = 0, // TODO
+                JobsAvailable = AvailableJobs.Count,
+                JobsPending = PendingJobs.Count,
+                TotalJobsProcessed = Interlocked.Read(ref _totalProcessedJobs),
+                TotalJobsFailed = Interlocked.Read(ref _totalFailedJobs),
                 HandlerState = HandlerState
             };
             return hInfo;
@@ -213,13 +219,15 @@ namespace NetDist.Server
                         }
                         // Reset the control task
                         _controlTask = null;
-                        // Clear the various queues/lists
+                        // Clear the various queues/lists/stats
                         AvailableJobs = new ConcurrentQueue<JobWrapper>();
                         lock (PendingJobs.GetSyncRoot())
                         {
                             PendingJobs = new Dictionary<Guid, JobWrapper>();
                         }
                         FinishedJobs = new ConcurrentQueue<JobWrapper>();
+                        Interlocked.Exchange(ref _totalProcessedJobs, 0);
+                        Interlocked.Exchange(ref _totalFailedJobs, 0);
                         // Signal the handler to stop
                         _handler.OnStop();
                         HandlerState = HandlerState.Stopped;
@@ -282,6 +290,7 @@ namespace NetDist.Server
                     if (result.HasError)
                     {
                         Logger.Error("Got failed result for job '{0}': {1}", result.JobId, result.Error.ToString());
+                        Interlocked.Increment(ref _totalFailedJobs);
                         // If so, remove it from the in-progress list
                         PendingJobs.Remove(result.JobId);
                         // Reset the assigned values
@@ -292,6 +301,7 @@ namespace NetDist.Server
                     }
 
                     Logger.Info("Got result for job '{0}': {1}", result.JobId, result.JobOutputString);
+                    Interlocked.Increment(ref _totalProcessedJobs);
 
                     // Remove job from in-progress list
                     PendingJobs.Remove(result.JobId);

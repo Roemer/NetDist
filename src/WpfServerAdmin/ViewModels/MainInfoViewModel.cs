@@ -5,7 +5,6 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.IO;
 using System.Windows.Input;
-using System.Windows.Threading;
 using Wpf.Shared;
 using WpfServerAdmin.Models;
 
@@ -63,7 +62,7 @@ namespace WpfServerAdmin.ViewModels
 
         public ObservableCollection<HandlerInfoViewModel> Handlers { get; set; }
         //public ObservableCollection<ClientInfoViewModel> Clients { get; set; }
-        //public ObservableCollection<PackageInfoViewModel> Handlers { get; set; }
+        //public ObservableCollection<PackageInfoViewModel> Packages { get; set; }
 
         public ICommand UploadJobHandlerCommand { get; private set; }
 
@@ -109,10 +108,12 @@ namespace WpfServerAdmin.ViewModels
                 {
                     Id = handler.Id,
                     Name = String.Format("{0}/{1}/{2}", handler.PluginName, handler.HandlerName, handler.JobName),
-                    HandlerState = handler.HandlerState,
-                    AvailableJobs = handler.AvailableJobs,
-                    PendingJobs = handler.PendingJobs,
-                    TotalJobs = handler.TotalJobs
+                    TotalJobsAvailable = handler.TotalJobsAvailable,
+                    JobsAvailable = handler.JobsAvailable,
+                    JobsPending = handler.JobsPending,
+                    TotalJobsProcessed = handler.TotalJobsProcessed,
+                    TotalJobsFailed = handler.TotalJobsFailed,
+                    HandlerState = handler.HandlerState
                 });
             }
         }

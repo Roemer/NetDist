@@ -24,9 +24,11 @@ namespace WpfServerAdmin
                 Id = Guid.NewGuid(),
                 Name = "Handler 1",
                 HandlerState = HandlerState.Running,
-                AvailableJobs = 145,
-                PendingJobs = 10,
-                TotalJobs = 15123
+                TotalJobsAvailable = 12323145,
+                JobsPending = 10,
+                JobsAvailable = 15123,
+                TotalJobsProcessed = 63366,
+                TotalJobsFailed = 12
             });
 
             MainInfoViewModel.Handlers.Add(new HandlerInfoViewModel
@@ -34,9 +36,11 @@ namespace WpfServerAdmin
                 Id = Guid.NewGuid(),
                 Name = "Handler 2",
                 HandlerState = HandlerState.Stopped,
-                AvailableJobs = 0,
-                PendingJobs = 0,
-                TotalJobs = 0
+                TotalJobsAvailable = 445,
+                JobsPending = 0,
+                JobsAvailable = 0,
+                TotalJobsProcessed = 744,
+                TotalJobsFailed = 454
             });
 
             MainInfoViewModel.Handlers.Add(new HandlerInfoViewModel
@@ -44,9 +48,11 @@ namespace WpfServerAdmin
                 Id = Guid.NewGuid(),
                 Name = "Handler 3",
                 HandlerState = HandlerState.Finished,
-                AvailableJobs = 0,
-                PendingJobs = 0,
-                TotalJobs = 0
+                TotalJobsAvailable = 0,
+                JobsPending = 0,
+                JobsAvailable = 0,
+                TotalJobsProcessed = 77744,
+                TotalJobsFailed = 1
             });
         }
     }
