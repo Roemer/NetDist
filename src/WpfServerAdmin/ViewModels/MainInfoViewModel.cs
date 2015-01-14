@@ -61,8 +61,8 @@ namespace WpfServerAdmin.ViewModels
         }
 
         public ObservableCollection<HandlerInfoViewModel> Handlers { get; set; }
-        //public ObservableCollection<ClientInfoViewModel> Clients { get; set; }
-        //public ObservableCollection<PackageInfoViewModel> Packages { get; set; }
+        public ObservableCollection<ClientInfoViewModel> Clients { get; set; }
+        public ObservableCollection<PackageInfoViewModel> Packages { get; set; }
 
         public ICommand UploadJobScriptCommand { get; private set; }
 
@@ -70,6 +70,8 @@ namespace WpfServerAdmin.ViewModels
         {
             Handlers = new ObservableCollection<HandlerInfoViewModel>();
             Handlers.CollectionChanged += Handlers_CollectionChanged;
+            Clients = new ObservableCollection<ClientInfoViewModel>();
+            Packages = new ObservableCollection<PackageInfoViewModel>();
 
             UploadJobScriptCommand = new RelayCommand(o =>
             {

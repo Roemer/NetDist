@@ -55,8 +55,10 @@
     </ApplicationDefinition>
     <Compile Include="Models\ServerModel.cs" />
     <Compile Include="SampleDataContext.cs" />
+    <Compile Include="ViewModels\ClientInfoViewModel.cs" />
     <Compile Include="ViewModels\HandlerInfoViewModel.cs" />
     <Compile Include="ViewModels\MainInfoViewModel.cs" />
+    <Compile Include="ViewModels\PackageInfoViewModel.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

@@ -5,10 +5,10 @@ using Wpf.Shared;
 
 namespace WpfServerAdmin.ViewModels
 {
-    public class HandlerInfoViewModel : ObservableObject
+    public class HandlerInfoViewModel
     {
-        public string Name { get; set; }
         public Guid Id { get; set; }
+        public string Name { get; set; }
         public long TotalJobsAvailable { get; set; }
         public int JobsAvailable { get; set; }
         public int JobsPending { get; set; }

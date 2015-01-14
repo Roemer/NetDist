@@ -86,88 +86,139 @@
         <Grid>
             <TabControl>
                 <TabItem Header="{Binding Path=Handlers.Count}" HeaderStringFormat="{}Handlers ({0})">
-                    <Grid Background="White">
-                        <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Path=Handlers}" CanUserAddRows="False" HeadersVisibility="Column">
-                            <DataGrid.Columns>
-                                <DataGridTemplateColumn Header="Name" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                            <Label Content="{Binding Path=Name}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Pend." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                            <Label Content="{Binding JobsPending}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Av." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                            <Label Content="{Binding JobsAvailable}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Tot.Av." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                            <Label Content="{Binding TotalJobsAvailable}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Proc." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                            <Label Content="{Binding TotalJobsProcessed}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="Error" Width="SizeToCells" MinWidth="60" IsReadOnly="True">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                            <Label Content="{Binding TotalJobsFailed}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                            <Button Content="Start" Command="{Binding StartCommand}"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                            <Button Content="Stop" Command="{Binding StopCommand}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn>
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                            <Button Content="Delete" Command="{Binding DeleteCommand}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="State" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                            <Label Content="{Binding HandlerState}" />
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
+                    <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Path=Handlers}" CanUserAddRows="False" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Name" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Label Content="{Binding Path=Name}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Pend." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Label Content="{Binding JobsPending}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Av." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Label Content="{Binding JobsAvailable}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Tot.Av." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Label Content="{Binding TotalJobsAvailable}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Proc." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Label Content="{Binding TotalJobsProcessed}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Error" Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Label Content="{Binding TotalJobsFailed}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Button Content="Start" Command="{Binding StartCommand}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Button Content="Stop" Command="{Binding StopCommand}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Button Content="Delete" Command="{Binding DeleteCommand}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="State" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Label Content="{Binding HandlerState}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </TabItem>
-                <TabItem Header="{Binding Path=Cpu}" HeaderStringFormat="{}Clients ({0})">
-
+                <TabItem Header="{Binding Path=Clients.Count}" HeaderStringFormat="{}Clients ({0})">
+                    <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Path=Clients}" CanUserAddRows="False" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Name" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:ClientInfoViewModel">
+                                        <Label Content="{Binding Path=Name}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Cpu" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:ClientInfoViewModel">
+                                        <Grid>
+                                            <ProgressBar Orientation="Vertical" Value="{Binding Path=Cpu}" Minimum="0" Maximum="100"></ProgressBar>
+                                            <Label Content="{Binding Path=Cpu}" ContentStringFormat="{}{0:00.00}%" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Mem" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:ClientInfoViewModel">
+                                        <Grid>
+                                            <ProgressBar Orientation="Vertical" Value="{Binding Path=MemoryPercentage, Mode=OneWay}" Minimum="0" Maximum="100"></ProgressBar>
+                                            <Label Content="{Binding Path=MemoryPercentage}" ContentStringFormat="{}{0:00.00}%" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Prog." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:ClientInfoViewModel">
+                                        <Label Content="{Binding JobsInProgress}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Proc." Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:ClientInfoViewModel">
+                                        <Label Content="{Binding TotalJobsProcessed}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Error" Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:ClientInfoViewModel">
+                                        <Label Content="{Binding TotalJobsFailed}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </TabItem>
-                <TabItem Header="{Binding Path=Cpu}" HeaderStringFormat="{}Packages ({0})">
+                <TabItem Header="{Binding Path=Packages.Count}" HeaderStringFormat="{}Packages ({0})">
+                    <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Path=Packages}" CanUserAddRows="False" HeadersVisibility="Column">
 
+                    </DataGrid>
                 </TabItem>
             </TabControl>
         </Grid>

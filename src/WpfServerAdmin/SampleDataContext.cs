@@ -1,5 +1,6 @@
 ﻿using System;
 using NetDist.Core;
+using NetDist.Core.Utilities;
 using WpfServerAdmin.ViewModels;
 
 namespace WpfServerAdmin
@@ -53,6 +54,55 @@ namespace WpfServerAdmin
                 JobsAvailable = 0,
                 TotalJobsProcessed = 77744,
                 TotalJobsFailed = 1
+            });
+
+            // Clients
+            MainInfoViewModel.Clients.Add(new ClientInfoViewModel
+            {
+                Id = Guid.NewGuid(),
+                Name = "Client 1",
+                TotalMemory = 8589934592,
+                UsedMemory = RandomGenerator.Instance.NextUInt64(0, 8589934592),
+                Cpu = (float)(RandomGenerator.Instance.NextDouble() * 100),
+                JobsInProgress = RandomGenerator.Instance.Next(0, 10),
+                TotalJobsFailed = RandomGenerator.Instance.Next(0, 100),
+                TotalJobsProcessed = RandomGenerator.Instance.Next(0, 10000)
+            });
+
+            MainInfoViewModel.Clients.Add(new ClientInfoViewModel
+            {
+                Id = Guid.NewGuid(),
+                Name = "Client 2",
+                TotalMemory = 8589934592,
+                UsedMemory = RandomGenerator.Instance.NextUInt64(0, 8589934592),
+                Cpu = (float)(RandomGenerator.Instance.NextDouble() * 100),
+                JobsInProgress = RandomGenerator.Instance.Next(0, 10),
+                TotalJobsFailed = RandomGenerator.Instance.Next(0, 100),
+                TotalJobsProcessed = RandomGenerator.Instance.Next(0, 10000)
+            });
+
+            MainInfoViewModel.Clients.Add(new ClientInfoViewModel
+            {
+                Id = Guid.NewGuid(),
+                Name = "Client 3",
+                TotalMemory = 8589934592,
+                UsedMemory = RandomGenerator.Instance.NextUInt64(0, 8589934592),
+                Cpu = (float)(RandomGenerator.Instance.NextDouble() * 100),
+                JobsInProgress = RandomGenerator.Instance.Next(0, 10),
+                TotalJobsFailed = RandomGenerator.Instance.Next(0, 100),
+                TotalJobsProcessed = RandomGenerator.Instance.Next(0, 10000)
+            });
+
+            MainInfoViewModel.Clients.Add(new ClientInfoViewModel
+            {
+                Id = Guid.NewGuid(),
+                Name = "Client 4",
+                TotalMemory = 8589934592,
+                UsedMemory = RandomGenerator.Instance.NextUInt64(0, 8589934592),
+                Cpu = (float)(RandomGenerator.Instance.NextDouble() * 100),
+                JobsInProgress = RandomGenerator.Instance.Next(0, 10),
+                TotalJobsFailed = RandomGenerator.Instance.Next(0, 100),
+                TotalJobsProcessed = RandomGenerator.Instance.Next(0, 10000)
             });
         }
     }
