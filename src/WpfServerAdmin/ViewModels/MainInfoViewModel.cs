@@ -1,12 +1,15 @@
 ﻿using NetDist.Core;
 using NetDist.Core.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.IO;
+using System.IO.Compression;
 using System.Windows.Input;
 using Wpf.Shared;
 using WpfServerAdmin.Models;
+using WpfServerAdmin.Views;
 
 namespace WpfServerAdmin.ViewModels
 {
@@ -65,6 +68,7 @@ namespace WpfServerAdmin.ViewModels
         public ObservableCollection<PackageInfoViewModel> Packages { get; set; }
 
         public ICommand UploadJobScriptCommand { get; private set; }
+        public ICommand UploadPackageCommand { get; private set; }
 
         public MainInfoViewModel()
         {
@@ -76,11 +80,30 @@ namespace WpfServerAdmin.ViewModels
             UploadJobScriptCommand = new RelayCommand(o =>
             {
                 string selectedFile;
-                var fileSelected = JobScriptFileBrowser.BrowseForScriptFile(String.Empty, out selectedFile);
+                var fileSelected = BrowserDialogs.BrowseForScriptFile(String.Empty, out selectedFile);
                 if (fileSelected)
                 {
                     var fileContent = File.ReadAllText(selectedFile);
-                    ServerModel.Server.AddJobScript(fileContent);
+                    ServerModel.Server.AddJobHandler(fileContent);
+                }
+            });
+
+            UploadPackageCommand = new RelayCommand(o =>
+            {
+                var dialogViewModel = new PackageUploadViewModel();
+                var dialog = new PackageUploadWindow();
+                dialog.DataContext = dialogViewModel;
+                var dialogResult = dialog.ShowDialog();
+                if (dialogResult.HasValue && dialogResult.Value)
+                {
+                    var filesToAdd = new List<string>();
+                    filesToAdd.Add(dialogViewModel.MainLibraryPath);
+                    filesToAdd.AddRange(dialogViewModel.Dependencies);
+                    // Create zip with files
+                    var packageName = Path.GetFileNameWithoutExtension(dialogViewModel.MainLibraryPath);
+                    var zipBytes = ZipUtility.ZipCompressFilesToBytes(filesToAdd, CompressionLevel.Optimal, packageName);
+                    // Uplad package zip
+                    ServerModel.Server.AddPackage(zipBytes);
                 }
             });
         }
@@ -93,6 +116,7 @@ namespace WpfServerAdmin.ViewModels
                 {
                     item.HandlerStartEvent += model => ServerModel.Server.StartJobHandler(model.Id);
                     item.HandlerStopEvent += model => ServerModel.Server.StopJobHandler(model.Id);
+                    item.HandlerDeleteEvent += model => ServerModel.Server.RemoveJobHandler(model.Id);
                 }
             }
         }

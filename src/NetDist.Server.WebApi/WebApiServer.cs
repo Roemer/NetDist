@@ -1,7 +1,5 @@
 ﻿using Microsoft.Owin.Hosting;
-using NetDist.Core.Utilities;
 using System;
-using System.IO;
 
 namespace NetDist.Server.WebApi
 {
@@ -21,12 +19,6 @@ namespace NetDist.Server.WebApi
             const string baseAddress = "http://*:9000/";
             Logger.Info("Starting OWIN at '{0}'", baseAddress);
             _app = WebApp.Start<Startup>(new StartOptions(baseAddress));
-
-
-
-            RegisterPackage(new ZipUtility().Compress(@"..\..\..\SimpleCalculator\bin\Debug\SimpleCalculator.dll"));
-
-
             return true;
         }
 

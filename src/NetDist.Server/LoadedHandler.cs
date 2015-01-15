@@ -119,7 +119,7 @@ namespace NetDist.Server
             var pluginName = HandlerSettings.PluginName;
             var handlerName = HandlerSettings.HandlerName;
 
-            var pluginPath = Path.Combine(handlersFolder, String.Format("{0}.dll", pluginName));
+            var pluginPath = Path.Combine(handlersFolder, pluginName, String.Format("{0}.dll", pluginName));
             var handlerAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(pluginPath));
 
             Type typeToLoad = null;
@@ -200,40 +200,38 @@ namespace NetDist.Server
         /// <summary>
         /// Stops the job handler
         /// </summary>
-        public void StopJobHandler()
+        public bool StopJobHandler()
         {
-            // Use an own task since this might take a little longer
-            Task.Run(() =>
+            lock (_lockObject)
             {
-                lock (_lockObject)
+                // Check if the control thread is running
+                if (_controlTask != null)
                 {
-                    // Check if the control thread is running
-                    if (_controlTask != null)
+                    // Notify the task to stop
+                    _controlTaskCancelToken.Cancel();
+                    // Wait until the task is finished (but not when faulted)
+                    if (!_controlTask.IsFaulted)
                     {
-                        // Notify the task to stop
-                        _controlTaskCancelToken.Cancel();
-                        // Wait until the task is finished (but not when faulted)
-                        if (!_controlTask.IsFaulted)
-                        {
-                            _controlTask.Wait();
-                        }
-                        // Reset the control task
-                        _controlTask = null;
-                        // Clear the various queues/lists/stats
-                        AvailableJobs = new ConcurrentQueue<JobWrapper>();
-                        lock (PendingJobs.GetSyncRoot())
-                        {
-                            PendingJobs = new Dictionary<Guid, JobWrapper>();
-                        }
-                        FinishedJobs = new ConcurrentQueue<JobWrapper>();
-                        Interlocked.Exchange(ref _totalProcessedJobs, 0);
-                        Interlocked.Exchange(ref _totalFailedJobs, 0);
-                        // Signal the handler to stop
-                        _handler.OnStop();
-                        HandlerState = HandlerState.Stopped;
+                        _controlTask.Wait();
                     }
+                    // Reset the control task
+                    _controlTask = null;
+                    // Clear the various queues/lists/stats
+                    AvailableJobs = new ConcurrentQueue<JobWrapper>();
+                    lock (PendingJobs.GetSyncRoot())
+                    {
+                        PendingJobs = new Dictionary<Guid, JobWrapper>();
+                    }
+                    FinishedJobs = new ConcurrentQueue<JobWrapper>();
+                    Interlocked.Exchange(ref _totalProcessedJobs, 0);
+                    Interlocked.Exchange(ref _totalFailedJobs, 0);
+                    // Signal the handler to stop
+                    _handler.OnStop();
+                    HandlerState = HandlerState.Stopped;
+                    return true;
                 }
-            });
+            }
+            return false;
         }
 
         /// <summary>

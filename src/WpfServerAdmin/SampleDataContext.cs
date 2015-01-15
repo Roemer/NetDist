@@ -8,6 +8,7 @@ namespace WpfServerAdmin
     public static class SampleDataContext
     {
         public static MainInfoViewModel MainInfoViewModel { get; private set; }
+        public static PackageUploadViewModel PackageUploadViewModel { get; private set; }
 
         static SampleDataContext()
         {
@@ -16,7 +17,7 @@ namespace WpfServerAdmin
                 TotalMemory = 123456789,
                 UsedMemory = 103456789,
                 Cpu = 12.442112f,
-                IsConnected = false
+                IsConnected = true
             };
 
             // Handlers
@@ -61,6 +62,7 @@ namespace WpfServerAdmin
             {
                 Id = Guid.NewGuid(),
                 Name = "Client 1",
+                Version = "1.0.0.60",
                 TotalMemory = 8589934592,
                 UsedMemory = RandomGenerator.Instance.NextUInt64(0, 8589934592),
                 Cpu = (float)(RandomGenerator.Instance.NextDouble() * 100),
@@ -73,6 +75,7 @@ namespace WpfServerAdmin
             {
                 Id = Guid.NewGuid(),
                 Name = "Client 2",
+                Version = "1.0.0.60",
                 TotalMemory = 8589934592,
                 UsedMemory = RandomGenerator.Instance.NextUInt64(0, 8589934592),
                 Cpu = (float)(RandomGenerator.Instance.NextDouble() * 100),
@@ -85,6 +88,7 @@ namespace WpfServerAdmin
             {
                 Id = Guid.NewGuid(),
                 Name = "Client 3",
+                Version = "1.0.0.59",
                 TotalMemory = 8589934592,
                 UsedMemory = RandomGenerator.Instance.NextUInt64(0, 8589934592),
                 Cpu = (float)(RandomGenerator.Instance.NextDouble() * 100),
@@ -97,6 +101,7 @@ namespace WpfServerAdmin
             {
                 Id = Guid.NewGuid(),
                 Name = "Client 4",
+                Version = "1.0.0.60",
                 TotalMemory = 8589934592,
                 UsedMemory = RandomGenerator.Instance.NextUInt64(0, 8589934592),
                 Cpu = (float)(RandomGenerator.Instance.NextDouble() * 100),
@@ -104,6 +109,13 @@ namespace WpfServerAdmin
                 TotalJobsFailed = RandomGenerator.Instance.Next(0, 100),
                 TotalJobsProcessed = RandomGenerator.Instance.Next(0, 10000)
             });
+
+            PackageUploadViewModel = new PackageUploadViewModel
+            {
+                MainLibraryPath = @"C:\somepath\someassembly.dll"
+            };
+            PackageUploadViewModel.Dependencies.Add("somefile.dll");
+            PackageUploadViewModel.Dependencies.Add("someotherfile.dll");
         }
     }
 }

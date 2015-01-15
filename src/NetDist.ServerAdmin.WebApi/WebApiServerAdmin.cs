@@ -41,7 +41,7 @@ namespace NetDist.ServerAdmin.WebApi
             return null;
         }
 
-        public void AddJobScript(string jobScript)
+        public void AddPackage(byte[] packageZip)
         {
             using (var client = new HttpClient())
             {
@@ -50,7 +50,41 @@ namespace NetDist.ServerAdmin.WebApi
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 // HTTP POST
-                var response = client.PostAsync("api/admin/addjobscript", new StringContent(jobScript)).Result;
+                var response = client.PostAsync("api/admin/addpackage", new ByteArrayContent(packageZip)).Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = response.Content.ReadAsStringAsync().Result;
+                }
+            }
+        }
+
+        public void AddJobHandler(string jobScript)
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(_settings.ServerUri);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                // HTTP POST
+                var response = client.PostAsync("api/admin/addjobhandler", new StringContent(jobScript)).Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = response.Content.ReadAsStringAsync().Result;
+                }
+            }
+        }
+
+        public void RemoveJobHandler(Guid handlerId)
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(_settings.ServerUri);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                // HTTP GET
+                var response = client.GetAsync(String.Concat("api/admin/removejobhandler", "/", handlerId)).Result;
                 if (response.IsSuccessStatusCode)
                 {
                     var content = response.Content.ReadAsStringAsync().Result;

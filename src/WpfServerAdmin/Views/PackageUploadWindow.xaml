@@ -1,0 +1,34 @@
+﻿<Window x:Class="WpfServerAdmin.Views.PackageUploadWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        xmlns:wpfServerAdmin="clr-namespace:WpfServerAdmin"
+        xmlns:viewModels="clr-namespace:WpfServerAdmin.ViewModels"
+        d:DataContext="{x:Static wpfServerAdmin:SampleDataContext.PackageUploadViewModel}"
+        Title="Package Upload" Height="365" Width="530">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="44"/>
+            <RowDefinition Height="*"/>
+
+            <RowDefinition Height="40"/>
+        </Grid.RowDefinitions>
+        <Button Content="Cancel" HorizontalAlignment="Right" Margin="0,0,10,10" Width="75" Height="20" VerticalAlignment="Bottom" Grid.Row="2" IsCancel="True"/>
+        <Button Content="Create and Upload" Margin="0,0,90,10" HorizontalAlignment="Right" Width="117" Height="20" VerticalAlignment="Bottom" Grid.Row="2" IsDefault="True" Click="Button_Click"/>
+        <TextBox Height="23" Margin="98,10,90,0" Text="{Binding MainLibraryPath}" VerticalAlignment="Top"/>
+        <Button Command="{Binding BrowseMainAssembly}"  Content="Browse" Margin="0,10,10,0" VerticalAlignment="Top" Height="20" HorizontalAlignment="Right" Width="75"/>
+        <Label Content="Main Library" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
+
+        <GroupBox Header="Dependencies (Handler and Client)" Margin="10" Grid.Row="1">
+            <Grid>
+                <Grid Margin="0,0,90,0">
+                    <ListBox Name="DependencyList" Margin="10" ItemsSource="{Binding Dependencies}" />
+                </Grid>
+                <Button Command="{Binding AddDependency}" Content="Add" Margin="0,10,10,0" VerticalAlignment="Top" Height="20" HorizontalAlignment="Right" Width="75"/>
+                <Button Command="{Binding RemoveDependency}" CommandParameter="{Binding ElementName=DependencyList, Path=SelectedIndex}" Content="Remove" Margin="0,37,10,0" VerticalAlignment="Top" Height="20" HorizontalAlignment="Right" Width="75"/>
+            </Grid>
+        </GroupBox>
+    </Grid>
+</Window>

@@ -15,19 +15,19 @@ namespace NetDist.Server.WebApi.Controllers
         }
 
         [HttpPost]
-        [Route("addjobscript")]
-        public IHttpActionResult AddJobScript()
+        [Route("addjobhandler")]
+        public IHttpActionResult AddJobHandler()
         {
             var jobScript = Request.Content.ReadAsStringAsync().Result;
-            var success = WebApiServer.Instance.AddJobScript(jobScript);
+            var success = WebApiServer.Instance.AddJobHandler(jobScript);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
         [HttpGet]
-        [Route("removejobscript")]
-        public IHttpActionResult RemoveJobScript(Guid id)
+        [Route("removejobhandler/{id}")]
+        public IHttpActionResult RemoveJobHandler(Guid id)
         {
-            var success = WebApiServer.Instance.RemoveJobScript(id);
+            var success = WebApiServer.Instance.RemoveJobHandler(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
@@ -44,6 +44,15 @@ namespace NetDist.Server.WebApi.Controllers
         public IHttpActionResult StopJobHandler(Guid id)
         {
             var success = WebApiServer.Instance.StopJobHandler(id);
+            return success ? (IHttpActionResult)Ok() : BadRequest();
+        }
+
+        [HttpPost]
+        [Route("addpackage")]
+        public IHttpActionResult AddPackage()
+        {
+            var bytes = Request.Content.ReadAsByteArrayAsync().Result;
+            var success = WebApiServer.Instance.RegisterPackage(bytes);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
     }

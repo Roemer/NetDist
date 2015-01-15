@@ -14,15 +14,15 @@
     </Window.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Header="_New" />
+            <MenuItem Header="_File" Click="MenuItem_Click">
+                <MenuItem Header="_Settings" />
                 <Separator />
                 <MenuItem Header="_Exit" />
             </MenuItem>
         </Menu>
         <ToolBarTray DockPanel.Dock="Top" IsLocked="True">
             <ToolBar>
-                <Button Command="New" Content="Upload Package" />
+                <Button Command="{Binding UploadPackageCommand}" Content="Upload Package" />
                 <Button Command="{Binding UploadJobScriptCommand}" Content="Upload Job Script" />
             </ToolBar>
         </ToolBarTray>
@@ -168,6 +168,13 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:ClientInfoViewModel">
                                         <Label Content="{Binding Path=Name}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Version" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:ClientInfoViewModel">
+                                        <Label Content="{Binding Path=Version}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>

@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace NetDist.Server
 {
@@ -76,7 +75,10 @@ namespace NetDist.Server
                 Logger.Info("Server failed to stop");
             }
             // Stop the handlers
-            Parallel.ForEach(_loadedHandlers, kvp => kvp.Value.Item2.StopJobHandler());
+            foreach (var handler in _loadedHandlers)
+            {
+                StopJobHandler(handler.Value.Item2.Id);
+            }
         }
 
         /// <summary>
@@ -114,16 +116,17 @@ namespace NetDist.Server
         /// </summary>
         public bool RegisterPackage(byte[] zipcontent)
         {
-            new ZipUtility().Extract(zipcontent, PackagesFolder);
+            ZipUtility.ZipExtractToDirectory(zipcontent, PackagesFolder, true);
+            Logger.Info("Registered new package");
             return true;
         }
 
         /// <summary>
-        /// Called when a new job script is added
+        /// Called when a new job handler is added
         /// Initializes and starts the appropriate handler
         /// </summary>
         /// <param name="jobScriptFileContent">The full content of the job script file</param>
-        public bool AddJobScript(string jobScriptFileContent)
+        public bool AddJobHandler(string jobScriptFileContent)
         {
             // Parse the content
             var jobScriptFile = JobScriptFileParser.ParseJob(jobScriptFileContent);
@@ -160,18 +163,20 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Stops and removes a job script
+        /// Stops and removes a job handler
         /// </summary>
-        public bool RemoveJobScript(Guid handlerId)
+        public bool RemoveJobHandler(Guid handlerId)
         {
             Tuple<AppDomain, LoadedHandler> removedItem;
             var success = _loadedHandlers.TryRemove(handlerId, out removedItem);
             if (success)
             {
+                var handlerName = removedItem.Item2.FullName;
                 // Stop the handler
                 removedItem.Item2.StopJobHandler();
                 // Unload the domain
                 AppDomain.Unload(removedItem.Item1);
+                Logger.Info("Removed handler: '{0}' ('{1}')", handlerName, handlerId);
             }
             return success;
         }
@@ -195,11 +200,15 @@ namespace NetDist.Server
         /// </summary>
         public bool StopJobHandler(Guid id)
         {
-            Logger.Info("Stopping Handler: '{0}'", id);
             if (_loadedHandlers.ContainsKey(id))
             {
-                _loadedHandlers[id].Item2.StopJobHandler();
-                return true;
+                var loadedHandler = _loadedHandlers[id].Item2;
+                var handlerStopped = loadedHandler.StopJobHandler();
+                if (handlerStopped)
+                {
+                    Logger.Info("Stopped Handler: '{0}' ('{1}')", loadedHandler.FullName, id);
+                }
+                return handlerStopped;
             }
             return false;
         }

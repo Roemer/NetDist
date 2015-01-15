@@ -6,6 +6,7 @@ namespace WpfServerAdmin.ViewModels
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
+        public string Version { get; set; }
         public ulong TotalMemory { get; set; }
         public ulong UsedMemory { get; set; }
         public float Cpu { get; set; }

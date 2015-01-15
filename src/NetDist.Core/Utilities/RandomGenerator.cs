@@ -5,6 +5,7 @@ namespace NetDist.Core.Utilities
 {
     /// <summary>
     /// Threadsafe random generator
+    /// Last updated: 14.01.2015
     /// </summary>
     public static class RandomGenerator
     {
