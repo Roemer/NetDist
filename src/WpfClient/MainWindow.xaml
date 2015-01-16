@@ -7,6 +7,7 @@
         xmlns:wpfClient="clr-namespace:WpfClient"
         xmlns:viewModels="clr-namespace:WpfClient.ViewModels"
         d:DataContext="{x:Static wpfClient:SampleDataContext.MainViewModel}"
+        Icon="client.ico"
         Title="{Binding Path=Version, StringFormat={}NetDist Wpf Client (v. {0})}" Height="333.502" Width="653.451" ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <ResourceDictionary>
@@ -37,7 +38,13 @@
                     <TextBlock VerticalAlignment="Center" Text="{Binding TrafficIn}"></TextBlock>
                     <Image Height="16" Source="Resources/up.png" />
                     <TextBlock VerticalAlignment="Center" Text="{Binding TrafficOut}"></TextBlock>
-                    <ComboBox Margin="5,0,0,0" ItemsSource="{Binding NetworkAdapters}" SelectedValue="{Binding SelectedNetworkAdapter}" />
+                    <ComboBox Width="100" Margin="5,0,0,0" ItemsSource="{Binding NetworkAdapters}" SelectedValue="{Binding SelectedNetworkAdapter}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </StackPanel>
             </StatusBarItem>
         </StatusBar>

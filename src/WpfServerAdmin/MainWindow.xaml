@@ -7,6 +7,7 @@
         xmlns:wpfServerAdmin="clr-namespace:WpfServerAdmin"
         xmlns:viewModels="clr-namespace:WpfServerAdmin.ViewModels"
         d:DataContext="{x:Static wpfServerAdmin:SampleDataContext.MainInfoViewModel}"
+        Icon="admin.ico"
         Title="NetDist Wpf Server Administrator" Height="373" Width="611" ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <BitmapImage x:Key="CpuImageSource" UriSource="Resources/cpu.png" />
