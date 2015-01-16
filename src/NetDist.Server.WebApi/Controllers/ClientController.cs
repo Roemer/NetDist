@@ -8,7 +8,7 @@ namespace NetDist.Server.WebApi.Controllers
     public class ClientController : ApiController
     {
         [HttpGet]
-        [Route("getjob")]
+        [Route("getjob/{id}")]
         public IHttpActionResult GetJob(Guid clientId)
         {
             var job = WebApiServer.Instance.GetJob(clientId);

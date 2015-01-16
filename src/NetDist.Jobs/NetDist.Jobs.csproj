@@ -46,13 +46,20 @@
     <Compile Include="IJobScript.cs" />
     <Compile Include="IJobInput.cs" />
     <Compile Include="IJobOutput.cs" />
+    <Compile Include="Job.cs" />
     <Compile Include="JobError.cs" />
-    <Compile Include="JobScriptBase.cs" />
     <Compile Include="JobResult.cs" />
+    <Compile Include="JobScriptBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NetDist.Core\NetDist.Core.csproj">
+      <Project>{af2925d1-e039-4d6b-ae81-2f5fe56faf4e}</Project>
+      <Name>NetDist.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

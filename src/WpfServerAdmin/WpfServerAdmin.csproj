@@ -119,6 +119,10 @@
       <Project>{fd99738a-616d-41df-a4a7-4dd6abeb5deb}</Project>
       <Name>NetDist.ServerAdmin.WebApi</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NetDist.ServerAdmin\NetDist.ServerAdmin.csproj">
+      <Project>{4e175507-9c76-4b55-bb86-680e974271fc}</Project>
+      <Name>NetDist.ServerAdmin</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Wpf.Shared\Wpf.Shared.csproj">
       <Project>{761276f7-95d2-4faf-97a0-deb2ff0691a8}</Project>
       <Name>Wpf.Shared</Name>

@@ -1,17 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using WpfClient.ViewModels;
 
 namespace WpfClient
 {
@@ -23,6 +12,23 @@ namespace WpfClient
         public MainWindow()
         {
             InitializeComponent();
+
+            var model = new MainViewModel();
+            model.SelectedItem = null;
+            DataContext = model;
+        }
+
+        private void DataGrid_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var grid = sender as DataGrid;
+            if (grid != null && grid.SelectedItems != null && grid.SelectedItems.Count == 1)
+            {
+                var dgr = grid.ItemContainerGenerator.ContainerFromItem(grid.SelectedItem) as DataGridRow;
+                if (dgr != null && !dgr.IsMouseOver)
+                {
+                    dgr.IsSelected = false;
+                }
+            }
         }
     }
 }

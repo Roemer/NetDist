@@ -6,7 +6,7 @@ using System.Net.Http.Headers;
 
 namespace NetDist.ServerAdmin.WebApi
 {
-    public class WebApiServerAdmin
+    public class WebApiServerAdmin : ServerAdminBase
     {
         private readonly WebApiServerAdminSettings _settings;
 

@@ -53,6 +53,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="SampleDataContext.cs" />
+    <Compile Include="ViewModels\JobInfoViewModel.cs" />
+    <Compile Include="ViewModels\MainViewModel.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -92,6 +95,32 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Models\" />
+    <Folder Include="Views\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NetDist.Client.WebApi\NetDist.Client.WebApi.csproj">
+      <Project>{c02ac3f2-58a3-451e-ad0f-bf3d245b93bc}</Project>
+      <Name>NetDist.Client.WebApi</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NetDist.Core\NetDist.Core.csproj">
+      <Project>{af2925d1-e039-4d6b-ae81-2f5fe56faf4e}</Project>
+      <Name>NetDist.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NetDist.Jobs\NetDist.Jobs.csproj">
+      <Project>{ff8e83d4-62d9-4e0f-908c-9fd2c2c9c229}</Project>
+      <Name>NetDist.Jobs</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Wpf.Shared\Wpf.Shared.csproj">
+      <Project>{761276f7-95d2-4faf-97a0-deb2ff0691a8}</Project>
+      <Name>Wpf.Shared</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\download.png" />
+    <Resource Include="Resources\up.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

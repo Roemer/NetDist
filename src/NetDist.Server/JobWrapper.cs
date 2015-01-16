@@ -1,4 +1,5 @@
 ﻿using System;
+using NetDist.Jobs;
 
 namespace NetDist.Server
 {

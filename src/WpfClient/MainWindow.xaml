@@ -1,8 +1,108 @@
 ﻿<Window x:Class="WpfClient.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="350" Width="525">
-    <Grid>
-        
-    </Grid>
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        xmlns:wpfClient="clr-namespace:WpfClient"
+        xmlns:viewModels="clr-namespace:WpfClient.ViewModels"
+        d:DataContext="{x:Static wpfClient:SampleDataContext.MainViewModel}"
+        Title="{Binding Path=Version, StringFormat={}NetDist Wpf Client (v. {0})}" Height="333.502" Width="653.451" ResizeMode="CanResizeWithGrip">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Wpf.Shared;component/Styles/SplitterDictionary.xaml"></ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Settings" />
+                <Separator />
+                <MenuItem Header="_Exit" />
+            </MenuItem>
+        </Menu>
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                Status
+            </StatusBarItem>
+            <StatusBarItem>
+                No. Jobs
+            </StatusBarItem>
+            <StatusBarItem>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center">Traffic:</TextBlock>
+                    <Image Height="16" Source="Resources/download.png" />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding TrafficIn}"></TextBlock>
+                    <Image Height="16" Source="Resources/up.png" />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding TrafficOut}"></TextBlock>
+                    <ComboBox Margin="5,0,0,0" ItemsSource="{Binding NetworkAdapters}" SelectedValue="{Binding SelectedNetworkAdapter}" />
+                </StackPanel>
+            </StatusBarItem>
+        </StatusBar>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="20"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <DataGrid SelectedItem="{Binding SelectedItem}" AutoGenerateColumns="False" ItemsSource="{Binding Path=Jobs}" CanUserAddRows="False" HeadersVisibility="Column" Grid.Row="0" SelectionMode="Single" SelectionUnit="FullRow" MouseLeftButtonDown="DataGrid_MouseLeftButtonDown">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="Handler" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate DataType="viewModels:JobInfoViewModel">
+                                <Label Content="{Binding Path=HandlerId}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Job" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate DataType="viewModels:JobInfoViewModel">
+                                <Label Content="{Binding Path=JobId}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="StartDate" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate DataType="viewModels:JobInfoViewModel">
+                                <Label Content="{Binding Path=StartDate}" ContentStringFormat="HH:mm:ss" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="Duration" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate DataType="viewModels:JobInfoViewModel">
+                                <Label Content="{Binding Path=Duration}" ContentStringFormat="hh\:mm\:ss" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+            <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" ShowsPreview="False" BorderBrush="White" BorderThickness="1" Style="{DynamicResource GridSplitterStyle1}">
+                <GridSplitter.Background>
+                    <LinearGradientBrush EndPoint="0.5,0" StartPoint="0.5,1">
+                        <GradientStop Color="#A0A0A0" Offset="0"/>
+                        <GradientStop Color="#E5E5E5" Offset="0.15"/>
+                        <GradientStop Color="#ECECEC" Offset="0.8"/>
+                        <GradientStop Color="#E5E5E5" Offset="1"/>
+                    </LinearGradientBrush>
+                </GridSplitter.Background>
+            </GridSplitter>
+            <Grid Grid.Row="2">
+                <Label DataContext="{Binding Path=SelectedItem}">
+                    <Label.Style>
+                        <Style TargetType="Label">
+                            <Setter Property="Content" Value="{Binding JobInput}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding}" Value="{x:Null}">
+                                    <Setter Property="Content" Value="No job selected" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Label.Style>
+                </Label>
+            </Grid>
+        </Grid>
+    </DockPanel>
 </Window>
