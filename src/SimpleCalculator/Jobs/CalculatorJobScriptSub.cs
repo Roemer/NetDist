@@ -1,34 +1,15 @@
-﻿#if COMPILERSETTINGS
-{
-    Libraries: [
-        'System.dll'
-        , 'NetDist.Jobs.dll'
-    ],
-    LibrariesToLoad: [
-        'SimpleCalculator.dll'
-    ]
-}
+﻿#if NETDISTCOMPILERLIBRARIES
+System.dll
+NetDist.Jobs.dll
+SimpleCalculator.dll
 #endif
 
-#if HANDLERSETTINGS
-{
-    "PluginName": "SimpleCalculator",
-    "HandlerName": "Calculator",
-    "JobName": "Calculator - Sub",
-}
+#if NETDISTDEPENDENCIES
+SimpleCalculator.dll
 #endif
 
-#if HANDLERCUSTOMSETTINGS
-{
-    "NegateResult": false
-}
-#endif
-
-#if EXAMPLEINPUT
-{
-    Number1: 10
-    , Number2: 20
-}
+#if NETDISTPACKAGE
+SimpleCalculator
 #endif
 
 using NetDist.Jobs;
@@ -36,6 +17,20 @@ using SimpleCalculator.Shared;
 
 namespace SimpleCalculator.Jobs
 {
+    public class CalculatorSubJobHandlerInitializer : JobHandlerInitializerBase<CalculatorHandlerSettings>
+    {
+        public override void FillJobHandlerSettings(HandlerSettings handlerSettings)
+        {
+            handlerSettings.HandlerName = "Calculator";
+            handlerSettings.JobName = "Calculator - Sub";
+        }
+
+        public override void FillCustomSettings(CalculatorHandlerSettings customSettings)
+        {
+            customSettings.NegateResult = false;
+        }
+    }
+
     public class CalculatorJobScriptSub : JobScriptBase<CalculatorJobInput, CalculatorJobOutput>
     {
         public override CalculatorJobOutput Process(CalculatorJobInput input)

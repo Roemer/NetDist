@@ -43,7 +43,7 @@
     <Compile Include="Jobs\CalculatorJobScriptSub.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Handlers\CalculatorHandler.cs" />
-    <Compile Include="Handlers\CalculatorHandlerSettings.cs" />
+    <Compile Include="Shared\CalculatorHandlerSettings.cs" />
     <Compile Include="Shared\CalculatorJobInput.cs" />
     <Compile Include="Shared\CalculatorJobOutput.cs" />
   </ItemGroup>

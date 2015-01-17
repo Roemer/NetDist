@@ -1,6 +1,6 @@
-﻿using NetDist.Handlers;
+﻿using NetDist.Jobs;
 
-namespace SimpleCalculator.Handlers
+namespace SimpleCalculator.Shared
 {
     public class CalculatorHandlerSettings : IHandlerCustomSettings
     {

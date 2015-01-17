@@ -27,11 +27,10 @@ namespace NetDist.Handlers
         /// <summary>
         /// Converts the passed settings string to the generic settings object
         /// </summary>
-        /// <param name="customSettingsString">String representation of the settings</param>
-        public void InitializeCustomSettings(string customSettingsString)
+        /// <param name="customSettings">Custom settings object</param>
+        public void InitializeCustomSettings(object customSettings)
         {
-            var settings = JobObjectSerializer.Deserialize<TSet>(customSettingsString, false);
-            Settings = settings;
+            Settings = (TSet)customSettings;
         }
 
         /// <summary>

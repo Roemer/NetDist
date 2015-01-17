@@ -45,9 +45,7 @@
   <ItemGroup>
     <Compile Include="HandlerBase.cs" />
     <Compile Include="HandlerNameAttribute.cs" />
-    <Compile Include="HandlerSettings.cs" />
     <Compile Include="IHandler.cs" />
-    <Compile Include="IHandlerCustomSettings.cs" />
     <Compile Include="JobObjectSerializer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

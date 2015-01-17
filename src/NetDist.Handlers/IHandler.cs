@@ -17,7 +17,7 @@ namespace NetDist.Handlers
         /// <summary>
         /// Initializes the custom settings object from the serialized string
         /// </summary>
-        void InitializeCustomSettings(string customSettingsString);
+        void InitializeCustomSettings(object customSettings);
 
         /// <summary>
         /// Allows custom initialization to be called which need the custom settings object

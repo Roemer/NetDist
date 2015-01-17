@@ -129,7 +129,7 @@ namespace NetDist.Server
         public bool AddJobHandler(string jobScriptFileContent)
         {
             // Parse the content
-            var jobScriptFile = JobScriptFileParser.ParseJob(jobScriptFileContent);
+            var jobScriptFile = JobScriptFileParser.Parse(jobScriptFileContent);
             if (jobScriptFile.ParsingFailed)
             {
                 Logger.Error("Failed to parse job script: {0}", jobScriptFile.ErrorMessage);
@@ -148,12 +148,13 @@ namespace NetDist.Server
                 //TODO: needed for folders? ShadowCopyDirectories = AppDomain.CurrentDomain.SetupInformation.ApplicationBase
             });
             // Create a loaded handler wrapper in the new app-domain
-            var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new object[] { jobScriptFile.HandlerSettingsString }, null, null);
-            var success = loadedHandler.InitializeHandler(PackagesFolder, jobScriptFile.HandlerCustomSettingsString);
+            var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new[] { jobScriptFile.PackageName }, null, null);
+            // Initialize the handler
+            var success = loadedHandler.Initialize(jobScriptFile, PackagesFolder);
             if (!success)
             {
                 AppDomain.Unload(domain);
-                Logger.Warn("Failed to add handler: '{0}", loadedHandler.FullName);
+                Logger.Warn("Failed to initialize handler: '{0}", loadedHandler.FullName);
                 return false;
             }
             // Add the loaded handler to the dictionary

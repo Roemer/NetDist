@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Text.RegularExpressions;
 
 namespace NetDist.Server
@@ -7,77 +6,47 @@ namespace NetDist.Server
     public static class JobScriptFileParser
     {
         // Prepare regex to parse the file
-        private static readonly Regex RegCompilerSettings = new Regex(@"#if COMPILERSETTINGS\s*(.*?)\s*#endif", RegexOptions.Singleline | RegexOptions.Compiled);
-        private static readonly Regex RegHandlerSettings = new Regex(@"#if HANDLERSETTINGS\s*(.*?)\s*#endif", RegexOptions.Singleline | RegexOptions.Compiled);
-        private static readonly Regex RegHandlerCustomSettings = new Regex(@"#if HANDLERCUSTOMSETTINGS\s*(.*?)\s*#endif", RegexOptions.Singleline | RegexOptions.Compiled);
-        private static readonly Regex RegExampleInput = new Regex(@"#if EXAMPLEINPUT\s*(.*?)\s*#endif", RegexOptions.Singleline | RegexOptions.Compiled);
+        private static readonly Regex RegCompilerLibraries = new Regex(@"#if NETDISTCOMPILERLIBRARIES\s*(.*?)\s*#endif", RegexOptions.Singleline | RegexOptions.Compiled);
+        private static readonly Regex RegDependencies = new Regex(@"#if NETDISTDEPENDENCIES\s*(.*?)\s*#endif", RegexOptions.Singleline | RegexOptions.Compiled);
+        private static readonly Regex RegPackageName = new Regex(@"#if NETDISTPACKAGE\s*(.*?)\s*#endif", RegexOptions.Singleline | RegexOptions.Compiled);
 
         /// <summary>
-        /// Parse the file by path
+        /// Parse by string
         /// </summary>
-        public static JobScriptFile ParseFile(string filePath)
-        {
-            // Check for empty file path
-            if (String.IsNullOrWhiteSpace(filePath))
-            {
-                return CreateWithError("No file specified");
-            }
-            // Check that file exists
-            if (!File.Exists(filePath))
-            {
-                return CreateWithError(String.Format("File '{0}' does not exist", filePath));
-            }
-            string fileContent;
-            try
-            {
-                // Try to read the file's content
-                fileContent = File.ReadAllText(filePath);
-            }
-            catch (Exception ex)
-            {
-                return CreateWithError(String.Format("Failed to read file '{0}': {1}", filePath, ex.Message));
-            }
-
-            // Parse the content of the file
-            return ParseJob(fileContent);
-        }
-
-        /// <summary>
-        /// Parse the file by content
-        /// </summary>
-        public static JobScriptFile ParseJob(string jobContent)
+        public static JobScriptFile Parse(string jobFileContent)
         {
             // Check for empty content
-            if (String.IsNullOrWhiteSpace(jobContent))
+            if (String.IsNullOrWhiteSpace(jobFileContent))
             {
                 return CreateWithError("Content is empty");
             }
 
-            // Search for settings for the handler
-            var handlerSettings = GetValueWithRegex(jobContent, RegHandlerSettings);
+            // Build the file object
+            var jobFile = new JobScriptFile();
 
-            // Search for custom settings for the handler
-            var handlerCustomSettings = GetValueWithRegex(jobContent, RegHandlerCustomSettings);
+            // Search for compiler libraries
+            var compilerLibrariesString = GetValueWithRegex(jobFileContent, RegCompilerLibraries);
+            foreach (var compilerLibrary in compilerLibrariesString.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                jobFile.CompilerLibraries.Add(compilerLibrary);
+            }
 
-            // Search for compiler settings
-            var compilerSettings = GetValueWithRegex(jobContent, RegCompilerSettings);
+            // Search for dependencies
+            var dependenciesString = GetValueWithRegex(jobFileContent, RegDependencies);
+            foreach (var dependency in dependenciesString.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                jobFile.Dependencies.Add(dependency);
+            }
 
-            // Search for example input
-            var exampleInput = GetValueWithRegex(jobContent, RegExampleInput);
+            // Parse out the package
+            var packageString = GetValueWithRegex(jobFileContent, RegPackageName);
+            jobFile.PackageName = packageString.Trim();
 
             // Parse out the job logic
             // TODO: Parse out the unnecessary stuff
-            var jobLogic = jobContent;
+            var jobscript = jobFileContent;
+            jobFile.JobScript = jobscript;
 
-            // Build the JobFile
-            var jobFile = new JobScriptFile
-            {
-                HandlerSettingsString = handlerSettings,
-                HandlerCustomSettingsString = handlerCustomSettings,
-                CompilerSettings = compilerSettings,
-                ExampleInput = exampleInput,
-                JobLogic = jobLogic
-            };
             return jobFile;
         }
 

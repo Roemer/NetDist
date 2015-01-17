@@ -1,9 +1,12 @@
-﻿using NetDist.Core;
+﻿using Microsoft.CSharp;
+using NetDist.Core;
 using NetDist.Core.Extensions;
+using NetDist.Core.Utilities;
 using NetDist.Handlers;
 using NetDist.Jobs;
 using NetDist.Logging;
 using System;
+using System.CodeDom.Compiler;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -28,6 +31,11 @@ namespace NetDist.Server
         /// ID of the loaded handler
         /// </summary>
         public Guid Id { get; private set; }
+
+        /// <summary>
+        /// PackageName name
+        /// </summary>
+        public string PackageName { get; private set; }
 
         /// <summary>
         /// Object which holds the handler settings
@@ -67,7 +75,7 @@ namespace NetDist.Server
         /// </summary>
         public string FullName
         {
-            get { return String.Format("{0}/{1}/{2}", HandlerSettings.PluginName, HandlerSettings.HandlerName, HandlerSettings.JobName); }
+            get { return String.Format("{0}/{1}/{2}", PackageName, HandlerSettings.HandlerName, HandlerSettings.JobName); }
         }
 
         /// <summary>
@@ -91,11 +99,11 @@ namespace NetDist.Server
         /// <summary>
         /// Constructor
         /// </summary>
-        public LoadedHandler(string handlerSettingsString)
+        public LoadedHandler(string packageName)
         {
             Id = Guid.NewGuid();
+            PackageName = packageName;
             Logger = new Logger();
-            HandlerSettings = JobObjectSerializer.Deserialize<HandlerSettings>(handlerSettingsString);
             AvailableJobs = new ConcurrentQueue<JobWrapper>();
             PendingJobs = new Dictionary<Guid, JobWrapper>();
             FinishedJobs = new ConcurrentQueue<JobWrapper>();
@@ -111,15 +119,66 @@ namespace NetDist.Server
             return null;
         }
 
+        public bool Initialize(JobScriptFile jobScriptFile, string packageFolder)
+        {
+            // Preparations
+            var currentPackageFolder = Path.Combine(packageFolder, jobScriptFile.PackageName);
+
+            // Prepare compiler
+            var codeProvider = new CSharpCodeProvider();
+            var options = new CompilerParameters
+            {
+                GenerateInMemory = false,
+                OutputAssembly = Path.Combine(currentPackageFolder, String.Format("_job_{0}.dll", HashCalculator.CalculateMd5Hash(jobScriptFile.JobScript))),
+                IncludeDebugInformation = true,
+                CompilerOptions = String.Format("/lib:{0}", currentPackageFolder)
+            };
+            // Add libraries
+            foreach (var library in jobScriptFile.CompilerLibraries)
+            {
+                options.ReferencedAssemblies.Add(library);
+            }
+            // Compile it
+            var result = codeProvider.CompileAssemblyFromSource(options, jobScriptFile.JobScript);
+            if (result.Errors.HasErrors)
+            {
+                Logger.Error("Failed to compile job script: {0}", result.Errors[0].ToString());
+                return false;
+            }
+
+            // Instantiate the job to get out the settings
+            var jobAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(result.PathToAssembly));
+            // Search for the initializer
+            Type jobInitializerType = null;
+            foreach (var type in jobAssembly.GetTypes())
+            {
+                if (typeof(IJobHandlerInitializer).IsAssignableFrom(type))
+                {
+                    jobInitializerType = type;
+                    break;
+                }
+            }
+            if (jobInitializerType == null) { return false; }
+            // Initialize the job
+            var jobInstance = (IJobHandlerInitializer)Activator.CreateInstance(jobInitializerType);
+            // Read the settings
+            HandlerSettings = jobInstance.GetHandlerSettings();
+            var customSettings = jobInstance.GetCustomHandlerSettings();
+
+            // Initialize the handler
+            var success = InitializeHandler(currentPackageFolder, customSettings);
+            return success;
+        }
+
         /// <summary>
         /// Tries to initialize the appropriate handler
         /// </summary>
-        public bool InitializeHandler(string handlersFolder, string handlerCustomSettingsString)
+        private bool InitializeHandler(string currentPackageFolder, object customSettings)
         {
-            var pluginName = HandlerSettings.PluginName;
+            var pluginName = PackageName;
             var handlerName = HandlerSettings.HandlerName;
 
-            var pluginPath = Path.Combine(handlersFolder, pluginName, String.Format("{0}.dll", pluginName));
+            var pluginPath = Path.Combine(currentPackageFolder, String.Format("{0}.dll", pluginName));
             var handlerAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(pluginPath));
 
             Type typeToLoad = null;
@@ -142,7 +201,7 @@ namespace NetDist.Server
             {
                 var handlerInstance = (IHandler)Activator.CreateInstance(typeToLoad);
                 // Initialize the handler with the custom settings
-                handlerInstance.InitializeCustomSettings(handlerCustomSettingsString);
+                handlerInstance.InitializeCustomSettings(customSettings);
                 // Call the virtual initialize method
                 handlerInstance.Initialize();
                 // Assign the handler
@@ -160,7 +219,7 @@ namespace NetDist.Server
             var hInfo = new HandlerInfo
             {
                 Id = Id,
-                PluginName = HandlerSettings.PluginName,
+                PluginName = PackageName,
                 HandlerName = HandlerSettings.HandlerName,
                 JobName = HandlerSettings.JobName,
                 TotalJobsAvailable = 0, // TODO

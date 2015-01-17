@@ -1,5 +1,5 @@
 ﻿
-namespace NetDist.Handlers
+namespace NetDist.Jobs
 {
     public interface IHandlerCustomSettings
     {
