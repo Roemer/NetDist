@@ -41,6 +41,10 @@ namespace NetDist.Server
             // Parse out the package
             var packageString = GetValueWithRegex(jobFileContent, RegPackageName);
             jobFile.PackageName = packageString.Trim();
+            if (String.IsNullOrWhiteSpace(jobFile.PackageName))
+            {
+                return CreateWithError("Package name is empty");
+            }
 
             // Parse out the job logic
             // TODO: Parse out the unnecessary stuff

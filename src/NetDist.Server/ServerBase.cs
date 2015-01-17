@@ -126,15 +126,22 @@ namespace NetDist.Server
         /// Initializes and starts the appropriate handler
         /// </summary>
         /// <param name="jobScriptFileContent">The full content of the job script file</param>
-        public bool AddJobHandler(string jobScriptFileContent)
+        public AddJobHandlerResult AddJobHandler(string jobScriptFileContent)
         {
+            // Prepare the info object
+            var info = new AddJobHandlerResult();
+
             // Parse the content
             var jobScriptFile = JobScriptFileParser.Parse(jobScriptFileContent);
             if (jobScriptFile.ParsingFailed)
             {
                 Logger.Error("Failed to parse job script: {0}", jobScriptFile.ErrorMessage);
-                return false;
+                info.SetError(AddJobHandlerErrorReason.ParsingFailed, jobScriptFile.ErrorMessage);
+                return info;
             }
+
+            // Add now known package name
+            info.PackageName = jobScriptFile.PackageName;
 
             // Create an additional app-domain
             var domain = AppDomain.CreateDomain(Guid.NewGuid().ToString(), null, new AppDomainSetup
@@ -150,17 +157,22 @@ namespace NetDist.Server
             // Create a loaded handler wrapper in the new app-domain
             var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new[] { jobScriptFile.PackageName }, null, null);
             // Initialize the handler
-            var success = loadedHandler.Initialize(jobScriptFile, PackagesFolder);
-            if (!success)
+            var initResult = loadedHandler.Initialize(jobScriptFile, PackagesFolder);
+            if (initResult.HasError)
             {
                 AppDomain.Unload(domain);
-                Logger.Warn("Failed to initialize handler: '{0}", loadedHandler.FullName);
-                return false;
+                Logger.Warn("Failed to initialize handler for package: '{0}'", info.PackageName);
+                info.SetError(initResult.ErrorReason, initResult.ErrorMessage);
+                return info;
             }
+            // Fill the info object from the result
+            info.HandlerId = initResult.HandlerId;
+            info.HandlerName = initResult.HandlerName;
+            info.JobName = initResult.JobName;
             // Add the loaded handler to the dictionary
             _loadedHandlers[loadedHandler.Id] = new Tuple<AppDomain, LoadedHandler>(domain, loadedHandler);
             Logger.Info("Added handler: '{0}' ('{1}')", loadedHandler.FullName, loadedHandler.Id);
-            return true;
+            return info;
         }
 
         /// <summary>

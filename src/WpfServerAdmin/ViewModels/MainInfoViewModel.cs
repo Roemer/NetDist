@@ -4,8 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
+using System.Windows;
 using System.Windows.Input;
 using Wpf.Shared;
 using WpfServerAdmin.Models;
@@ -84,7 +86,19 @@ namespace WpfServerAdmin.ViewModels
                 if (fileSelected)
                 {
                     var fileContent = File.ReadAllText(selectedFile);
-                    ServerModel.Server.AddJobHandler(fileContent);
+                    var result = ServerModel.Server.AddJobHandler(fileContent);
+                    if (result.HasError)
+                    {
+                        var msg = String.Format("Reason: {0}", result.ErrorReason);
+                        msg += Environment.NewLine;
+                        msg += result.ErrorMessage;
+                        MessageBox.Show(msg, "Error");
+                    }
+                    else
+                    {
+                        var msg = String.Format("{0}/{1}/{2}", result.PackageName, result.HandlerName, result.JobName);
+                        MessageBox.Show(msg, "Success");
+                    }
                 }
             });
 

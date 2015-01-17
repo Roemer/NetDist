@@ -11,6 +11,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -119,10 +120,17 @@ namespace NetDist.Server
             return null;
         }
 
-        public bool Initialize(JobScriptFile jobScriptFile, string packageFolder)
+        /// <summary>
+        /// Initializes the handler and everything it needs to run
+        /// </summary>
+        public JobHandlerInitializeResult Initialize(JobScriptFile jobScriptFile, string packageBaseFolder)
         {
             // Preparations
-            var currentPackageFolder = Path.Combine(packageFolder, jobScriptFile.PackageName);
+            var currentPackageFolder = Path.Combine(packageBaseFolder, jobScriptFile.PackageName);
+            var result = new JobHandlerInitializeResult
+            {
+                PackageName = PackageName
+            };
 
             // Prepare compiler
             var codeProvider = new CSharpCodeProvider();
@@ -139,15 +147,30 @@ namespace NetDist.Server
                 options.ReferencedAssemblies.Add(library);
             }
             // Compile it
-            var result = codeProvider.CompileAssemblyFromSource(options, jobScriptFile.JobScript);
-            if (result.Errors.HasErrors)
+            var compilerResults = codeProvider.CompileAssemblyFromSource(options, jobScriptFile.JobScript);
+            if (compilerResults.Errors.HasErrors)
             {
-                Logger.Error("Failed to compile job script: {0}", result.Errors[0].ToString());
-                return false;
+                var sb = new StringBuilder();
+                // Don't add output for now
+                //sb.AppendLine("Output:");
+                //for (int i = 0; i < compilerResults.Output.Count; i++)
+                //{
+                //    sb.AppendLine(compilerResults.Output[i]);
+                //}
+                sb.AppendLine("Errors:");
+                for (int i = 0; i < compilerResults.Errors.Count; i++)
+                {
+                    sb.AppendFormat("{0}: {1}", i, compilerResults.Errors[i]).AppendLine();
+                }
+                var errorString = sb.ToString();
+                Logger.Error("Failed to compile job script: {0}", errorString);
+                // Fill result object
+                result.SetError(AddJobHandlerErrorReason.CompilationFailed, errorString);
+                return result;
             }
 
             // Instantiate the job to get out the settings
-            var jobAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(result.PathToAssembly));
+            var jobAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(compilerResults.PathToAssembly));
             // Search for the initializer
             Type jobInitializerType = null;
             foreach (var type in jobAssembly.GetTypes())
@@ -158,27 +181,23 @@ namespace NetDist.Server
                     break;
                 }
             }
-            if (jobInitializerType == null) { return false; }
+            if (jobInitializerType == null)
+            {
+                result.SetError(AddJobHandlerErrorReason.JobInitializerMissing, "Job initializer type not found");
+                return result;
+            }
             // Initialize the job
             var jobInstance = (IJobHandlerInitializer)Activator.CreateInstance(jobInitializerType);
             // Read the settings
             HandlerSettings = jobInstance.GetHandlerSettings();
             var customSettings = jobInstance.GetCustomHandlerSettings();
 
+            // Add new information
+            result.HandlerName = HandlerSettings.HandlerName;
+            result.JobName = HandlerSettings.JobName;
+
             // Initialize the handler
-            var success = InitializeHandler(currentPackageFolder, customSettings);
-            return success;
-        }
-
-        /// <summary>
-        /// Tries to initialize the appropriate handler
-        /// </summary>
-        private bool InitializeHandler(string currentPackageFolder, object customSettings)
-        {
-            var pluginName = PackageName;
-            var handlerName = HandlerSettings.HandlerName;
-
-            var pluginPath = Path.Combine(currentPackageFolder, String.Format("{0}.dll", pluginName));
+            var pluginPath = Path.Combine(currentPackageFolder, String.Format("{0}.dll", PackageName));
             var handlerAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(pluginPath));
 
             Type typeToLoad = null;
@@ -189,7 +208,7 @@ namespace NetDist.Server
                     var att = type.GetCustomAttribute<HandlerNameAttribute>(true);
                     if (att != null)
                     {
-                        if (att.HandlerName == handlerName)
+                        if (att.HandlerName == HandlerSettings.HandlerName)
                         {
                             typeToLoad = type;
                             break;
@@ -197,18 +216,21 @@ namespace NetDist.Server
                     }
                 }
             }
-            if (typeToLoad != null)
+            if (typeToLoad == null)
             {
-                var handlerInstance = (IHandler)Activator.CreateInstance(typeToLoad);
-                // Initialize the handler with the custom settings
-                handlerInstance.InitializeCustomSettings(customSettings);
-                // Call the virtual initialize method
-                handlerInstance.Initialize();
-                // Assign the handler
-                _handler = handlerInstance;
-                return true;
+                result.SetError(AddJobHandlerErrorReason.JobHandlerMissing, String.Format("Handler type for handler '{0}' not found", HandlerSettings.HandlerName));
+                return result;
             }
-            return false;
+            var handlerInstance = (IHandler)Activator.CreateInstance(typeToLoad);
+            // Initialize the handler with the custom settings
+            handlerInstance.InitializeCustomSettings(customSettings);
+            // Call the virtual initialize method
+            handlerInstance.Initialize();
+            // Assign the handler
+            _handler = handlerInstance;
+            // Fill and return the info object
+            result.HandlerId = Id;
+            return result;
         }
 
         /// <summary>

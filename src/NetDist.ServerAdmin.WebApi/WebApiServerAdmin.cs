@@ -20,7 +20,7 @@ namespace NetDist.ServerAdmin.WebApi
             System.Net.Http.Formatting.MediaTypeFormatter.GetDefaultValueForType(typeof(object));
         }
 
-        public ServerInfo GetStatistics()
+        public override ServerInfo GetStatistics()
         {
             using (var client = new HttpClient())
             {
@@ -41,7 +41,7 @@ namespace NetDist.ServerAdmin.WebApi
             return null;
         }
 
-        public void AddPackage(byte[] packageZip)
+        public override void AddPackage(byte[] packageZip)
         {
             using (var client = new HttpClient())
             {
@@ -58,7 +58,7 @@ namespace NetDist.ServerAdmin.WebApi
             }
         }
 
-        public void AddJobHandler(string jobScript)
+        public override AddJobHandlerResult AddJobHandler(string jobScript)
         {
             using (var client = new HttpClient())
             {
@@ -71,11 +71,14 @@ namespace NetDist.ServerAdmin.WebApi
                 if (response.IsSuccessStatusCode)
                 {
                     var content = response.Content.ReadAsStringAsync().Result;
+                    var addHandlerResult = JsonConvert.DeserializeObject<AddJobHandlerResult>(content);
+                    return addHandlerResult;
                 }
             }
+            return null;
         }
 
-        public void RemoveJobHandler(Guid handlerId)
+        public override void RemoveJobHandler(Guid handlerId)
         {
             using (var client = new HttpClient())
             {
@@ -92,7 +95,7 @@ namespace NetDist.ServerAdmin.WebApi
             }
         }
 
-        public void StartJobHandler(Guid handlerId)
+        public override void StartJobHandler(Guid handlerId)
         {
             using (var client = new HttpClient())
             {
@@ -109,7 +112,7 @@ namespace NetDist.ServerAdmin.WebApi
             }
         }
 
-        public void StopJobHandler(Guid handlerId)
+        public override void StopJobHandler(Guid handlerId)
         {
             using (var client = new HttpClient())
             {

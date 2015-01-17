@@ -19,8 +19,8 @@ namespace NetDist.Server.WebApi.Controllers
         public IHttpActionResult AddJobHandler()
         {
             var jobScript = Request.Content.ReadAsStringAsync().Result;
-            var success = WebApiServer.Instance.AddJobHandler(jobScript);
-            return success ? (IHttpActionResult)Ok() : BadRequest();
+            var addHandlerResult = WebApiServer.Instance.AddJobHandler(jobScript);
+            return Ok(addHandlerResult);
         }
 
         [HttpGet]
