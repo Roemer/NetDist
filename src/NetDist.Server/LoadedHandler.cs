@@ -90,6 +90,7 @@ namespace NetDist.Server
 
         private readonly JobScriptFile _jobScriptFile;
         private readonly string _currentPackageFolder;
+        private string _jobAssemblyPath;
         private Task _controlTask;
         private CancellationTokenSource _controlTaskCancelToken = new CancellationTokenSource();
         private readonly AutoResetEvent _jobsEmptyWaitHandle = new AutoResetEvent(false);
@@ -148,27 +149,28 @@ namespace NetDist.Server
             var compilerResults = codeProvider.CompileAssemblyFromSource(options, _jobScriptFile.JobScript);
             if (compilerResults.Errors.HasErrors)
             {
-                var sb = new StringBuilder();
-                // Don't add output for now
-                //sb.AppendLine("Output:");
-                //for (int i = 0; i < compilerResults.Output.Count; i++)
-                //{
-                //    sb.AppendLine(compilerResults.Output[i]);
-                //}
-                sb.AppendLine("Errors:");
+                var sbOutput = new StringBuilder();
+                for (int i = 0; i < compilerResults.Output.Count; i++)
+                {
+                    sbOutput.AppendLine(compilerResults.Output[i]);
+                }
+                result.CompileOutput = sbOutput.ToString();
+                var sbError = new StringBuilder();
                 for (int i = 0; i < compilerResults.Errors.Count; i++)
                 {
-                    sb.AppendFormat("{0}: {1}", i, compilerResults.Errors[i]).AppendLine();
+                    sbError.AppendFormat("{0}: {1}", i, compilerResults.Errors[i]).AppendLine();
                 }
-                var errorString = sb.ToString();
+                var errorString = sbError.ToString();
                 Logger.Error("Failed to compile job script: {0}", errorString);
                 // Fill result object
                 result.SetError(AddJobHandlerErrorReason.CompilationFailed, errorString);
                 return result;
             }
+            _jobAssemblyPath = compilerResults.PathToAssembly;
+            result.JobAssemblyPath = _jobAssemblyPath;
 
             // Instantiate the job to get out the settings
-            var jobAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(compilerResults.PathToAssembly));
+            var jobAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(_jobAssemblyPath));
             // Search for the initializer
             Type jobInitializerType = null;
             foreach (var type in jobAssembly.GetTypes())

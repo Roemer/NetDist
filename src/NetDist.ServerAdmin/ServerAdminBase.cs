@@ -6,6 +6,7 @@ namespace NetDist.ServerAdmin
     public abstract class ServerAdminBase
     {
         public abstract ServerInfo GetStatistics();
+        public abstract PackageInfo GetPackages();
         public abstract void AddPackage(byte[] packageZip);
         public abstract AddJobHandlerResult AddJobHandler(string jobScript);
         public abstract void RemoveJobHandler(Guid handlerId);

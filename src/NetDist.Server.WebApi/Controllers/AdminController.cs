@@ -55,5 +55,13 @@ namespace NetDist.Server.WebApi.Controllers
             var success = WebApiServer.Instance.RegisterPackage(bytes);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
+
+        [HttpGet]
+        [Route("getpackages")]
+        public IHttpActionResult GetPackages()
+        {
+            var packages = WebApiServer.Instance.GetRegisteredPackages();
+            return Ok(packages);
+        }
     }
 }

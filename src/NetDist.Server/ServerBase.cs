@@ -108,6 +108,16 @@ namespace NetDist.Server
         public List<PackageInfo> GetRegisteredPackages()
         {
             var info = new List<PackageInfo>();
+            foreach (var dir in new DirectoryInfo(PackagesFolder).EnumerateDirectories())
+            {
+                var pi = new PackageInfo();
+                pi.PackageName = dir.Name;
+                foreach (var file in dir.EnumerateFiles())
+                {
+                    pi.Files.Add(file.Name);
+                }
+                info.Add(pi);
+            }
             return info;
         }
 

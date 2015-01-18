@@ -41,6 +41,27 @@ namespace NetDist.ServerAdmin.WebApi
             return null;
         }
 
+        public override PackageInfo GetPackages()
+        {
+            using (var client = new HttpClient())
+            {
+                client.Timeout = new TimeSpan(0, 0, 2);
+                client.BaseAddress = new Uri(_settings.ServerUri);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                // HTTP GET
+                var response = client.GetAsync("api/admin/getpackages").Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = response.Content.ReadAsStringAsync().Result;
+                    var serverInfo = JsonConvert.DeserializeObject<PackageInfo>(content);
+                    return serverInfo;
+                }
+            }
+            return null;
+        }
+
         public override void AddPackage(byte[] packageZip)
         {
             using (var client = new HttpClient())
