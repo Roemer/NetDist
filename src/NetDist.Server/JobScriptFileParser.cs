@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NetDist.Server.XDomainObjects;
+using System;
 using System.Text.RegularExpressions;
 
 namespace NetDist.Server

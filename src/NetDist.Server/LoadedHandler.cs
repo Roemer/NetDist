@@ -14,6 +14,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NetDist.Server.XDomainObjects;
 
 namespace NetDist.Server
 {
@@ -32,11 +33,6 @@ namespace NetDist.Server
         /// ID of the loaded handler
         /// </summary>
         public Guid Id { get; private set; }
-
-        /// <summary>
-        /// PackageName name
-        /// </summary>
-        public string PackageName { get; private set; }
 
         /// <summary>
         /// Object which holds the handler settings
@@ -76,7 +72,7 @@ namespace NetDist.Server
         /// </summary>
         public string FullName
         {
-            get { return String.Format("{0}/{1}/{2}", PackageName, HandlerSettings.HandlerName, HandlerSettings.JobName); }
+            get { return String.Format("{0}/{1}/{2}", _jobScriptFile.PackageName, HandlerSettings.HandlerName, HandlerSettings.JobName); }
         }
 
         /// <summary>
@@ -92,6 +88,8 @@ namespace NetDist.Server
         /// </summary>
         private readonly object _lockObject = new object();
 
+        private readonly JobScriptFile _jobScriptFile;
+        private readonly string _currentPackageFolder;
         private Task _controlTask;
         private CancellationTokenSource _controlTaskCancelToken = new CancellationTokenSource();
         private readonly AutoResetEvent _jobsEmptyWaitHandle = new AutoResetEvent(false);
@@ -100,10 +98,11 @@ namespace NetDist.Server
         /// <summary>
         /// Constructor
         /// </summary>
-        public LoadedHandler(string packageName)
+        public LoadedHandler(JobScriptFile jobScriptFile, string packageBaseFolder)
         {
             Id = Guid.NewGuid();
-            PackageName = packageName;
+            _jobScriptFile = jobScriptFile;
+            _currentPackageFolder = Path.Combine(packageBaseFolder, jobScriptFile.PackageName);
             Logger = new Logger();
             AvailableJobs = new ConcurrentQueue<JobWrapper>();
             PendingJobs = new Dictionary<Guid, JobWrapper>();
@@ -123,13 +122,12 @@ namespace NetDist.Server
         /// <summary>
         /// Initializes the handler and everything it needs to run
         /// </summary>
-        public JobHandlerInitializeResult Initialize(JobScriptFile jobScriptFile, string packageBaseFolder)
+        public JobHandlerInitializeResult Initialize()
         {
             // Preparations
-            var currentPackageFolder = Path.Combine(packageBaseFolder, jobScriptFile.PackageName);
             var result = new JobHandlerInitializeResult
             {
-                PackageName = PackageName
+                PackageName = _jobScriptFile.PackageName
             };
 
             // Prepare compiler
@@ -137,17 +135,17 @@ namespace NetDist.Server
             var options = new CompilerParameters
             {
                 GenerateInMemory = false,
-                OutputAssembly = Path.Combine(currentPackageFolder, String.Format("_job_{0}.dll", HashCalculator.CalculateMd5Hash(jobScriptFile.JobScript))),
+                OutputAssembly = Path.Combine(_currentPackageFolder, String.Format("_job_{0}.dll", HashCalculator.CalculateMd5Hash(_jobScriptFile.JobScript))),
                 IncludeDebugInformation = true,
-                CompilerOptions = String.Format("/lib:{0}", currentPackageFolder)
+                CompilerOptions = String.Format("/lib:{0}", _currentPackageFolder)
             };
             // Add libraries
-            foreach (var library in jobScriptFile.CompilerLibraries)
+            foreach (var library in _jobScriptFile.CompilerLibraries)
             {
                 options.ReferencedAssemblies.Add(library);
             }
             // Compile it
-            var compilerResults = codeProvider.CompileAssemblyFromSource(options, jobScriptFile.JobScript);
+            var compilerResults = codeProvider.CompileAssemblyFromSource(options, _jobScriptFile.JobScript);
             if (compilerResults.Errors.HasErrors)
             {
                 var sb = new StringBuilder();
@@ -197,7 +195,7 @@ namespace NetDist.Server
             result.JobName = HandlerSettings.JobName;
 
             // Initialize the handler
-            var pluginPath = Path.Combine(currentPackageFolder, String.Format("{0}.dll", PackageName));
+            var pluginPath = Path.Combine(_currentPackageFolder, String.Format("{0}.dll", _jobScriptFile.PackageName));
             var handlerAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(pluginPath));
 
             Type typeToLoad = null;
@@ -241,7 +239,7 @@ namespace NetDist.Server
             var hInfo = new HandlerInfo
             {
                 Id = Id,
-                PluginName = PackageName,
+                PluginName = _jobScriptFile.PackageName,
                 HandlerName = HandlerSettings.HandlerName,
                 JobName = HandlerSettings.JobName,
                 TotalJobsAvailable = 0, // TODO

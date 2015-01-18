@@ -13,7 +13,7 @@ namespace NetDist.Jobs
             return handlerSettings;
         }
 
-        public object GetCustomHandlerSettings()
+        public IHandlerCustomSettings GetCustomHandlerSettings()
         {
             var customHandlerSettings = new T();
             FillCustomSettings(customHandlerSettings);

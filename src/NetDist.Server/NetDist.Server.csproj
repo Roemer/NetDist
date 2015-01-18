@@ -41,13 +41,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CpuUsageReader.cs" />
-    <Compile Include="JobHandlerInitializeResult.cs" />
-    <Compile Include="JobScriptFile.cs" />
     <Compile Include="JobScriptFileParser.cs" />
     <Compile Include="JobWrapper.cs" />
     <Compile Include="LoadedHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerBase.cs" />
+    <Compile Include="XDomainObjects\JobHandlerInitializeResult.cs" />
+    <Compile Include="XDomainObjects\JobScriptFile.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NetDist.Core\NetDist.Core.csproj">

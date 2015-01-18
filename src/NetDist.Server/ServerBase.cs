@@ -155,9 +155,9 @@ namespace NetDist.Server
                 //TODO: needed for folders? ShadowCopyDirectories = AppDomain.CurrentDomain.SetupInformation.ApplicationBase
             });
             // Create a loaded handler wrapper in the new app-domain
-            var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new[] { jobScriptFile.PackageName }, null, null);
+            var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new object[] { jobScriptFile, PackagesFolder }, null, null);
             // Initialize the handler
-            var initResult = loadedHandler.Initialize(jobScriptFile, PackagesFolder);
+            var initResult = loadedHandler.Initialize();
             if (initResult.HasError)
             {
                 AppDomain.Unload(domain);

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace NetDist.Server
+namespace NetDist.Server.XDomainObjects
 {
     [Serializable]
     public class JobScriptFile
