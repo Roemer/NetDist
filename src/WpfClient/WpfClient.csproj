@@ -56,6 +56,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Models\MainModel.cs" />
     <Compile Include="SampleDataContext.cs" />
     <Compile Include="ViewModels\JobInfoViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
@@ -100,13 +101,16 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Models\" />
     <Folder Include="Views\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NetDist.Client.WebApi\NetDist.Client.WebApi.csproj">
       <Project>{c02ac3f2-58a3-451e-ad0f-bf3d245b93bc}</Project>
       <Name>NetDist.Client.WebApi</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NetDist.Client\NetDist.Client.csproj">
+      <Project>{1981f386-7c69-41e4-b859-22d2d4322098}</Project>
+      <Name>NetDist.Client</Name>
     </ProjectReference>
     <ProjectReference Include="..\NetDist.Core\NetDist.Core.csproj">
       <Project>{af2925d1-e039-4d6b-ae81-2f5fe56faf4e}</Project>

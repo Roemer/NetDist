@@ -24,14 +24,31 @@
                 <MenuItem Header="_Exit" />
             </MenuItem>
         </Menu>
+        <ToolBarTray DockPanel.Dock="Top" IsLocked="True">
+            <ToolBar>
+                <Button>
+                    <TextBlock>Start/Stop</TextBlock>
+                </Button>
+                <Separator></Separator>
+                <Slider Value="{Binding NumberOfParallelTasks}" Minimum="1" Maximum="20" TickPlacement="TopLeft" TickFrequency="1" Width="150"></Slider>
+            </ToolBar>
+        </ToolBarTray>
         <StatusBar DockPanel.Dock="Bottom">
             <StatusBarItem>
-                Status
+                <TextBlock Text="{Binding TrafficIn, StringFormat=Status: {0}}"></TextBlock>
             </StatusBarItem>
+            <Separator />
             <StatusBarItem>
-                No. Jobs
+                <TextBlock>
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="Jobs: {0}/{1}">
+                            <Binding Path="Jobs.Count" />
+                            <Binding Path="NumberOfParallelTasks" />
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
             </StatusBarItem>
-            <StatusBarItem>
+            <StatusBarItem Margin="0,0,15,0" DockPanel.Dock="Right">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock VerticalAlignment="Center">Traffic:</TextBlock>
                     <Image Height="16" Source="Resources/download.png" />
@@ -47,14 +64,17 @@
                     </ComboBox>
                 </StackPanel>
             </StatusBarItem>
+            <StatusBarItem>
+                <!--This is just the spacing item-->
+            </StatusBarItem>
         </StatusBar>
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="20"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="2*"/>
+                <RowDefinition Height="15"/>
+                <RowDefinition Height="1*"/>
             </Grid.RowDefinitions>
-            <DataGrid SelectedItem="{Binding SelectedItem}" AutoGenerateColumns="False" ItemsSource="{Binding Path=Jobs}" CanUserAddRows="False" HeadersVisibility="Column" Grid.Row="0" SelectionMode="Single" SelectionUnit="FullRow" MouseLeftButtonDown="DataGrid_MouseLeftButtonDown">
+            <DataGrid Grid.Row="0" SelectedItem="{Binding SelectedItem}" AutoGenerateColumns="False" ItemsSource="{Binding Path=Jobs}" CanUserAddRows="False" HeadersVisibility="Column" SelectionMode="Single" SelectionUnit="FullRow" MouseLeftButtonDown="DataGrid_MouseLeftButtonDown">
                 <DataGrid.Columns>
                     <DataGridTemplateColumn Header="Handler" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
                         <DataGridTemplateColumn.CellTemplate>

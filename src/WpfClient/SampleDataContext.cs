@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using NetDist.Jobs;
+using WpfClient.Models;
 using WpfClient.ViewModels;
 
 namespace WpfClient
@@ -10,24 +12,13 @@ namespace WpfClient
 
         static SampleDataContext()
         {
-            MainViewModel = new MainViewModel
+            var mainModel = new MainModel
             {
                 Version = "1.0.3.44"
             };
-            MainViewModel.Jobs.Add(new JobInfoViewModel
-            {
-                HandlerId = Guid.NewGuid(),
-                JobId = Guid.NewGuid(),
-                JobInput = "{someinput}",
-                StartDate = DateTime.Now.AddMinutes(-2)
-            });
-            MainViewModel.Jobs.Add(new JobInfoViewModel
-            {
-                HandlerId = Guid.NewGuid(),
-                JobId = Guid.NewGuid(),
-                JobInput = "{someinput2}",
-                StartDate = DateTime.Now.AddMinutes(-3)
-            });
+            MainViewModel = new MainViewModel(mainModel);
+            mainModel.Jobs.Add(new Job(Guid.NewGuid(), null));
+            mainModel.Jobs.Add(new Job(Guid.NewGuid(), null));
             MainViewModel.SelectedItem = MainViewModel.Jobs.Last();
         }
     }

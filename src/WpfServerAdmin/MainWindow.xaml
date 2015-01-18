@@ -24,6 +24,7 @@
         <ToolBarTray DockPanel.Dock="Top" IsLocked="True">
             <ToolBar>
                 <Button Command="{Binding UploadPackageCommand}" Content="Upload Package" />
+                <Separator />
                 <Button Command="{Binding UploadJobScriptCommand}" Content="Upload Job Script" />
             </ToolBar>
         </ToolBarTray>

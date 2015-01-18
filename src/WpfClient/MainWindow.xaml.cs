@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using WpfClient.Models;
 using WpfClient.ViewModels;
 
 namespace WpfClient
@@ -13,9 +14,10 @@ namespace WpfClient
         {
             InitializeComponent();
 
-            var model = new MainViewModel();
-            model.SelectedItem = null;
-            DataContext = model;
+            var model = new MainModel();
+            var viewModel = new MainViewModel(model);
+            viewModel.SelectedItem = null;
+            DataContext = viewModel;
         }
 
         private void DataGrid_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)

@@ -1,17 +1,25 @@
-﻿using System;
+﻿using NetDist.Core.Utilities;
+using NetDist.Jobs;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Threading;
-using NetDist.Core.Utilities;
 using Wpf.Shared;
+using WpfClient.Models;
 
 namespace WpfClient.ViewModels
 {
     public class MainViewModel : ObservableObject
     {
-        public string Version { get; set; }
+        private readonly MainModel _model;
 
-        public ObservableCollection<JobInfoViewModel> Jobs { get; set; }
+        public string Version { get { return _model.Version; } }
+
+        public int NumberOfParallelTasks
+        {
+            get { return _model.NumberOfParallelTasks; }
+            set { _model.NumberOfParallelTasks = value; OnPropertyChanged(() => NumberOfParallelTasks); }
+        }
 
         public ObservableCollection<string> NetworkAdapters { get; set; }
 
@@ -27,7 +35,7 @@ namespace WpfClient.ViewModels
             set
             {
                 SetProperty(value);
-                _networkAnalyzer.CurrentAdapter = value;
+                _model.NetworkAnalyzer.CurrentAdapter = value;
                 OnPropertyChanged(() => TrafficIn);
                 OnPropertyChanged(() => TrafficOut);
             }
@@ -35,24 +43,31 @@ namespace WpfClient.ViewModels
 
         public string TrafficIn
         {
-            get { return SizeSuffix.AddSizeSuffix((ulong)_networkAnalyzer.TotalTrafficIn); }
+            get { return SizeSuffix.AddSizeSuffix((ulong)_model.NetworkAnalyzer.TotalTrafficIn); }
         }
 
         public string TrafficOut
         {
-            get { return SizeSuffix.AddSizeSuffix((ulong)_networkAnalyzer.TotalTrafficOut); }
+            get { return SizeSuffix.AddSizeSuffix((ulong)_model.NetworkAnalyzer.TotalTrafficOut); }
         }
 
-        private readonly NetworkTrafficAnalyzer _networkAnalyzer = new NetworkTrafficAnalyzer();
-
-        public MainViewModel()
+        private readonly ObservableViewModelCollection<JobInfoViewModel, Job> _jobs;
+        public ObservableCollection<JobInfoViewModel> Jobs
         {
-            Jobs = new ObservableCollection<JobInfoViewModel>();
-            NetworkAdapters = new ObservableCollection<string>(_networkAnalyzer.GetNetworkAdapters());
+            get { return _jobs; }
+        }
+
+        public MainViewModel(MainModel model)
+        {
+            _model = model;
+            _jobs = new ObservableViewModelCollection<JobInfoViewModel, Job>(model.Jobs, job => new JobInfoViewModel(job));
+
+            NetworkAdapters = new ObservableCollection<string>(_model.NetworkAnalyzer.GetNetworkAdapters());
             SelectedNetworkAdapter = NetworkAdapters[0];
 
             if (LicenseManager.UsageMode != LicenseUsageMode.Designtime)
             {
+                // Dispatcher to update the display of some values
                 var timer = new DispatcherTimer { Interval = new TimeSpan(0, 0, 1) };
                 timer.Tick += (sender, args) =>
                 {
