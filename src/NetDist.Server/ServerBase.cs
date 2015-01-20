@@ -244,16 +244,28 @@ namespace NetDist.Server
         public Job GetJob(Guid clientId)
         {
             Logger.Info("Client '{0}' requested a job", clientId);
-            var handlersWithJobs = _loadedHandlers.Where(x => x.Value.Item2.HasAvailableJobs).ToArray();
-            if (handlersWithJobs.Length == 0)
+            for (var i = 0; i < 10; i++)
             {
-                return null;
+                var handlersWithJobs = _loadedHandlers.Where(x => x.Value.Item2.HasAvailableJobs).ToArray();
+                if (handlersWithJobs.Length == 0)
+                {
+                    return null;
+                }
+                var nextRandNumber = RandomGenerator.Instance.Next(handlersWithJobs.Length);
+                var randomHandler = handlersWithJobs[nextRandNumber];
+                var nextJob = randomHandler.Value.Item2.GetNextJob(clientId);
+                if (nextJob == null)
+                {
+                    // Can happen if the queue was empty between the "HasAvailableJobs" check and now
+                    // just retry a few times
+                    Logger.Debug("Job queue was suddenly empty, try again");
+                    continue;
+                }
+                Logger.Info("Client '{0}' got job '{1}' for handler '{2}'", clientId, nextJob.Id, randomHandler.Value.Item2.FullName);
+                return nextJob;
             }
-            var nextRandNumber = RandomGenerator.Instance.Next(handlersWithJobs.Length);
-            var randomHandler = handlersWithJobs[nextRandNumber];
-            var nextJob = randomHandler.Value.Item2.GetNextJob(clientId);
-            Logger.Info("Client '{0}' got job '{1}' for handler '{2}'", clientId, nextJob.Id, randomHandler.Value.Item2.FullName);
-            return nextJob;
+            Logger.Warn("Gave up getting a job");
+            return null;
         }
 
         /// <summary>
