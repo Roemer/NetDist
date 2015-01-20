@@ -1,13 +1,12 @@
-﻿using NetDist.Core.Utilities;
+﻿using NetDist.Client;
+using NetDist.Core.Utilities;
 using NetDist.Jobs;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Security.Permissions;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Wpf.Shared;
-using WpfClient.Common;
 using WpfClient.Models;
 
 namespace WpfClient.ViewModels
@@ -16,16 +15,16 @@ namespace WpfClient.ViewModels
     {
         private readonly MainModel _model;
         private readonly ObservableViewModelCollection<JobInfoViewModel, Job> _jobs;
-        private PropertyChangedProxy<MainModel, ClientStatusType> _statusPropertyChangedProxy;
+        private PropertyChangedProxy<ClientBase, ClientStatusType> _statusPropertyChangedProxy;
 
-        public ClientStatusType Status { get { return _model.Status; } }
+        public ClientStatusType Status { get { return _model.Client.Status; } }
 
         public string Version { get { return _model.Version; } }
 
         public int NumberOfParallelTasks
         {
-            get { return _model.NumberOfParallelTasks; }
-            set { _model.NumberOfParallelTasks = value; OnPropertyChanged(() => NumberOfParallelTasks); }
+            get { return _model.Client.NumberOfParallelJobs; }
+            set { _model.Client.NumberOfParallelJobs = value; OnPropertyChanged(() => NumberOfParallelTasks); }
         }
 
         public ObservableCollection<string> NetworkAdapters { get; set; }
@@ -82,8 +81,8 @@ namespace WpfClient.ViewModels
         public MainViewModel(MainModel model)
         {
             _model = model;
-            _jobs = new ObservableViewModelCollection<JobInfoViewModel, Job>(Dispatcher.CurrentDispatcher, model.Jobs, job => new JobInfoViewModel(job));
-            _statusPropertyChangedProxy = new PropertyChangedProxy<MainModel, ClientStatusType>(_model, m => m.Status, newValue =>
+            _jobs = new ObservableViewModelCollection<JobInfoViewModel, Job>(Dispatcher.CurrentDispatcher, model.Client.Jobs, job => new JobInfoViewModel(job));
+            _statusPropertyChangedProxy = new PropertyChangedProxy<ClientBase, ClientStatusType>(_model.Client, m => m.Status, newValue =>
             {
                 OnPropertyChanged(() => Status);
                 OnPropertyChanged(() => IsStarted);
@@ -95,9 +94,9 @@ namespace WpfClient.ViewModels
             SelectedNetworkAdapter = NetworkAdapters[0];
 
             // Initialize commands
-            AddSingleJobCommand = new RelayCommand(o => model.GetJob());
-            StartCommand = new RelayCommand(o => model.Start());
-            StopCommand = new RelayCommand(o => model.Stop());
+            AddSingleJobCommand = new RelayCommand(o => model.Client.GetAndStartJob());
+            StartCommand = new RelayCommand(o => model.Client.StartProcessing());
+            StopCommand = new RelayCommand(o => model.Client.StopProcessing());
 
             // Initialize run-time only timer to update the display of some values
             if (LicenseManager.UsageMode != LicenseUsageMode.Designtime)

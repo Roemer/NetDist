@@ -254,11 +254,12 @@ namespace NetDist.Server
             return hInfo;
         }
 
-        public HandlerClientInfo GetClientInfo()
+        public HandlerJobInfo GetJobInfo()
         {
-            var hInfo = new HandlerClientInfo
+            var hInfo = new HandlerJobInfo
             {
-                JobFile = Path.GetFileName(_jobAssemblyPath),
+                HandlerName = FullName,
+                JobAssemblyName = Path.GetFileName(_jobAssemblyPath),
                 Depdendencies = new List<string>(_jobScriptFile.Dependencies)
             };
             return hInfo;

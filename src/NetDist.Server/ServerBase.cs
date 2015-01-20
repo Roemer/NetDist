@@ -6,7 +6,6 @@ using NetDist.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -258,14 +257,14 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Get information for the client for the given handler
+        /// Get information for the client for the given handler to execute the job
         /// </summary>
-        public HandlerClientInfo GetHandlerClientInfo(Guid handlerId)
+        public HandlerJobInfo GetHandlerJobInfo(Guid handlerId)
         {
             var handler = GetHandler(handlerId);
             if (handler != null)
             {
-                var info = handler.GetClientInfo();
+                var info = handler.GetJobInfo();
                 return info;
             }
             return null;
@@ -307,7 +306,7 @@ namespace NetDist.Server
 
         public void ReceivedClientInfo(ClientInfo info)
         {
-            Logger.Info("{0} {1} {2}", info.Id, info.Ip, info.Name);
+            Logger.Info("{0} {1} {2}", info.Id, info.StartDate, info.Name);
         }
 
         private LoadedHandler GetHandler(Guid handlerId)

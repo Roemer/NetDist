@@ -1,5 +1,5 @@
 ﻿
-namespace WpfClient.Common
+namespace NetDist.Client
 {
     public enum ClientStatusType
     {

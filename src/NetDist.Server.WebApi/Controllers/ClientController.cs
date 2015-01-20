@@ -1,11 +1,11 @@
-﻿using NetDist.Jobs;
+﻿using NetDist.Core;
+using NetDist.Jobs;
 using System;
 using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Web.Http;
-using NetDist.Core;
 
 namespace NetDist.Server.WebApi.Controllers
 {
@@ -21,10 +21,10 @@ namespace NetDist.Server.WebApi.Controllers
         }
 
         [HttpGet]
-        [Route("gethandlerclientinfo/{id}")]
+        [Route("gethandlerjobinfo/{id}")]
         public IHttpActionResult GetHandlerClientInfo(Guid id)
         {
-            var handlerClientInfo = WebApiServer.Instance.GetHandlerClientInfo(id);
+            var handlerClientInfo = WebApiServer.Instance.GetHandlerJobInfo(id);
             return Ok(handlerClientInfo);
         }
 

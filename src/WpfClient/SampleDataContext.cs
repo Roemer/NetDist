@@ -17,8 +17,8 @@ namespace WpfClient
                 Version = "1.0.3.44"
             };
             MainViewModel = new MainViewModel(mainModel);
-            mainModel.Jobs.Add(new Job(Guid.NewGuid(), null));
-            mainModel.Jobs.Add(new Job(Guid.NewGuid(), null));
+            mainModel.Client.Jobs.Add(new Job(Guid.NewGuid(), null));
+            mainModel.Client.Jobs.Add(new Job(Guid.NewGuid(), null));
             MainViewModel.SelectedItem = MainViewModel.Jobs.Last();
         }
     }

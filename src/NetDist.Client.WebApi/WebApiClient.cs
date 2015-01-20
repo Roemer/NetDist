@@ -1,9 +1,9 @@
-﻿using NetDist.Jobs;
+﻿using NetDist.Core;
+using NetDist.Jobs;
 using Newtonsoft.Json;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using NetDist.Core;
 
 namespace NetDist.Client.WebApi
 {
@@ -57,7 +57,7 @@ namespace NetDist.Client.WebApi
             }
         }
 
-        public override HandlerClientInfo GetHandlerClientInfo(Guid handlerId)
+        public override HandlerJobInfo GetHandlerJobInfo(Guid handlerId)
         {
             using (var client = new HttpClient())
             {
@@ -66,11 +66,11 @@ namespace NetDist.Client.WebApi
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 // HTTP GET
-                var response = client.GetAsync(String.Concat("api/client/gethandlerclientinfo", "/", handlerId)).Result;
+                var response = client.GetAsync(String.Concat("api/client/gethandlerjobinfo", "/", handlerId)).Result;
                 if (response.IsSuccessStatusCode)
                 {
                     var content = response.Content.ReadAsStringAsync().Result;
-                    var handlerClientInfo = JsonConvert.DeserializeObject<HandlerClientInfo>(content);
+                    var handlerClientInfo = JsonConvert.DeserializeObject<HandlerJobInfo>(content);
                     return handlerClientInfo;
                 }
             }
@@ -96,7 +96,7 @@ namespace NetDist.Client.WebApi
             return null;
         }
 
-        public void SendInfo()
+        public override void SendInfo()
         {
             using (var client = new HttpClient())
             {

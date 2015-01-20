@@ -40,7 +40,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CpuUsageReader.cs" />
     <Compile Include="JobScriptFileParser.cs" />
     <Compile Include="JobWrapper.cs" />
     <Compile Include="LoadedHandler.cs" />

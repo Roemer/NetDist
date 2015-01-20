@@ -1,5 +1,6 @@
 ﻿using NetDist.Jobs;
 using System;
+using NetDist.Core.Utilities;
 using Wpf.Shared;
 
 namespace WpfClient.ViewModels

@@ -56,7 +56,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Common\ClientStatusType.cs" />
     <Compile Include="Models\MainModel.cs" />
     <Compile Include="SampleDataContext.cs" />
     <Compile Include="ViewModels\JobInfoViewModel.cs" />

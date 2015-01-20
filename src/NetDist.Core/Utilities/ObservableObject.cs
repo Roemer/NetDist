@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 
-namespace Wpf.Shared
+namespace NetDist.Core.Utilities
 {
     /// <summary>
     /// Object which automatically handles INotifyPropertyChanged events

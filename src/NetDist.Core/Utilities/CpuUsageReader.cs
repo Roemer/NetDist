@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace NetDist.Server
+namespace NetDist.Core.Utilities
 {
     public static class CpuUsageReader
     {
