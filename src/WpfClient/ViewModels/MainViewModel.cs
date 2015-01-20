@@ -3,8 +3,11 @@ using NetDist.Jobs;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Security.Permissions;
+using System.Windows.Input;
 using System.Windows.Threading;
 using Wpf.Shared;
+using WpfClient.Common;
 using WpfClient.Models;
 
 namespace WpfClient.ViewModels
@@ -12,6 +15,10 @@ namespace WpfClient.ViewModels
     public class MainViewModel : ObservableObject
     {
         private readonly MainModel _model;
+        private readonly ObservableViewModelCollection<JobInfoViewModel, Job> _jobs;
+        private PropertyChangedProxy<MainModel, ClientStatusType> _statusPropertyChangedProxy;
+
+        public ClientStatusType Status { get { return _model.Status; } }
 
         public string Version { get { return _model.Version; } }
 
@@ -41,6 +48,16 @@ namespace WpfClient.ViewModels
             }
         }
 
+        public bool IsStarted
+        {
+            get { return Status != ClientStatusType.Idle; }
+        }
+
+        public bool IsStopped
+        {
+            get { return Status == ClientStatusType.Idle; }
+        }
+
         public string TrafficIn
         {
             get { return SizeSuffix.AddSizeSuffix((ulong)_model.NetworkAnalyzer.TotalTrafficIn); }
@@ -51,24 +68,41 @@ namespace WpfClient.ViewModels
             get { return SizeSuffix.AddSizeSuffix((ulong)_model.NetworkAnalyzer.TotalTrafficOut); }
         }
 
-        private readonly ObservableViewModelCollection<JobInfoViewModel, Job> _jobs;
         public ObservableCollection<JobInfoViewModel> Jobs
         {
             get { return _jobs; }
         }
 
+        #region Commands
+        public ICommand AddSingleJobCommand { get; private set; }
+        public ICommand StartCommand { get; private set; }
+        public ICommand StopCommand { get; private set; }
+        #endregion
+
         public MainViewModel(MainModel model)
         {
             _model = model;
-            _jobs = new ObservableViewModelCollection<JobInfoViewModel, Job>(model.Jobs, job => new JobInfoViewModel(job));
+            _jobs = new ObservableViewModelCollection<JobInfoViewModel, Job>(Dispatcher.CurrentDispatcher, model.Jobs, job => new JobInfoViewModel(job));
+            _statusPropertyChangedProxy = new PropertyChangedProxy<MainModel, ClientStatusType>(_model, m => m.Status, newValue =>
+            {
+                OnPropertyChanged(() => Status);
+                OnPropertyChanged(() => IsStarted);
+                OnPropertyChanged(() => IsStopped);
+            });
 
+            // Initialize the network adapters
             NetworkAdapters = new ObservableCollection<string>(_model.NetworkAnalyzer.GetNetworkAdapters());
             SelectedNetworkAdapter = NetworkAdapters[0];
 
+            // Initialize commands
+            AddSingleJobCommand = new RelayCommand(o => model.GetJob());
+            StartCommand = new RelayCommand(o => model.Start());
+            StopCommand = new RelayCommand(o => model.Stop());
+
+            // Initialize run-time only timer to update the display of some values
             if (LicenseManager.UsageMode != LicenseUsageMode.Designtime)
             {
-                // Dispatcher to update the display of some values
-                var timer = new DispatcherTimer { Interval = new TimeSpan(0, 0, 1) };
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
                 timer.Tick += (sender, args) =>
                 {
                     foreach (var job in Jobs)

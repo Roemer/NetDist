@@ -9,5 +9,6 @@ namespace NetDist.Core
         public string Version { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime LastUpdateTime { get; set; }
+        public string Ip { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿
+﻿using NetDist.Core;
+
 namespace NetDist.Jobs
 {
     /// <summary>
@@ -12,9 +13,11 @@ namespace NetDist.Jobs
     {
         public abstract TOut Process(TIn input);
 
-        public IJobOutput Process(IJobInput input)
+        public string Process(string jobInputString)
         {
-            return Process((TIn)input);
+            var input = JobObjectSerializer.Deserialize<TIn>(jobInputString);
+            var jobOutputString = Process(input);
+            return JobObjectSerializer.Serialize(jobOutputString);
         }
     }
 }

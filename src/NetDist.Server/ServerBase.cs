@@ -1,12 +1,12 @@
 ﻿using Microsoft.VisualBasic.Devices;
 using NetDist.Core;
-using NetDist.Core.Extensions;
 using NetDist.Core.Utilities;
 using NetDist.Jobs;
 using NetDist.Logging;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -161,11 +161,14 @@ namespace NetDist.Server
                 ApplicationName = AppDomain.CurrentDomain.SetupInformation.ApplicationName,
                 LoaderOptimization = LoaderOptimization.MultiDomainHost,
                 ShadowCopyFiles = "true",
-                AppDomainInitializerArguments = null,
-                //TODO: needed for folders? ShadowCopyDirectories = AppDomain.CurrentDomain.SetupInformation.ApplicationBase
+                AppDomainInitializerArguments = null
             });
             // Create a loaded handler wrapper in the new app-domain
             var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new object[] { jobScriptFile, PackagesFolder }, null, null);
+            // Create a interchangeable event sink to register cross-domain events
+            var sink = new EventSink<LogEventArgs>();
+            loadedHandler.RegisterSink(sink);
+            sink.NotificationFired += (sender, args) => Logger.Log(args.LogLevel, args.Exception, args.Message);
             // Initialize the handler
             var initResult = loadedHandler.Initialize();
             if (initResult.HasError)
@@ -241,20 +244,45 @@ namespace NetDist.Server
         /// </summary>
         public Job GetJob(Guid clientId)
         {
-            Logger.Info("Client '{0}' requested a job", "TODO");
-            lock (_loadedHandlers.GetSyncRoot())
+            Logger.Info("Client '{0}' requested a job", clientId);
+            var handlersWithJobs = _loadedHandlers.Where(x => x.Value.Item2.HasAvailableJobs).ToArray();
+            if (handlersWithJobs.Length == 0)
             {
-                var handlersWithJobs = _loadedHandlers.Where(x => x.Value.Item2.HasAvailableJobs).ToArray();
-                if (handlersWithJobs.Length == 0)
-                {
-                    return null;
-                }
-                var nextRandNumber = RandomGenerator.Instance.Next(handlersWithJobs.Length);
-                var randomHandler = handlersWithJobs[nextRandNumber];
-                var nextJob = randomHandler.Value.Item2.GetNextJob(clientId);
-                Logger.Info("Client '{0}' got job '{1}' for handler '{2}'", "client.Id", nextJob.Id, randomHandler.Value.Item2.HandlerSettings.HandlerName);
-                return nextJob;
+                return null;
             }
+            var nextRandNumber = RandomGenerator.Instance.Next(handlersWithJobs.Length);
+            var randomHandler = handlersWithJobs[nextRandNumber];
+            var nextJob = randomHandler.Value.Item2.GetNextJob(clientId);
+            Logger.Info("Client '{0}' got job '{1}' for handler '{2}'", clientId, nextJob.Id, randomHandler.Value.Item2.FullName);
+            return nextJob;
+        }
+
+        /// <summary>
+        /// Get information for the client for the given handler
+        /// </summary>
+        public HandlerClientInfo GetHandlerClientInfo(Guid handlerId)
+        {
+            var handler = GetHandler(handlerId);
+            if (handler != null)
+            {
+                var info = handler.GetClientInfo();
+                return info;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Gets a file from the specified handler
+        /// </summary>
+        public byte[] GetFile(Guid handlerId, string file)
+        {
+            var handler = GetHandler(handlerId);
+            if (handler != null)
+            {
+                var fileContent = handler.GetFile(file);
+                return fileContent;
+            }
+            return null;
         }
 
         /// <summary>
@@ -262,19 +290,31 @@ namespace NetDist.Server
         /// </summary>
         public void ReceiveResult(JobResult result)
         {
-            lock (_loadedHandlers.GetSyncRoot())
+            if (result == null)
             {
-                // Search the appropriate handler
-                var handlerId = result.HandlerId;
-                if (!_loadedHandlers.ContainsKey(handlerId))
-                {
-                    Logger.Error("Got result for unknown handler: '{0}'", handlerId);
-                    return;
-                }
-                var handler = _loadedHandlers[handlerId];
-                // Forward the result to the handler
-                handler.Item2.ReceivedResult(result);
+                Logger.Error("Received invalid result");
+                return;
             }
+            var handler = GetHandler(result.HandlerId);
+            if (handler == null)
+            {
+                Logger.Error("Got result for unknown handler: '{0}'", result.HandlerId);
+                return;
+            }
+            // Forward the result to the handler (also failed ones)
+            handler.ReceivedResult(result);
+        }
+
+        public void ReceivedClientInfo(ClientInfo info)
+        {
+            Logger.Info("{0} {1} {2}", info.Id, info.Ip, info.Name);
+        }
+
+        private LoadedHandler GetHandler(Guid handlerId)
+        {
+            Tuple<AppDomain, LoadedHandler> handler;
+            var hasHandler = _loadedHandlers.TryGetValue(handlerId, out handler);
+            return hasHandler ? handler.Item2 : null;
         }
     }
 }

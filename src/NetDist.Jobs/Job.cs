@@ -5,17 +5,18 @@ namespace NetDist.Jobs
     /// <summary>
     /// Class for job instances which should be executed
     /// </summary>
+    [Serializable]
     public class Job
     {
         public Guid Id { get; set; }
         public Guid HandlerId { get; set; }
-        public IJobInput JobInput { get; private set; }
+        public string JobInputString { get; private set; }
 
-        public Job(Guid handlerId, IJobInput jobInput)
+        public Job(Guid handlerId, string jobInputString)
         {
             Id = Guid.NewGuid();
             HandlerId = handlerId;
-            JobInput = jobInput;
+            JobInputString = jobInputString;
         }
     }
 }

@@ -5,6 +5,7 @@ using NetDist.Core.Utilities;
 using NetDist.Handlers;
 using NetDist.Jobs;
 using NetDist.Logging;
+using NetDist.Server.XDomainObjects;
 using System;
 using System.CodeDom.Compiler;
 using System.Collections.Concurrent;
@@ -14,7 +15,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using NetDist.Server.XDomainObjects;
 
 namespace NetDist.Server
 {
@@ -35,11 +35,6 @@ namespace NetDist.Server
         public Guid Id { get; private set; }
 
         /// <summary>
-        /// Object which holds the handler settings
-        /// </summary>
-        public HandlerSettings HandlerSettings { get; private set; }
-
-        /// <summary>
         /// Current state of the handler
         /// </summary>
         public HandlerState HandlerState { get; private set; }
@@ -49,36 +44,41 @@ namespace NetDist.Server
         /// </summary>
         public bool HasAvailableJobs
         {
-            get { return HandlerState == HandlerState.Running && !AvailableJobs.IsEmpty; }
+            get { return HandlerState == HandlerState.Running && !_availableJobs.IsEmpty; }
         }
-
-        /// <summary>
-        /// Queue for the available jobs
-        /// </summary>
-        protected ConcurrentQueue<JobWrapper> AvailableJobs;
-
-        /// <summary>
-        /// List for jobs which are in progress
-        /// </summary>
-        protected Dictionary<Guid, JobWrapper> PendingJobs;
-
-        /// <summary>
-        /// List for jobs which are finished and waiting to be collected
-        /// </summary>
-        protected ConcurrentQueue<JobWrapper> FinishedJobs;
 
         /// <summary>
         /// Full name of the handler: PluginName/HandlerName/JobName
         /// </summary>
         public string FullName
         {
-            get { return String.Format("{0}/{1}/{2}", _jobScriptFile.PackageName, HandlerSettings.HandlerName, HandlerSettings.JobName); }
+            get { return String.Format("{0}/{1}/{2}", _jobScriptFile.PackageName, _handlerSettings.HandlerName, _handlerSettings.JobName); }
         }
 
         /// <summary>
         /// Instance of the effective handler
         /// </summary>
         private IHandler _handler;
+
+        /// <summary>
+        /// Instance of handler settings
+        /// </summary>
+        private HandlerSettings _handlerSettings;
+
+        /// <summary>
+        /// Queue for the available jobs
+        /// </summary>
+        private ConcurrentQueue<JobWrapper> _availableJobs;
+
+        /// <summary>
+        /// List for jobs which are in progress
+        /// </summary>
+        private Dictionary<Guid, JobWrapper> _pendingJobs;
+
+        /// <summary>
+        /// List for jobs which are finished and waiting to be collected
+        /// </summary>
+        private ConcurrentQueue<JobWrapper> _finishedJobs;
 
         private long _totalProcessedJobs;
         private long _totalFailedJobs;
@@ -105,9 +105,9 @@ namespace NetDist.Server
             _jobScriptFile = jobScriptFile;
             _currentPackageFolder = Path.Combine(packageBaseFolder, jobScriptFile.PackageName);
             Logger = new Logger();
-            AvailableJobs = new ConcurrentQueue<JobWrapper>();
-            PendingJobs = new Dictionary<Guid, JobWrapper>();
-            FinishedJobs = new ConcurrentQueue<JobWrapper>();
+            _availableJobs = new ConcurrentQueue<JobWrapper>();
+            _pendingJobs = new Dictionary<Guid, JobWrapper>();
+            _finishedJobs = new ConcurrentQueue<JobWrapper>();
             HandlerState = HandlerState.Stopped;
         }
 
@@ -189,12 +189,12 @@ namespace NetDist.Server
             // Initialize the job
             var jobInstance = (IJobHandlerInitializer)Activator.CreateInstance(jobInitializerType);
             // Read the settings
-            HandlerSettings = jobInstance.GetHandlerSettings();
+            _handlerSettings = jobInstance.GetHandlerSettings();
             var customSettings = jobInstance.GetCustomHandlerSettings();
 
             // Add new information
-            result.HandlerName = HandlerSettings.HandlerName;
-            result.JobName = HandlerSettings.JobName;
+            result.HandlerName = _handlerSettings.HandlerName;
+            result.JobName = _handlerSettings.JobName;
 
             // Initialize the handler
             var pluginPath = Path.Combine(_currentPackageFolder, String.Format("{0}.dll", _jobScriptFile.PackageName));
@@ -208,7 +208,7 @@ namespace NetDist.Server
                     var att = type.GetCustomAttribute<HandlerNameAttribute>(true);
                     if (att != null)
                     {
-                        if (att.HandlerName == HandlerSettings.HandlerName)
+                        if (att.HandlerName == _handlerSettings.HandlerName)
                         {
                             typeToLoad = type;
                             break;
@@ -218,7 +218,7 @@ namespace NetDist.Server
             }
             if (typeToLoad == null)
             {
-                result.SetError(AddJobHandlerErrorReason.JobHandlerMissing, String.Format("Handler type for handler '{0}' not found", HandlerSettings.HandlerName));
+                result.SetError(AddJobHandlerErrorReason.JobHandlerMissing, String.Format("Handler type for handler '{0}' not found", _handlerSettings.HandlerName));
                 return result;
             }
             var handlerInstance = (IHandler)Activator.CreateInstance(typeToLoad);
@@ -242,16 +242,33 @@ namespace NetDist.Server
             {
                 Id = Id,
                 PluginName = _jobScriptFile.PackageName,
-                HandlerName = HandlerSettings.HandlerName,
-                JobName = HandlerSettings.JobName,
+                HandlerName = _handlerSettings.HandlerName,
+                JobName = _handlerSettings.JobName,
                 TotalJobsAvailable = 0, // TODO
-                JobsAvailable = AvailableJobs.Count,
-                JobsPending = PendingJobs.Count,
+                JobsAvailable = _availableJobs.Count,
+                JobsPending = _pendingJobs.Count,
                 TotalJobsProcessed = Interlocked.Read(ref _totalProcessedJobs),
                 TotalJobsFailed = Interlocked.Read(ref _totalFailedJobs),
                 HandlerState = HandlerState
             };
             return hInfo;
+        }
+
+        public HandlerClientInfo GetClientInfo()
+        {
+            var hInfo = new HandlerClientInfo
+            {
+                JobFile = Path.GetFileName(_jobAssemblyPath),
+                Depdendencies = new List<string>(_jobScriptFile.Dependencies)
+            };
+            return hInfo;
+        }
+
+        public byte[] GetFile(string file)
+        {
+            var fullPath = Path.Combine(_currentPackageFolder, file);
+            var content = File.ReadAllBytes(fullPath);
+            return content;
         }
 
         /// <summary>
@@ -298,12 +315,12 @@ namespace NetDist.Server
                     // Reset the control task
                     _controlTask = null;
                     // Clear the various queues/lists/stats
-                    AvailableJobs = new ConcurrentQueue<JobWrapper>();
-                    lock (PendingJobs.GetSyncRoot())
+                    _availableJobs = new ConcurrentQueue<JobWrapper>();
+                    lock (_pendingJobs.GetSyncRoot())
                     {
-                        PendingJobs = new Dictionary<Guid, JobWrapper>();
+                        _pendingJobs = new Dictionary<Guid, JobWrapper>();
                     }
-                    FinishedJobs = new ConcurrentQueue<JobWrapper>();
+                    _finishedJobs = new ConcurrentQueue<JobWrapper>();
                     Interlocked.Exchange(ref _totalProcessedJobs, 0);
                     Interlocked.Exchange(ref _totalFailedJobs, 0);
                     // Signal the handler to stop
@@ -321,19 +338,19 @@ namespace NetDist.Server
         public Job GetNextJob(Guid clientId)
         {
             JobWrapper assignedJob;
-            var success = AvailableJobs.TryDequeue(out assignedJob);
+            var success = _availableJobs.TryDequeue(out assignedJob);
             if (success)
             {
                 // Set the assigned values
                 assignedJob.AssignedTime = DateTime.Now;
                 assignedJob.AssignedCliendId = clientId;
                 // Add it to pending jobs
-                lock (PendingJobs.GetSyncRoot())
+                lock (_pendingJobs.GetSyncRoot())
                 {
-                    PendingJobs[assignedJob.Job.Id] = assignedJob;
+                    _pendingJobs[assignedJob.Job.Id] = assignedJob;
                 }
                 // Check if more jobs are available
-                if (AvailableJobs.IsEmpty)
+                if (_availableJobs.IsEmpty)
                 {
                     // If not, set the waithandle to get new jobs
                     _jobsEmptyWaitHandle.Set();
@@ -354,10 +371,10 @@ namespace NetDist.Server
                     return;
                 }
 
-                lock (PendingJobs.GetSyncRoot())
+                lock (_pendingJobs.GetSyncRoot())
                 {
                     // Get the job which is in progress
-                    var jobInProgress = PendingJobs[result.JobId];
+                    var jobInProgress = _pendingJobs[result.JobId];
                     // Check if the clientid mismatches
                     if (jobInProgress.AssignedCliendId != result.ClientId)
                     {
@@ -371,11 +388,11 @@ namespace NetDist.Server
                         Logger.Error("Got failed result for job '{0}': {1}", result.JobId, result.Error.ToString());
                         Interlocked.Increment(ref _totalFailedJobs);
                         // If so, remove it from the in-progress list
-                        PendingJobs.Remove(result.JobId);
+                        _pendingJobs.Remove(result.JobId);
                         // Reset the assigned values
                         jobInProgress.Reset();
                         // Add the job to the queue again
-                        AvailableJobs.Enqueue(jobInProgress);
+                        _availableJobs.Enqueue(jobInProgress);
                         return;
                     }
 
@@ -383,12 +400,12 @@ namespace NetDist.Server
                     Interlocked.Increment(ref _totalProcessedJobs);
 
                     // Remove job from in-progress list
-                    PendingJobs.Remove(result.JobId);
+                    _pendingJobs.Remove(result.JobId);
                     // Set the result values
                     jobInProgress.ResultTime = DateTime.Now;
                     jobInProgress.ResultString = result.JobOutputString;
                     // Add it to the finished queue
-                    FinishedJobs.Enqueue(jobInProgress);
+                    _finishedJobs.Enqueue(jobInProgress);
                     _resultAvailableWaitHandle.Set();
                 }
             });
@@ -409,22 +426,22 @@ namespace NetDist.Server
             {
                 // Collect results
                 JobWrapper finishedJob;
-                while (FinishedJobs.TryDequeue(out finishedJob))
+                while (_finishedJobs.TryDequeue(out finishedJob))
                 {
                     Logger.Debug("Collecting finished job '{0}' with result '{1}'", finishedJob.Job.Id, finishedJob.ResultString);
-                    _handler.ProcessResult(finishedJob.Job.JobInput, finishedJob.ResultString);
+                    _handler.ProcessResult(finishedJob.Job.JobInputString, finishedJob.ResultString);
                 }
 
                 // Check for jobs with a timeout
-                if (HandlerSettings.JobTimeout > 0)
+                if (_handlerSettings.JobTimeout > 0)
                 {
                     var now = DateTime.Now;
                     var jobsToRequeue = new List<JobWrapper>();
-                    lock (PendingJobs.GetSyncRoot())
+                    lock (_pendingJobs.GetSyncRoot())
                     {
-                        foreach (var kvp in PendingJobs)
+                        foreach (var kvp in _pendingJobs)
                         {
-                            if (now - kvp.Value.AssignedTime > TimeSpan.FromSeconds(HandlerSettings.JobTimeout))
+                            if (now - kvp.Value.AssignedTime > TimeSpan.FromSeconds(_handlerSettings.JobTimeout))
                             {
                                 // Job had a timeout
                                 jobsToRequeue.Add(kvp.Value);
@@ -433,28 +450,28 @@ namespace NetDist.Server
                         foreach (var job in jobsToRequeue)
                         {
                             Logger.Warn("Job '{0}' had a timeout", job.Job.Id);
-                            PendingJobs.Remove(job.Job.Id);
+                            _pendingJobs.Remove(job.Job.Id);
                             job.Reset();
-                            AvailableJobs.Enqueue(job);
+                            _availableJobs.Enqueue(job);
                         }
                     }
                 }
 
                 // Refill available jobs if needed
-                if (AvailableJobs.IsEmpty)
+                if (_availableJobs.IsEmpty)
                 {
                     Logger.Debug("Job queue is empty, adding new jobs");
                     // Fill with Jobs
                     var newJobInputs = _handler.GetJobs();
                     foreach (var input in newJobInputs)
                     {
-                        var job = new Job(Id, input);
+                        var job = new Job(Id, JobObjectSerializer.Serialize(input));
                         var jobWrapper = new JobWrapper
                         {
                             Job = job,
                             EnqueueTime = DateTime.Now
                         };
-                        AvailableJobs.Enqueue(jobWrapper);
+                        _availableJobs.Enqueue(jobWrapper);
                     }
                 }
 
@@ -474,6 +491,14 @@ namespace NetDist.Server
                 // Sleep a little or until any of the various events was set
                 WaitHandle.WaitAny(new[] { _controlTaskCancelToken.Token.WaitHandle, _jobsEmptyWaitHandle, _resultAvailableWaitHandle }, 5000);
             }
+        }
+
+        /// <summary>
+        /// Register the log event to the given sink
+        /// </summary>
+        public void RegisterSink(EventSink<LogEventArgs> sink)
+        {
+            Logger.LogEvent += sink.CallbackMethod;
         }
     }
 }

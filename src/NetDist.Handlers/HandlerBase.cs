@@ -1,4 +1,5 @@
-﻿using NetDist.Jobs;
+﻿using NetDist.Core;
+using NetDist.Jobs;
 using System.Collections.Generic;
 
 namespace NetDist.Handlers
@@ -57,10 +58,11 @@ namespace NetDist.Handlers
         /// Converts the result to the generic result object and calls the abstract method
         /// to process the data
         /// </summary>
-        public void ProcessResult(IJobInput jobInput, string jobResultString)
+        public void ProcessResult(string jobInputString, string jobResultString)
         {
+            var input = JobObjectSerializer.Deserialize<TIn>(jobInputString);
             var output = JobObjectSerializer.Deserialize<TOut>(jobResultString);
-            ProcessResult((TIn)jobInput, output);
+            ProcessResult(input, output);
         }
 
         /// <summary>

@@ -54,7 +54,7 @@ namespace NetDist.Logging
             var handlers = LogEvent;
             if (handlers != null)
             {
-                handlers(this, new LogEventArgs(logLevel, messageString, exception));
+                handlers(null, new LogEventArgs(logLevel, messageString, exception));
             }
         }
     }

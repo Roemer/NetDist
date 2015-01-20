@@ -21,21 +21,27 @@
             <MenuItem Header="_File">
                 <MenuItem Header="_Settings" />
                 <Separator />
-                <MenuItem Header="_Exit" />
+                <MenuItem Header="_Exit" Click="MenuItem_Exit_Click" />
             </MenuItem>
         </Menu>
         <ToolBarTray DockPanel.Dock="Top" IsLocked="True">
             <ToolBar>
-                <Button>
-                    <TextBlock>Start/Stop</TextBlock>
+                <Button Command="{Binding StartCommand}" IsEnabled="{Binding IsStopped}">
+                    <TextBlock>Start</TextBlock>
+                </Button>
+                <Button Command="{Binding StopCommand}" IsEnabled="{Binding IsStarted}">
+                    <TextBlock>Stop</TextBlock>
                 </Button>
                 <Separator></Separator>
+                <TextBlock Margin="0,0,5,0"  VerticalAlignment="Center">Parallel jobs</TextBlock>
                 <Slider Value="{Binding NumberOfParallelTasks}" Minimum="1" Maximum="20" TickPlacement="TopLeft" TickFrequency="1" Width="150"></Slider>
+                <Separator />
+                <Button Command="{Binding AddSingleJobCommand}" Content="Get Single Job" />
             </ToolBar>
         </ToolBarTray>
         <StatusBar DockPanel.Dock="Bottom">
             <StatusBarItem>
-                <TextBlock Text="{Binding TrafficIn, StringFormat=Status: {0}}"></TextBlock>
+                <TextBlock Text="{Binding Status, StringFormat=Status: {0}}"></TextBlock>
             </StatusBarItem>
             <Separator />
             <StatusBarItem>

@@ -5,6 +5,7 @@ namespace NetDist.Jobs
     /// <summary>
     /// Class for all jobs which have been run
     /// </summary>
+    [Serializable]
     public class JobResult
     {
         /// <summary>
@@ -41,37 +42,24 @@ namespace NetDist.Jobs
         {
         }
 
-        private JobResult(Guid jobId, Guid handlerId, Guid clientId)
+        private JobResult(Job job, Guid clientId)
         {
-            JobId = jobId;
-            HandlerId = handlerId;
+            JobId = job.Id;
+            HandlerId = job.HandlerId;
             ClientId = clientId;
         }
 
-        public JobResult(Guid jobId, Guid handlerId, Guid clientId, IJobOutput output)
-            : this(jobId, handlerId, clientId)
-        {
-            //TODO?: JobOutputString = JobObjectSerializer.Serialize(output);
-        }
-
-        public JobResult(Guid jobId, Guid handlerId, Guid clientId, string outputString)
-            : this(jobId, handlerId, clientId)
+        public JobResult(Job job, Guid clientId, string outputString)
+            : this(job, clientId)
         {
             JobOutputString = outputString;
         }
 
-        public JobResult(Guid jobId, Guid handlerId, Guid clientId, Exception ex)
-            : this(jobId, handlerId, clientId)
+        public JobResult(Job job, Guid clientId, Exception ex)
+            : this(job, clientId)
         {
             HasError = true;
             Error = new JobError(ex);
-        }
-
-        public void SetFailed(Exception ex)
-        {
-            HasError = true;
-            Error = new JobError(ex);
-            JobOutputString = null;
         }
     }
 }

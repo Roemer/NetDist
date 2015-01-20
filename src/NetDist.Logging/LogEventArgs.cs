@@ -2,6 +2,7 @@
 
 namespace NetDist.Logging
 {
+    [Serializable]
     public class LogEventArgs : EventArgs
     {
         public LogLevel LogLevel { get; set; }

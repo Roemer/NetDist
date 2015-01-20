@@ -32,5 +32,10 @@ namespace WpfClient
                 }
             }
         }
+
+        private void MenuItem_Exit_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
     }
 }

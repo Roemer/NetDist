@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using NetDist.Core;
 
 namespace NetDist.Client.WebApi
 {
@@ -50,6 +51,61 @@ namespace NetDist.Client.WebApi
 
                 // HTTP POST
                 var response = client.PostAsJsonAsync("api/client/result", result).Result;
+                if (response.IsSuccessStatusCode)
+                {
+                }
+            }
+        }
+
+        public override HandlerClientInfo GetHandlerClientInfo(Guid handlerId)
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(_settings.ServerUri);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                // HTTP GET
+                var response = client.GetAsync(String.Concat("api/client/gethandlerclientinfo", "/", handlerId)).Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = response.Content.ReadAsStringAsync().Result;
+                    var handlerClientInfo = JsonConvert.DeserializeObject<HandlerClientInfo>(content);
+                    return handlerClientInfo;
+                }
+            }
+            return null;
+        }
+
+        public override byte[] GetFile(Guid handlerId, string fileName)
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(_settings.ServerUri);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                // HTTP GET
+                var response = client.GetAsync(String.Concat("api/client/getfile", "/", handlerId, "/", fileName)).Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = response.Content.ReadAsByteArrayAsync().Result;
+                    return content;
+                }
+            }
+            return null;
+        }
+
+        public void SendInfo()
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(_settings.ServerUri);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                // HTTP POST
+                var response = client.PostAsJsonAsync("api/client/info", ClientInfo).Result;
                 if (response.IsSuccessStatusCode)
                 {
                 }

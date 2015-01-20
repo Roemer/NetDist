@@ -1,5 +1,5 @@
-﻿using System;
-using NetDist.Jobs;
+﻿using NetDist.Jobs;
+using System;
 using Wpf.Shared;
 
 namespace WpfClient.ViewModels
@@ -8,7 +8,7 @@ namespace WpfClient.ViewModels
     {
         public Guid JobId { get { return _job.Id; } }
         public Guid HandlerId { get { return _job.HandlerId; } }
-        public string JobInput { get { return _job.JobInput.ToString(); } }
+        public string JobInput { get { return _job.JobInputString; } }
         public DateTime StartDate { get; set; }
 
         public TimeSpan Duration

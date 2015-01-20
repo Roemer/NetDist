@@ -2,6 +2,7 @@
 
 namespace NetDist.Jobs
 {
+    [Serializable]
     public class JobError
     {
         public DateTime Time { get; set; }
