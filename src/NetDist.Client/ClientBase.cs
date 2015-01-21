@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.VisualBasic.Devices;
 
 namespace NetDist.Client
 {
@@ -82,6 +83,19 @@ namespace NetDist.Client
         }
 
         /// <summary>
+        /// Updates the dynamic information of the client
+        /// </summary>
+        private void UpdateClientInfo()
+        {
+            // RAM information
+            var ci = new ComputerInfo();
+            ClientInfo.TotalMemory = ci.TotalPhysicalMemory;
+            ClientInfo.UsedMemory = ci.TotalPhysicalMemory - ci.AvailablePhysicalMemory;
+            // CPU information
+            ClientInfo.CpuUsage = CpuUsageReader.GetValue();
+        }
+
+        /// <summary>
         /// Starts processing jobs
         /// </summary>
         public void StartProcessing()
@@ -124,6 +138,10 @@ namespace NetDist.Client
         {
             while (_fetchNewJobs)
             {
+                // TODO: Send client info regularly
+                UpdateClientInfo();
+                SendInfo();
+
                 var sleepTime = 10000;
                 if (Jobs.Count >= NumberOfParallelJobs)
                 {
@@ -147,9 +165,6 @@ namespace NetDist.Client
                 // OR until a job slot is free
                 // OR until processing was stopped
                 WaitHandle.WaitAny(new WaitHandle[] { _allJobsDone, _stoppedWaitHandle }, sleepTime);
-
-                // TODO: Send client info regularly
-                SendInfo();
             }
             Status = ClientStatusType.Idle;
         }

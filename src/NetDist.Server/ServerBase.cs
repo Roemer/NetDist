@@ -28,6 +28,11 @@ namespace NetDist.Server
         private readonly ConcurrentDictionary<Guid, Tuple<AppDomain, LoadedHandler>> _loadedHandlers;
 
         /// <summary>
+        /// Dictionary which olds information about the known clients
+        /// </summary>
+        private readonly ConcurrentDictionary<Guid, ExtendedClientInfo> _knownClients;
+
+        /// <summary>
         /// Abstract method to start the server
         /// </summary>
         protected abstract bool InternalStart();
@@ -49,6 +54,7 @@ namespace NetDist.Server
         {
             Logger = new Logger();
             _loadedHandlers = new ConcurrentDictionary<Guid, Tuple<AppDomain, LoadedHandler>>();
+            _knownClients = new ConcurrentDictionary<Guid, ExtendedClientInfo>();
         }
 
         /// <summary>
@@ -97,6 +103,12 @@ namespace NetDist.Server
             {
                 var loadedHandler = kvp.Value.Item2;
                 info.Handlers.Add(loadedHandler.GetInfo());
+            }
+            // Client information
+            foreach (var kvp in _knownClients)
+            {
+                var clientInfo = kvp.Value;
+                info.Clients.Add(clientInfo);
             }
             return info;
         }
@@ -261,6 +273,7 @@ namespace NetDist.Server
                     Logger.Debug("Job queue was suddenly empty, try again");
                     continue;
                 }
+                _knownClients[clientId].JobsInProgress++;
                 Logger.Info("Client '{0}' got job '{1}' for handler '{2}'", clientId, nextJob.Id, randomHandler.Value.Item2.FullName);
                 return nextJob;
             }
@@ -313,14 +326,40 @@ namespace NetDist.Server
                 return;
             }
             // Forward the result to the handler (also failed ones)
-            handler.ReceivedResult(result);
+            var success = handler.ReceivedResult(result);
+
+            // Update statistics
+            _knownClients[result.ClientId].JobsInProgress--;
+            if (success)
+            {
+                _knownClients[result.ClientId].TotalJobsProcessed++;
+            }
+            else
+            {
+                _knownClients[result.ClientId].TotalJobsFailed++;
+            }
         }
 
+        /// <summary>
+        /// Receive information from the client about the client
+        /// </summary>
         public void ReceivedClientInfo(ClientInfo info)
         {
-            Logger.Info("{0} {1} {2}", info.Id, info.StartDate, info.Name);
+            _knownClients.AddOrUpdate(info.Id, guid => new ExtendedClientInfo
+            {
+                ClientInfo = info,
+                LastCommunicationDate = DateTime.Now
+            }, (guid, wrapper) =>
+            {
+                wrapper.ClientInfo = info;
+                wrapper.LastCommunicationDate = DateTime.Now;
+                return wrapper;
+            });
         }
 
+        /// <summary>
+        /// Get the handler for the given id
+        /// </summary>
         private LoadedHandler GetHandler(Guid handlerId)
         {
             Tuple<AppDomain, LoadedHandler> handler;

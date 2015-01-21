@@ -8,10 +8,12 @@ namespace NetDist.Core
         public ulong UsedMemory { get; set; }
         public float CpuUsage { get; set; }
         public List<HandlerInfo> Handlers { get; set; }
+        public List<ExtendedClientInfo> Clients { get; set; }
 
         public ServerInfo()
         {
             Handlers = new List<HandlerInfo>();
+            Clients = new List<ExtendedClientInfo>();
         }
     }
 }

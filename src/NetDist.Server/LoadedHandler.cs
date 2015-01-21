@@ -361,55 +361,53 @@ namespace NetDist.Server
             return null;
         }
 
-        public void ReceivedResult(JobResult result)
+        public bool ReceivedResult(JobResult result)
         {
-            Task.Run(() =>
+            // Catch case where we receive results for an already stopped handler
+            if (HandlerState == HandlerState.Stopped)
             {
-                // Catch case where we receive results for an already stopped handler
-                if (HandlerState == HandlerState.Stopped)
+                Logger.Warn("Got job '{0}' result for stopped handler", result.JobId);
+                return false;
+            }
+
+            lock (_pendingJobs.GetSyncRoot())
+            {
+                // Get the job which is in progress
+                var jobInProgress = _pendingJobs[result.JobId];
+                // Check if the clientid mismatches
+                if (jobInProgress.AssignedCliendId != result.ClientId)
                 {
-                    Logger.Warn("Got job '{0}' result for stopped handler", result.JobId);
-                    return;
+                    Logger.Warn("Got job '{0}' result for differet client ('{1}' instead '{2}')", result.JobId, result.ClientId, jobInProgress.AssignedCliendId);
+                    return false;
                 }
 
-                lock (_pendingJobs.GetSyncRoot())
+                // Check if there was an error processing the job
+                if (result.HasError)
                 {
-                    // Get the job which is in progress
-                    var jobInProgress = _pendingJobs[result.JobId];
-                    // Check if the clientid mismatches
-                    if (jobInProgress.AssignedCliendId != result.ClientId)
-                    {
-                        Logger.Warn("Got job '{0}' result for differet client ('{1}' instead '{2}')", result.JobId, result.ClientId, jobInProgress.AssignedCliendId);
-                        return;
-                    }
-
-                    // Check if there was an error processing the job
-                    if (result.HasError)
-                    {
-                        Logger.Error("Got failed result for job '{0}': {1}", result.JobId, result.Error.ToString());
-                        Interlocked.Increment(ref _totalFailedJobs);
-                        // If so, remove it from the in-progress list
-                        _pendingJobs.Remove(result.JobId);
-                        // Reset the assigned values
-                        jobInProgress.Reset();
-                        // Add the job to the queue again
-                        _availableJobs.Enqueue(jobInProgress);
-                        return;
-                    }
-
-                    Logger.Info("Got result for job '{0}': {1}", result.JobId, result.JobOutputString);
-                    Interlocked.Increment(ref _totalProcessedJobs);
-
-                    // Remove job from in-progress list
+                    Logger.Error("Got failed result for job '{0}': {1}", result.JobId, result.Error.ToString());
+                    Interlocked.Increment(ref _totalFailedJobs);
+                    // If so, remove it from the in-progress list
                     _pendingJobs.Remove(result.JobId);
-                    // Set the result values
-                    jobInProgress.ResultTime = DateTime.Now;
-                    jobInProgress.ResultString = result.JobOutputString;
-                    // Add it to the finished queue
-                    _finishedJobs.Enqueue(jobInProgress);
-                    _resultAvailableWaitHandle.Set();
+                    // Reset the assigned values
+                    jobInProgress.Reset();
+                    // Add the job to the queue again
+                    _availableJobs.Enqueue(jobInProgress);
+                    return false;
                 }
-            });
+
+                Logger.Info("Got result for job '{0}': {1}", result.JobId, result.JobOutputString);
+                Interlocked.Increment(ref _totalProcessedJobs);
+
+                // Remove job from in-progress list
+                _pendingJobs.Remove(result.JobId);
+                // Set the result values
+                jobInProgress.ResultTime = DateTime.Now;
+                jobInProgress.ResultString = result.JobOutputString;
+                // Add it to the finished queue
+                _finishedJobs.Enqueue(jobInProgress);
+                _resultAvailableWaitHandle.Set();
+            }
+            return true;
         }
 
         /// <summary>

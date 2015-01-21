@@ -3,6 +3,10 @@ using System.Diagnostics;
 
 namespace NetDist.Core.Utilities
 {
+    /// <summary>
+    /// Reads out the cpu usage
+    /// Last updated: 21.01.2015
+    /// </summary>
     public static class CpuUsageReader
     {
         private static readonly PerformanceCounter CpuCounter;

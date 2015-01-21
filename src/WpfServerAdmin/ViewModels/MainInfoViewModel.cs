@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Windows;
@@ -154,6 +153,24 @@ namespace WpfServerAdmin.ViewModels
                     TotalJobsProcessed = handler.TotalJobsProcessed,
                     TotalJobsFailed = handler.TotalJobsFailed,
                     HandlerState = handler.HandlerState
+                });
+            }
+            // Clients
+            Clients.Clear();
+            foreach (var client in info.Clients)
+            {
+                Clients.Add(new ClientInfoViewModel
+                {
+                    Id = client.ClientInfo.Id,
+                    Version = client.ClientInfo.Version,
+                    Name = client.ClientInfo.Name,
+                    Cpu = client.ClientInfo.CpuUsage,
+                    TotalMemory = client.ClientInfo.TotalMemory,
+                    UsedMemory = client.ClientInfo.UsedMemory,
+                    JobsInProgress = client.JobsInProgress,
+                    TotalJobsFailed = client.TotalJobsFailed,
+                    TotalJobsProcessed = client.TotalJobsProcessed,
+                    LastUpdate = client.LastCommunicationDate
                 });
             }
         }

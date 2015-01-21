@@ -14,5 +14,6 @@ namespace WpfServerAdmin.ViewModels
         public long TotalJobsProcessed { get; set; }
         public long TotalJobsFailed { get; set; }
         public int JobsInProgress { get; set; }
+        public DateTime LastUpdate { get; set; }
     }
 }

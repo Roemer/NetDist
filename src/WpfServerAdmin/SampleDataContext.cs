@@ -68,7 +68,8 @@ namespace WpfServerAdmin
                 Cpu = (float)(RandomGenerator.Instance.NextDouble() * 100),
                 JobsInProgress = RandomGenerator.Instance.Next(0, 10),
                 TotalJobsFailed = RandomGenerator.Instance.Next(0, 100),
-                TotalJobsProcessed = RandomGenerator.Instance.Next(0, 10000)
+                TotalJobsProcessed = RandomGenerator.Instance.Next(0, 10000),
+                LastUpdate = DateTime.Now.AddMinutes(-1)
             });
 
             MainInfoViewModel.Clients.Add(new ClientInfoViewModel
@@ -81,7 +82,8 @@ namespace WpfServerAdmin
                 Cpu = (float)(RandomGenerator.Instance.NextDouble() * 100),
                 JobsInProgress = RandomGenerator.Instance.Next(0, 10),
                 TotalJobsFailed = RandomGenerator.Instance.Next(0, 100),
-                TotalJobsProcessed = RandomGenerator.Instance.Next(0, 10000)
+                TotalJobsProcessed = RandomGenerator.Instance.Next(0, 10000),
+                LastUpdate = DateTime.Now.AddMinutes(-2)
             });
 
             MainInfoViewModel.Clients.Add(new ClientInfoViewModel
@@ -94,7 +96,8 @@ namespace WpfServerAdmin
                 Cpu = (float)(RandomGenerator.Instance.NextDouble() * 100),
                 JobsInProgress = RandomGenerator.Instance.Next(0, 10),
                 TotalJobsFailed = RandomGenerator.Instance.Next(0, 100),
-                TotalJobsProcessed = RandomGenerator.Instance.Next(0, 10000)
+                TotalJobsProcessed = RandomGenerator.Instance.Next(0, 10000),
+                LastUpdate = DateTime.Now.AddMinutes(-3)
             });
 
             MainInfoViewModel.Clients.Add(new ClientInfoViewModel
@@ -107,7 +110,8 @@ namespace WpfServerAdmin
                 Cpu = (float)(RandomGenerator.Instance.NextDouble() * 100),
                 JobsInProgress = RandomGenerator.Instance.Next(0, 10),
                 TotalJobsFailed = RandomGenerator.Instance.Next(0, 100),
-                TotalJobsProcessed = RandomGenerator.Instance.Next(0, 10000)
+                TotalJobsProcessed = RandomGenerator.Instance.Next(0, 10000),
+                LastUpdate = DateTime.Now.AddMinutes(-5)
             });
 
             PackageUploadViewModel = new PackageUploadViewModel
