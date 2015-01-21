@@ -138,7 +138,7 @@ namespace NetDist.Server
                 GenerateInMemory = false,
                 OutputAssembly = Path.Combine(_currentPackageFolder, String.Format("_job_{0}.dll", HashCalculator.CalculateMd5Hash(_jobScriptFile.JobScript))),
                 IncludeDebugInformation = true,
-                CompilerOptions = String.Format("/lib:{0}", _currentPackageFolder)
+                CompilerOptions = String.Format("/lib:\"{0}\"", _currentPackageFolder)
             };
             // Add libraries
             foreach (var library in _jobScriptFile.CompilerLibraries)
