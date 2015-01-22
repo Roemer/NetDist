@@ -1,6 +1,7 @@
-﻿using NetDist.Core;
+﻿using Microsoft.VisualBasic.Devices;
+using NetDist.Core;
 using NetDist.Core.Utilities;
-using NetDist.Jobs;
+using NetDist.Jobs.DataContracts;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,7 +9,6 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.VisualBasic.Devices;
 
 namespace NetDist.Client
 {
@@ -232,9 +232,8 @@ namespace NetDist.Client
                 // Create the proxy object for the job script
                 var jobScriptProxy = (JobScriptProxy)domain.CreateInstanceAndUnwrap(typeof(JobScriptProxy).Assembly.FullName, typeof(JobScriptProxy).FullName);
                 var jobLibraryFullPath = Path.Combine(localHandlerFolder, jobLibraryName);
-                var result = jobScriptProxy.RunJob(jobLibraryFullPath, job.JobInputString);
-                // Create the result
-                jobResult = new JobResult(job, ClientInfo.Id, result);
+                // Execute the logic and get the result
+                jobResult = jobScriptProxy.RunJob(ClientInfo.Id, job, jobLibraryFullPath);
                 // Free the app domain
                 AppDomain.Unload(domain);
             }

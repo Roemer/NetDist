@@ -1,7 +1,6 @@
-﻿using NetDist.Jobs;
+﻿using NetDist.Core.Utilities;
+using NetDist.Jobs.DataContracts;
 using System;
-using NetDist.Core.Utilities;
-using Wpf.Shared;
 
 namespace WpfClient.ViewModels
 {
@@ -9,7 +8,7 @@ namespace WpfClient.ViewModels
     {
         public Guid JobId { get { return _job.Id; } }
         public Guid HandlerId { get { return _job.HandlerId; } }
-        public string JobInput { get { return _job.JobInputString; } }
+        public string JobInput { get; private set; }
         public DateTime StartDate { get; set; }
 
         public TimeSpan Duration
@@ -23,6 +22,7 @@ namespace WpfClient.ViewModels
         {
             _job = job;
             StartDate = DateTime.Now;
+            JobInput = job.GetInput();
         }
 
         public void RefreshDuration()

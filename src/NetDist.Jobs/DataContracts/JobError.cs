@@ -1,7 +1,10 @@
 ﻿using System;
 
-namespace NetDist.Jobs
+namespace NetDist.Jobs.DataContracts
 {
+    /// <summary>
+    /// Error object when a job failed to run
+    /// </summary>
     [Serializable]
     public class JobError
     {

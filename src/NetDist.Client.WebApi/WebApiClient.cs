@@ -1,5 +1,5 @@
 ﻿using NetDist.Core;
-using NetDist.Jobs;
+using NetDist.Jobs.DataContracts;
 using Newtonsoft.Json;
 using System;
 using System.Net.Http;

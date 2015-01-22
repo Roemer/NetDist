@@ -32,7 +32,7 @@ namespace NetDist.Handlers
         /// <summary>
         /// Process a result
         /// </summary>
-        void ProcessResult(string jobInputString, string jobResultString);
+        void ProcessResult(IJobInput jobInput, string jobResultString);
 
         /// <summary>
         /// Check if a handler is the same (to update it)

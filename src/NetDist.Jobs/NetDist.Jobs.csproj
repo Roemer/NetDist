@@ -39,16 +39,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataContracts\Job.cs" />
+    <Compile Include="DataContracts\JobError.cs" />
+    <Compile Include="DataContracts\JobResult.cs" />
     <Compile Include="HandlerSettings.cs" />
     <Compile Include="IHandlerCustomSettings.cs" />
     <Compile Include="IJobHandlerInitializer.cs" />
     <Compile Include="IJobScript.cs" />
     <Compile Include="IJobInput.cs" />
     <Compile Include="IJobOutput.cs" />
-    <Compile Include="Job.cs" />
-    <Compile Include="JobError.cs" />
     <Compile Include="JobHandlerInitializerBase.cs" />
-    <Compile Include="JobResult.cs" />
     <Compile Include="JobScriptBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

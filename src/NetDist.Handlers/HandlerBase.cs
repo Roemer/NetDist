@@ -58,11 +58,10 @@ namespace NetDist.Handlers
         /// Converts the result to the generic result object and calls the abstract method
         /// to process the data
         /// </summary>
-        public void ProcessResult(string jobInputString, string jobResultString)
+        public void ProcessResult(IJobInput jobInput, string jobResultString)
         {
-            var input = JobObjectSerializer.Deserialize<TIn>(jobInputString);
             var output = JobObjectSerializer.Deserialize<TOut>(jobResultString);
-            ProcessResult(input, output);
+            ProcessResult((TIn)jobInput, output);
         }
 
         /// <summary>

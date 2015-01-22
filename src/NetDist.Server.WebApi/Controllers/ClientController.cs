@@ -1,5 +1,5 @@
 ﻿using NetDist.Core;
-using NetDist.Jobs;
+using NetDist.Jobs.DataContracts;
 using System;
 using System.IO;
 using System.Net;

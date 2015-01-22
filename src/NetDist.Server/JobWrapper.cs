@@ -1,5 +1,7 @@
-﻿using System;
-using NetDist.Jobs;
+﻿using NetDist.Jobs;
+using System;
+using NetDist.Core;
+using NetDist.Jobs.DataContracts;
 
 namespace NetDist.Server
 {
@@ -9,9 +11,19 @@ namespace NetDist.Server
     public class JobWrapper
     {
         /// <summary>
-        /// The job itself
+        /// Id of this job
         /// </summary>
-        public Job Job { get; set; }
+        public Guid Id { get; set; }
+
+        /// <summary>
+        /// Id of the handler of this job
+        /// </summary>
+        public Guid HandlerId { get; set; }
+
+        /// <summary>
+        /// Original input object of the job
+        /// </summary>
+        public IJobInput JobInput { get; set; }
 
         /// <summary>
         /// Additional data registered to the job from the handler
@@ -52,6 +64,15 @@ namespace NetDist.Server
             AssignedTime = null;
             ResultString = null;
             ResultString = null;
+        }
+
+        /// <summary>
+        /// Create a job out of this wrapper
+        /// </summary>
+        public Job CreateJob()
+        {
+            var jobInputString = JobObjectSerializer.Serialize(JobInput);
+            return new Job(Id, HandlerId, jobInputString);
         }
     }
 }

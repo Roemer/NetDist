@@ -1,6 +1,8 @@
-﻿using System;
+﻿using NetDist.Core.Utilities;
+using System;
+using System.Text;
 
-namespace NetDist.Jobs
+namespace NetDist.Jobs.DataContracts
 {
     /// <summary>
     /// Class for all jobs which have been run
@@ -34,13 +36,11 @@ namespace NetDist.Jobs
         public JobError Error { get; set; }
 
         /// <summary>
-        /// The result of the job
+        /// The result of the job (gzip compressed)
         /// </summary>
-        public string JobOutputString { get; set; }
+        public byte[] JobOutputCompressed { get; set; }
 
-        public JobResult()
-        {
-        }
+        public JobResult() { }
 
         private JobResult(Job job, Guid clientId)
         {
@@ -49,10 +49,10 @@ namespace NetDist.Jobs
             ClientId = clientId;
         }
 
-        public JobResult(Job job, Guid clientId, string outputString)
+        public JobResult(Job job, Guid clientId, string jobOutputString)
             : this(job, clientId)
         {
-            JobOutputString = outputString;
+            JobOutputCompressed = ZipUtility.GZipCompress(Encoding.UTF8.GetBytes(jobOutputString));
         }
 
         public JobResult(Job job, Guid clientId, Exception ex)
@@ -60,6 +60,11 @@ namespace NetDist.Jobs
         {
             HasError = true;
             Error = new JobError(ex);
+        }
+
+        public string GetOutput()
+        {
+            return ZipUtility.GZipExtractToString(JobOutputCompressed, Encoding.UTF8);
         }
     }
 }

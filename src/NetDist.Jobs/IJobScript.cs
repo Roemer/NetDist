@@ -1,8 +1,10 @@
-﻿
+﻿using NetDist.Jobs.DataContracts;
+using System;
+
 namespace NetDist.Jobs
 {
     public interface IJobScript
     {
-        string Process(string jobInputString);
+        JobResult Process(Job job, Guid clientId);
     }
 }

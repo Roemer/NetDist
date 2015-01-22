@@ -1,7 +1,7 @@
 ﻿using Microsoft.VisualBasic.Devices;
 using NetDist.Core;
 using NetDist.Core.Utilities;
-using NetDist.Jobs;
+using NetDist.Jobs.DataContracts;
 using NetDist.Logging;
 using System;
 using System.Collections.Concurrent;

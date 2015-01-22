@@ -1,4 +1,6 @@
 ﻿using NetDist.Core;
+using NetDist.Jobs.DataContracts;
+using System;
 
 namespace NetDist.Jobs
 {
@@ -13,11 +15,21 @@ namespace NetDist.Jobs
     {
         public abstract TOut Process(TIn input);
 
-        public string Process(string jobInputString)
+        public JobResult Process(Job job, Guid clientId)
         {
-            var input = JobObjectSerializer.Deserialize<TIn>(jobInputString);
-            var jobOutputString = Process(input);
-            return JobObjectSerializer.Serialize(jobOutputString);
+            var inputString = job.GetInput();
+            var inputObject = JobObjectSerializer.Deserialize<TIn>(inputString);
+            try
+            {
+                var outputObject = Process(inputObject);
+                var outputString = JobObjectSerializer.Serialize(outputObject);
+                var result = new JobResult(job, clientId, outputString);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                return new JobResult(job, clientId, ex);
+            }
         }
     }
 }

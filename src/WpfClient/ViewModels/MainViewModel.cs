@@ -1,6 +1,6 @@
 ﻿using NetDist.Client;
 using NetDist.Core.Utilities;
-using NetDist.Jobs;
+using NetDist.Jobs.DataContracts;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;

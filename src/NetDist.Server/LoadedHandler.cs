@@ -5,6 +5,7 @@ using NetDist.Core.Extensions;
 using NetDist.Core.Utilities;
 using NetDist.Handlers;
 using NetDist.Jobs;
+using NetDist.Jobs.DataContracts;
 using NetDist.Logging;
 using NetDist.Server.XDomainObjects;
 using System;
@@ -428,7 +429,7 @@ namespace NetDist.Server
                 // Add it to pending jobs
                 lock (_pendingJobs.GetSyncRoot())
                 {
-                    _pendingJobs[assignedJob.Job.Id] = assignedJob;
+                    _pendingJobs[assignedJob.Id] = assignedJob;
                 }
                 // Check if more jobs are available
                 if (_availableJobs.IsEmpty)
@@ -436,7 +437,7 @@ namespace NetDist.Server
                     // If not, set the waithandle to get new jobs
                     _jobsEmptyWaitHandle.Set();
                 }
-                return assignedJob.Job;
+                return assignedJob.CreateJob();
             }
             return null;
         }
@@ -475,14 +476,15 @@ namespace NetDist.Server
                     return false;
                 }
 
-                Logger.Info("Got result for job '{0}': {1}", result.JobId, result.JobOutputString);
+                var resultString = result.GetOutput();
+                Logger.Info("Got result for job '{0}': {1}", result.JobId, resultString);
                 Interlocked.Increment(ref _totalProcessedJobs);
 
                 // Remove job from in-progress list
                 _pendingJobs.Remove(result.JobId);
                 // Set the result values
                 jobInProgress.ResultTime = DateTime.Now;
-                jobInProgress.ResultString = result.JobOutputString;
+                jobInProgress.ResultString = resultString;
                 // Add it to the finished queue
                 _finishedJobs.Enqueue(jobInProgress);
                 _resultAvailableWaitHandle.Set();
@@ -507,8 +509,8 @@ namespace NetDist.Server
                 JobWrapper finishedJob;
                 while (_finishedJobs.TryDequeue(out finishedJob))
                 {
-                    Logger.Debug("Collecting finished job '{0}' with result '{1}'", finishedJob.Job.Id, finishedJob.ResultString);
-                    _handler.ProcessResult(finishedJob.Job.JobInputString, finishedJob.ResultString);
+                    Logger.Debug("Collecting finished job '{0}' with result '{1}'", finishedJob.Id, finishedJob.ResultString);
+                    _handler.ProcessResult(finishedJob.JobInput, finishedJob.ResultString);
                 }
 
                 // Check for jobs with a timeout
@@ -528,8 +530,8 @@ namespace NetDist.Server
                         }
                         foreach (var job in jobsToRequeue)
                         {
-                            Logger.Warn("Job '{0}' had a timeout", job.Job.Id);
-                            _pendingJobs.Remove(job.Job.Id);
+                            Logger.Warn("Job '{0}' had a timeout", job.Id);
+                            _pendingJobs.Remove(job.Id);
                             job.Reset();
                             _availableJobs.Enqueue(job);
                         }
@@ -544,10 +546,11 @@ namespace NetDist.Server
                     var newJobInputs = _handler.GetJobs();
                     foreach (var input in newJobInputs)
                     {
-                        var job = new Job(Id, JobObjectSerializer.Serialize(input));
                         var jobWrapper = new JobWrapper
                         {
-                            Job = job,
+                            Id = Guid.NewGuid(),
+                            HandlerId = Id,
+                            JobInput = input,
                             EnqueueTime = DateTime.Now
                         };
                         _availableJobs.Enqueue(jobWrapper);

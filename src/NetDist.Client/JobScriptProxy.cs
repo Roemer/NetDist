@@ -1,6 +1,7 @@
 ﻿using NetDist.Jobs;
 using System;
 using System.Reflection;
+using NetDist.Jobs.DataContracts;
 
 namespace NetDist.Client
 {
@@ -9,7 +10,7 @@ namespace NetDist.Client
     /// </summary>
     public class JobScriptProxy : MarshalByRefObject
     {
-        public string RunJob(string assemblyPath, string input)
+        public JobResult RunJob(Guid clientId, Job job, string assemblyPath)
         {
             // Load library
             var loadedJobAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(assemblyPath));
@@ -27,7 +28,7 @@ namespace NetDist.Client
             // Initialize the job
             var jobInstance = (IJobScript)Activator.CreateInstance(jobScriptType);
             // Run the job logic
-            var result = jobInstance.Process(input);
+            var result = jobInstance.Process(job, clientId);
             return result;
         }
     }
