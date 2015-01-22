@@ -15,10 +15,10 @@
     </Window.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File" Click="MenuItem_Click">
+            <MenuItem Header="_File">
                 <MenuItem Header="_Settings" Command="{Binding ShowSettingsCommand}" />
                 <Separator />
-                <MenuItem Header="_Exit" />
+                <MenuItem Header="_Exit" Click="MenuItemExit_Click" />
             </MenuItem>
         </Menu>
         <ToolBarTray DockPanel.Dock="Top" IsLocked="True">

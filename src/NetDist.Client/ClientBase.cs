@@ -62,6 +62,10 @@ namespace NetDist.Client
         /// EventWaitHandle to indicate that processing is stopped
         /// </summary>
         private readonly AutoResetEvent _stoppedWaitHandle = new AutoResetEvent(false);
+        /// <summary>
+        /// Date when the client should send the next status update to the server
+        /// </summary>
+        private DateTime _nextStatusUpdate = DateTime.Now;
 
         /// <summary>
         /// Constructor
@@ -146,9 +150,13 @@ namespace NetDist.Client
         {
             while (_fetchNewJobs)
             {
-                // TODO: Send client info regularly
-                UpdateClientInfo();
-                SendInfo();
+                // Send client info regularly
+                if (_nextStatusUpdate < DateTime.Now)
+                {
+                    UpdateClientInfo();
+                    SendInfo();
+                    _nextStatusUpdate = DateTime.Now.AddMinutes(1);
+                }
 
                 var sleepTime = 10000;
                 if (Jobs.Count >= NumberOfParallelJobs)
