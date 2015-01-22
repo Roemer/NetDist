@@ -13,6 +13,7 @@ using System.CodeDom.Compiler;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -216,8 +217,20 @@ namespace NetDist.Server
             var pluginPath = Path.Combine(_currentPackageFolder, String.Format("{0}.dll", _jobScriptFile.PackageName));
             var handlerAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(pluginPath));
 
+            // Try loading the types
+            Type[] types;
+            try
+            {
+                types = handlerAssembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                result.SetError(AddJobHandlerErrorReason.TypeException, ex.LoaderExceptions.First().Message);
+                return result;
+            }
+
             Type typeToLoad = null;
-            foreach (var type in handlerAssembly.GetTypes())
+            foreach (var type in types)
             {
                 if (typeof(IHandler).IsAssignableFrom(type))
                 {
@@ -242,6 +255,8 @@ namespace NetDist.Server
             handlerInstance.InitializeCustomSettings(customSettings);
             // Call the virtual initialize method
             handlerInstance.Initialize();
+            // Event when a job was added
+            handlerInstance.EnqueueJobEvent += EnqueueJob;
             // Assign the handler
             _handler = handlerInstance;
 
@@ -322,7 +337,6 @@ namespace NetDist.Server
                 PluginName = _jobScriptFile.PackageName,
                 HandlerName = _handlerSettings.HandlerName,
                 JobName = _handlerSettings.JobName,
-                TotalJobsAvailable = 0, // TODO
                 JobsAvailable = _availableJobs.Count,
                 JobsPending = _pendingJobs.Count,
                 TotalJobsProcessed = Interlocked.Read(ref _totalProcessedJobs),
@@ -331,6 +345,13 @@ namespace NetDist.Server
                 LastStartTime = LastStartTime,
                 NextStartTime = NextStartTime
             };
+            // Calculate the total job count
+            hInfo.TotalJobsAvailable = _handler.GetTotalJobCount();
+            if (hInfo.TotalJobsAvailable < 0)
+            {
+                // Set it to the current available jobs if it is unknown
+                hInfo.TotalJobsAvailable = hInfo.JobsAvailable;
+            }
             return hInfo;
         }
 
@@ -493,6 +514,22 @@ namespace NetDist.Server
         }
 
         /// <summary>
+        /// Enqueues the given job
+        /// </summary>
+        private void EnqueueJob(IJobInput jobInput, object additionalData = null)
+        {
+            var jobWrapper = new JobWrapper
+            {
+                Id = Guid.NewGuid(),
+                HandlerId = Id,
+                JobInput = jobInput,
+                EnqueueTime = DateTime.Now,
+                AdditionalData = additionalData
+            };
+            _availableJobs.Enqueue(jobWrapper);
+        }
+
+        /// <summary>
         /// Control thread for this handler which is run when it is started
         /// - Refills the job-queue if needed
         /// - Checks for job timeouts and then resends the jobs
@@ -542,22 +579,12 @@ namespace NetDist.Server
                 if (_availableJobs.IsEmpty)
                 {
                     Logger.Debug("Job queue is empty, adding new jobs");
-                    // Fill with Jobs
-                    var newJobInputs = _handler.GetJobs();
-                    foreach (var input in newJobInputs)
-                    {
-                        var jobWrapper = new JobWrapper
-                        {
-                            Id = Guid.NewGuid(),
-                            HandlerId = Id,
-                            JobInput = input,
-                            EnqueueTime = DateTime.Now
-                        };
-                        _availableJobs.Enqueue(jobWrapper);
-                    }
+                    // Fill with jobs
+                    _handler.CreateMoreJobs();
+                    Logger.Debug("Job queue contains now {0} job(s)", _availableJobs.Count);
                 }
 
-                // Stop if the handler is finished
+                // Stop if the handler was marked as finished
                 if (_handler.IsFinished)
                 {
                     Logger.Info("Handler '{0}' finished successfully", Id);

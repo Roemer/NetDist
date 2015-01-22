@@ -1,4 +1,5 @@
-﻿using NetDist.Core.Utilities;
+﻿using NetDist.Client;
+using NetDist.Core.Utilities;
 using NetDist.Jobs.DataContracts;
 using System;
 
@@ -7,9 +8,10 @@ namespace WpfClient.ViewModels
     public class JobInfoViewModel : ObservableObject
     {
         public Guid JobId { get { return _job.Id; } }
+        public string HandlerName { get; private set; }
         public Guid HandlerId { get { return _job.HandlerId; } }
         public string JobInput { get; private set; }
-        public DateTime StartDate { get; set; }
+        public DateTime StartDate { get; private set; }
 
         public TimeSpan Duration
         {
@@ -17,12 +19,19 @@ namespace WpfClient.ViewModels
         }
 
         private readonly Job _job;
+        private PropertyChangedProxy<ClientJob, string> _statusPropertyChangedProxy;
 
-        public JobInfoViewModel(Job job)
+        public JobInfoViewModel(ClientJob clientJob)
         {
-            _job = job;
+            _job = clientJob.Job;
             StartDate = DateTime.Now;
-            JobInput = job.GetInput();
+            JobInput = _job.GetInput();
+
+            _statusPropertyChangedProxy = new PropertyChangedProxy<ClientJob, string>(clientJob, m => m.HandlerName, newValue =>
+            {
+                HandlerName = newValue;
+                OnPropertyChanged(() => HandlerName);
+            });
         }
 
         public void RefreshDuration()

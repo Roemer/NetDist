@@ -2,18 +2,15 @@
 using DependencySample.Shared;
 using NetDist.Handlers;
 using System;
-using System.Collections.Generic;
 
 namespace DependencySample.Handlers
 {
     [HandlerNameAttribute("Dependency")]
     public class DependencyHandler : HandlerBase<DependencyHandlerSettings, DependencyJobInput, DependencyJobOutput>
     {
-        public override List<DependencyJobInput> GetJobs()
+        public override void CreateMoreJobs()
         {
-            var list = new List<DependencyJobInput>();
-            list.Add(new DependencyJobInput { Text = StringGenerator.GetString() });
-            return list;
+            EnqueueJob(new DependencyJobInput { Text = StringGenerator.GetString() });
         }
 
         public override void ProcessResult(DependencyJobInput jobInput, DependencyJobOutput jobResult)

@@ -6,6 +6,7 @@
         ParsingFailed,
         CompilationFailed,
         JobInitializerMissing,
-        JobHandlerMissing
+        JobHandlerMissing,
+        TypeException,
     }
 }

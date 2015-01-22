@@ -85,7 +85,7 @@
                     <DataGridTemplateColumn Header="Handler" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate DataType="viewModels:JobInfoViewModel">
-                                <Label Content="{Binding Path=HandlerId}" />
+                                <Label Content="{Binding Path=HandlerName}" />
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

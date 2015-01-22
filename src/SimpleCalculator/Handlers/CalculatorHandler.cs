@@ -1,7 +1,6 @@
 ﻿using NetDist.Handlers;
 using SimpleCalculator.Shared;
 using System;
-using System.Collections.Generic;
 
 namespace SimpleCalculator.Handlers
 {
@@ -13,15 +12,13 @@ namespace SimpleCalculator.Handlers
             Console.WriteLine("NegateResult: {0}", Settings.NegateResult);
         }
 
-        public override List<CalculatorJobInput> GetJobs()
+        public override void CreateMoreJobs()
         {
-            var jobList = new List<CalculatorJobInput>();
             var random = new Random();
             for (var i = 0; i < 50; i++)
             {
-                jobList.Add(new CalculatorJobInput(random.Next(10), random.Next(100)));
+                EnqueueJob(new CalculatorJobInput(random.Next(10), random.Next(100)));
             }
-            return jobList;
         }
 
         public override void ProcessResult(CalculatorJobInput jobInput, CalculatorJobOutput jobResult)

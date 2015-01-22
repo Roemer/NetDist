@@ -1,6 +1,7 @@
 ﻿using NetDist.Core;
 using NetDist.Jobs;
-using System.Collections.Generic;
+using System;
+using System.Threading;
 
 namespace NetDist.Handlers
 {
@@ -26,6 +27,15 @@ namespace NetDist.Handlers
         public bool IsFinished { get; protected set; }
 
         /// <summary>
+        /// A count to show how many jobs are still being processed
+        /// </summary>
+        public long JobCount
+        {
+            get { return Interlocked.Read(ref _jobCount); }
+        }
+        private long _jobCount;
+
+        /// <summary>
         /// Converts the passed settings string to the generic settings object
         /// </summary>
         /// <param name="customSettings">Custom settings object</param>
@@ -40,18 +50,39 @@ namespace NetDist.Handlers
         public virtual void Initialize() { }
 
         /// <summary>
-        /// Method to get the next batch of pending jobs
+        /// Gets the total number of jobs which can be added
         /// </summary>
-        /// <returns>A list of input parameters which should be processed as jobs</returns>
-        public abstract List<TIn> GetJobs();
+        public virtual long GetTotalJobCount()
+        {
+            return -1;
+        }
 
         /// <summary>
-        /// Interface implementation to get a list of jobs
+        /// Method to get the next batch of pending jobs
         /// </summary>
-        /// <returns>A list of input parameters</returns>
-        List<IJobInput> IHandler.GetJobs()
+        public abstract void CreateMoreJobs();
+
+        /// <summary>
+        /// Event when a new job is enqueued
+        /// </summary>
+        public event Action<IJobInput, object> EnqueueJobEvent;
+
+        /// <summary>
+        /// Enqueues a new job
+        /// </summary>
+        public void EnqueueJob(TIn jobInput, object additionalData = null)
         {
-            return GetJobs().ConvertAll(x => (IJobInput)x);
+            Interlocked.Increment(ref _jobCount);
+            OnEnqueueJob(jobInput, additionalData);
+        }
+
+        /// <summary>
+        /// Handler when the enqueue job is fired
+        /// </summary>
+        protected virtual void OnEnqueueJob(IJobInput jobInput, object additionalData)
+        {
+            var handler = EnqueueJobEvent;
+            if (handler != null) handler(jobInput, additionalData);
         }
 
         /// <summary>
@@ -62,6 +93,7 @@ namespace NetDist.Handlers
         {
             var output = JobObjectSerializer.Deserialize<TOut>(jobResultString);
             ProcessResult((TIn)jobInput, output);
+            Interlocked.Decrement(ref _jobCount);
         }
 
         /// <summary>

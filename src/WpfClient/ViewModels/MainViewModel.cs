@@ -1,6 +1,5 @@
 ﻿using NetDist.Client;
 using NetDist.Core.Utilities;
-using NetDist.Jobs.DataContracts;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -15,7 +14,7 @@ namespace WpfClient.ViewModels
     public class MainViewModel : ObservableObject
     {
         private readonly MainModel _model;
-        private readonly ObservableViewModelCollection<JobInfoViewModel, Job> _jobs;
+        private readonly ObservableViewModelCollection<JobInfoViewModel, ClientJob> _jobs;
         private PropertyChangedProxy<ClientBase, ClientStatusType> _statusPropertyChangedProxy;
 
         public ClientStatusType Status { get { return _model.Client.Status; } }
@@ -83,7 +82,7 @@ namespace WpfClient.ViewModels
         public MainViewModel(MainModel model)
         {
             _model = model;
-            _jobs = new ObservableViewModelCollection<JobInfoViewModel, Job>(Dispatcher.CurrentDispatcher, model.Client.Jobs, job => new JobInfoViewModel(job));
+            _jobs = new ObservableViewModelCollection<JobInfoViewModel, ClientJob>(Dispatcher.CurrentDispatcher, model.Client.Jobs, job => new JobInfoViewModel(job));
             _statusPropertyChangedProxy = new PropertyChangedProxy<ClientBase, ClientStatusType>(_model.Client, m => m.Status, newValue =>
             {
                 OnPropertyChanged(() => Status);

@@ -1,5 +1,5 @@
 ﻿using NetDist.Jobs;
-using System.Collections.Generic;
+using System;
 
 namespace NetDist.Handlers
 {
@@ -15,6 +15,11 @@ namespace NetDist.Handlers
         bool IsFinished { get; }
 
         /// <summary>
+        /// Event when a new job is enqueued
+        /// </summary>
+        event Action<IJobInput, object> EnqueueJobEvent;
+
+        /// <summary>
         /// Initializes the custom settings object from the serialized string
         /// </summary>
         void InitializeCustomSettings(object customSettings);
@@ -25,9 +30,14 @@ namespace NetDist.Handlers
         void Initialize();
 
         /// <summary>
-        /// Get a list of the next input objects which should be processed
+        /// Get the total count of jobs which are available
         /// </summary>
-        List<IJobInput> GetJobs();
+        long GetTotalJobCount();
+
+        /// <summary>
+        /// No more jobs in the queue, generate additional jobs
+        /// </summary>
+        void CreateMoreJobs();
 
         /// <summary>
         /// Process a result

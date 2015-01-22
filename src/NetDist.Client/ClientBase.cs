@@ -39,7 +39,7 @@ namespace NetDist.Client
         /// <summary>
         /// List of jobs currently in progress
         /// </summary>
-        public ObservableCollection<Job> Jobs { get; set; }
+        public ObservableCollection<ClientJob> Jobs { get; set; }
 
         /// <summary>
         /// Flag to indicate that new jobs can be started
@@ -53,7 +53,7 @@ namespace NetDist.Client
         /// <summary>
         /// Dictionary with the job assembly name of each handler
         /// </summary>
-        private readonly Dictionary<Guid, string> _handlerMainJobFile = new Dictionary<Guid, string>();
+        private readonly Dictionary<Guid, Tuple<HandlerJobInfo, string>> _handlerJobInfo = new Dictionary<Guid, Tuple<HandlerJobInfo, string>>();
         /// <summary>
         /// EventWaitHandle to set when all jobs are processed
         /// </summary>
@@ -73,7 +73,7 @@ namespace NetDist.Client
         protected ClientBase()
         {
             // General initialization
-            Jobs = new ObservableCollection<Job>();
+            Jobs = new ObservableCollection<ClientJob>();
 
             // Initialize basic information about the client
             ClientInfo = new ClientInfo
@@ -133,11 +133,12 @@ namespace NetDist.Client
             var nextJob = GetJob();
             if (nextJob != null)
             {
+                var clientJob = new ClientJob(nextJob);
                 lock (((ICollection)Jobs).SyncRoot)
                 {
-                    Jobs.Add(nextJob);
+                    Jobs.Add(clientJob);
                 }
-                Task.Factory.StartNew(ProcessJob, nextJob);
+                Task.Factory.StartNew(ProcessJob, clientJob);
                 return true;
             }
             return false;
@@ -192,7 +193,8 @@ namespace NetDist.Client
         private void ProcessJob(object state)
         {
             // Setup
-            var job = (Job)state;
+            var clientJob = (ClientJob)state;
+            var job = clientJob.Job;
             JobResult jobResult;
             var localHandlerFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, job.HandlerId.ToString());
             Directory.CreateDirectory(localHandlerFolder);
@@ -204,7 +206,7 @@ namespace NetDist.Client
                 _downloadFileLocks[job.HandlerId].WaitOne();
             }
             // Check if we don't know this handler already
-            else if (!_handlerMainJobFile.ContainsKey(job.HandlerId))
+            else if (!_handlerJobInfo.ContainsKey(job.HandlerId))
             {
                 // Create a lock for this handler id
                 var resetEvent = new ManualResetEvent(false);
@@ -218,13 +220,15 @@ namespace NetDist.Client
                     DownloadAndSaveFile(job.HandlerId, localHandlerFolder, file);
                 }
                 // Add the handler to the "known" list
-                _handlerMainJobFile.Add(job.HandlerId, mainFilePath);
+                _handlerJobInfo.Add(job.HandlerId, Tuple.Create(handlerInfo, mainFilePath));
                 // Reset the event
                 resetEvent.Set();
             }
 
             // Now the handler is known and no lock is on it
-            var jobLibraryName = _handlerMainJobFile[job.HandlerId];
+            var cachedHandlerInfo = _handlerJobInfo[job.HandlerId];
+            clientJob.HandlerName = cachedHandlerInfo.Item1.HandlerName;
+            var jobLibraryName = cachedHandlerInfo.Item2;
             try
             {
                 // Create an additional app-domain
@@ -252,7 +256,7 @@ namespace NetDist.Client
             SendResult(jobResult);
             lock (((ICollection)Jobs).SyncRoot)
             {
-                Jobs.Remove(job);
+                Jobs.Remove(clientJob);
             }
             if (Jobs.Count < NumberOfParallelJobs)
             {
