@@ -8,7 +8,7 @@
         xmlns:viewModels="clr-namespace:WpfServerAdmin.ViewModels"
         d:DataContext="{x:Static wpfServerAdmin:SampleDataContext.MainInfoViewModel}"
         Icon="admin.ico"
-        Title="NetDist Wpf Server Administrator" Height="373" Width="611" ResizeMode="CanResizeWithGrip">
+        Title="NetDist Wpf Server Administrator" Height="373" Width="741" ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <BitmapImage x:Key="CpuImageSource" UriSource="Resources/cpu.png" />
         <BitmapImage x:Key="RamImageSource" UriSource="Resources/ram.png" />
@@ -157,6 +157,20 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:HandlerInfoViewModel">
                                         <Label Content="{Binding HandlerState}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="LastStart" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Label Content="{Binding LastStartTime}" ContentStringFormat="HH:mm:ss" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="NextStart" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Label Content="{Binding NextStartTime}" ContentStringFormat="HH:mm:ss" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>

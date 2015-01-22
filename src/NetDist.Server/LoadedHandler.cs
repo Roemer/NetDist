@@ -1,4 +1,5 @@
 ﻿using Microsoft.CSharp;
+using NCrontab;
 using NetDist.Core;
 using NetDist.Core.Extensions;
 using NetDist.Core.Utilities;
@@ -56,6 +57,16 @@ namespace NetDist.Server
         }
 
         /// <summary>
+        /// Time when the handler was last started
+        /// </summary>
+        public DateTime? LastStartTime { get; set; }
+
+        /// <summary>
+        /// Time when the handler will start next time
+        /// </summary>
+        private DateTime? NextStartTime { get; set; }
+
+        /// <summary>
         /// Instance of the effective handler
         /// </summary>
         private IHandler _handler;
@@ -91,16 +102,20 @@ namespace NetDist.Server
         private readonly JobScriptFile _jobScriptFile;
         private readonly string _currentPackageFolder;
         private string _jobAssemblyPath;
+        private Task _schedulerTask;
         private Task _controlTask;
+        private CancellationTokenSource _schedulerTaskCancelToken = new CancellationTokenSource();
         private CancellationTokenSource _controlTaskCancelToken = new CancellationTokenSource();
         private readonly AutoResetEvent _jobsEmptyWaitHandle = new AutoResetEvent(false);
         private readonly AutoResetEvent _resultAvailableWaitHandle = new AutoResetEvent(false);
+        private CrontabSchedule _cronSchedule;
 
         /// <summary>
         /// Constructor
         /// </summary>
         public LoadedHandler(JobScriptFile jobScriptFile, string packageBaseFolder)
         {
+            // Initialization
             Id = Guid.NewGuid();
             _jobScriptFile = jobScriptFile;
             _currentPackageFolder = Path.Combine(packageBaseFolder, jobScriptFile.PackageName);
@@ -229,6 +244,45 @@ namespace NetDist.Server
             // Assign the handler
             _handler = handlerInstance;
 
+            // Initialize cron scheduler
+            _cronSchedule = null;
+            NextStartTime = null;
+            if (!String.IsNullOrWhiteSpace(_handlerSettings.Schedule))
+            {
+                try
+                {
+                    _cronSchedule = CrontabSchedule.Parse(_handlerSettings.Schedule);
+                    NextStartTime = _cronSchedule.GetNextOccurrence(DateTime.Now);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn("Failed to parse Crontab: '{0}' - Ex: {1}", _handlerSettings.Schedule, ex.Message);
+                }
+            }
+
+            // Small task to regularly check for a scheduled start
+            if (_cronSchedule != null)
+            {
+                _schedulerTask = Task.Factory.StartNew(() =>
+                {
+                    while (!_schedulerTaskCancelToken.IsCancellationRequested)
+                    {
+                        if (NextStartTime < DateTime.Now)
+                        {
+                            lock (_lockObject)
+                            {
+                                if (HandlerState != HandlerState.Running)
+                                {
+                                    StartJobHandler();
+                                    NextStartTime = _cronSchedule.GetNextOccurrence(DateTime.Now);
+                                }
+                            }
+                        }
+                        Thread.Sleep(5000);
+                    }
+                }, _schedulerTaskCancelToken.Token);
+            }
+
             // Autostart if wanted
             if (_handlerSettings.AutoStart)
             {
@@ -238,6 +292,22 @@ namespace NetDist.Server
             // Fill and return the info object
             result.HandlerId = Id;
             return result;
+        }
+
+        /// <summary>
+        /// Clear all resources
+        /// </summary>
+        public void Shutdown()
+        {
+            if (_schedulerTask != null)
+            {
+                _schedulerTaskCancelToken.Cancel();
+                // Wait until the task is finished (but not when faulted)
+                if (!_schedulerTask.IsFaulted)
+                {
+                    _schedulerTask.Wait();
+                }
+            }
         }
 
         /// <summary>
@@ -256,7 +326,9 @@ namespace NetDist.Server
                 JobsPending = _pendingJobs.Count,
                 TotalJobsProcessed = Interlocked.Read(ref _totalProcessedJobs),
                 TotalJobsFailed = Interlocked.Read(ref _totalFailedJobs),
-                HandlerState = HandlerState
+                HandlerState = HandlerState,
+                LastStartTime = LastStartTime,
+                NextStartTime = NextStartTime
             };
             return hInfo;
         }
@@ -291,7 +363,7 @@ namespace NetDist.Server
                 {
                     // Start the control task
                     _controlTaskCancelToken = new CancellationTokenSource();
-                    _controlTask = new Task(ControlThread);
+                    _controlTask = new Task(ControlThread, _controlTaskCancelToken.Token);
                     _controlTask.ContinueWith(t =>
                     {
                         Logger.Error(t.Exception, "Exception in handler '{0}'", Id);
@@ -299,6 +371,7 @@ namespace NetDist.Server
                     }, TaskContinuationOptions.OnlyOnFaulted);
                     HandlerState = HandlerState.Running;
                     _controlTask.Start();
+                    LastStartTime = DateTime.Now;
                 }
             }
         }

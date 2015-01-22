@@ -209,11 +209,10 @@ namespace NetDist.Client
                 {
                     DownloadAndSaveFile(job.HandlerId, localHandlerFolder, file);
                 }
-                // Reset the event
-                resetEvent.Set();
-
                 // Add the handler to the "known" list
                 _handlerMainJobFile.Add(job.HandlerId, mainFilePath);
+                // Reset the event
+                resetEvent.Set();
             }
 
             // Now the handler is known and no lock is on it

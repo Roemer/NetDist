@@ -15,5 +15,7 @@ namespace NetDist.Core
         public long TotalJobsProcessed { get; set; }
         public long TotalJobsFailed { get; set; }
         public HandlerState HandlerState { get; set; }
+        public DateTime? LastStartTime { get; set; }
+        public DateTime? NextStartTime { get; set; }
     }
 }

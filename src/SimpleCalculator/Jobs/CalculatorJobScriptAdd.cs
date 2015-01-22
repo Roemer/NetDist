@@ -24,6 +24,7 @@ namespace SimpleCalculator.Jobs
             handlerSettings.HandlerName = "Calculator";
             handlerSettings.JobName = "Calculator - Add";
             handlerSettings.AutoStart = true;
+            handlerSettings.Schedule = "* * * * *";
         }
 
         public override void FillCustomSettings(CalculatorHandlerSettings customSettings)

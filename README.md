@@ -34,3 +34,10 @@ The client requests jobs from the server and completes them, sending the result 
 
 ##### Communication
 Currently all the communication is implemented in Web Api. Other channels might be implemented later.
+
+### Features planned
+* Allow / disallow specific clients to run a job
+* Allow only one job of a specific type to concurrently run on a client
+* Notify the server about the job progress (percentage, status text)
+* Idle time (timespan were a handler is not sending any jobs)
+* MaxTimePerClient (maximum duration per day? a job can run per client)

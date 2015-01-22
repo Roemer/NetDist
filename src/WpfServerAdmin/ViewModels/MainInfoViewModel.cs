@@ -151,17 +151,7 @@ namespace WpfServerAdmin.ViewModels
             Handlers.Clear();
             foreach (var handler in info.Handlers)
             {
-                Handlers.Add(new HandlerInfoViewModel
-                {
-                    Id = handler.Id,
-                    Name = String.Format("{0}/{1}/{2}", handler.PluginName, handler.HandlerName, handler.JobName),
-                    TotalJobsAvailable = handler.TotalJobsAvailable,
-                    JobsAvailable = handler.JobsAvailable,
-                    JobsPending = handler.JobsPending,
-                    TotalJobsProcessed = handler.TotalJobsProcessed,
-                    TotalJobsFailed = handler.TotalJobsFailed,
-                    HandlerState = handler.HandlerState
-                });
+                Handlers.Add(new HandlerInfoViewModel(handler));
             }
             // Clients
             Clients.Clear();

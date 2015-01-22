@@ -225,6 +225,8 @@ namespace NetDist.Server
                 var handlerName = removedItem.Item2.FullName;
                 // Stop the handler
                 removedItem.Item2.StopJobHandler();
+                // Signal it to cleanup it's resources
+                removedItem.Item2.Shutdown();
                 // Unload the domain
                 AppDomain.Unload(removedItem.Item1);
                 Logger.Info("Removed handler: '{0}' ('{1}')", handlerName, handlerId);

@@ -1,4 +1,5 @@
-﻿
+﻿using System.Collections.Generic;
+
 namespace NetDist.Jobs
 {
     public class HandlerSettings
@@ -23,5 +24,28 @@ namespace NetDist.Jobs
         /// Autostart the handler
         /// </summary>
         public bool AutoStart { get; set; }
+
+        /// <summary>
+        /// CronTab schedule string for the handler
+        /// </summary>
+        public string Schedule { get; set; }
+
+        /// <summary>
+        /// Names of the clients which are allowed to process this job
+        /// Takes precedence if ClientsDenied is also set
+        /// </summary>
+        public List<string> ClientsAllowed { get; set; }
+
+        /// <summary>
+        /// Names of the clients which are not allowed to process this job
+        /// Ignored if ClientsAllowed is also set
+        /// </summary>
+        public List<string> ClientsDenied { get; set; }
+
+        public HandlerSettings()
+        {
+            ClientsAllowed = new List<string>();
+            ClientsDenied = new List<string>();
+        }
     }
 }

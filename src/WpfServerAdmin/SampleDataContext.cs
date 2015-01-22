@@ -21,41 +21,53 @@ namespace WpfServerAdmin
             };
 
             // Handlers
-            MainInfoViewModel.Handlers.Add(new HandlerInfoViewModel
+            MainInfoViewModel.Handlers.Add(new HandlerInfoViewModel(new HandlerInfo
             {
                 Id = Guid.NewGuid(),
-                Name = "Handler 1",
+                PluginName = "Plugin 1",
+                HandlerName = "Handler 1",
+                JobName = "Job 1",
                 HandlerState = HandlerState.Running,
                 TotalJobsAvailable = 12323145,
                 JobsPending = 10,
                 JobsAvailable = 15123,
                 TotalJobsProcessed = 63366,
-                TotalJobsFailed = 12
-            });
+                TotalJobsFailed = 12,
+                LastStartTime = DateTime.Now,
+                NextStartTime = DateTime.Now.AddMinutes(4)
+            }));
 
-            MainInfoViewModel.Handlers.Add(new HandlerInfoViewModel
+            MainInfoViewModel.Handlers.Add(new HandlerInfoViewModel(new HandlerInfo
             {
                 Id = Guid.NewGuid(),
-                Name = "Handler 2",
+                PluginName = "Plugin 2",
+                HandlerName = "Handler 1",
+                JobName = "Job 3",
                 HandlerState = HandlerState.Stopped,
                 TotalJobsAvailable = 445,
                 JobsPending = 0,
                 JobsAvailable = 0,
                 TotalJobsProcessed = 744,
-                TotalJobsFailed = 454
-            });
+                TotalJobsFailed = 454,
+                LastStartTime = DateTime.Now,
+                NextStartTime = DateTime.Now.AddMinutes(4)
+            }));
 
-            MainInfoViewModel.Handlers.Add(new HandlerInfoViewModel
+            MainInfoViewModel.Handlers.Add(new HandlerInfoViewModel(new HandlerInfo
             {
                 Id = Guid.NewGuid(),
-                Name = "Handler 3",
+                PluginName = "Plugin 3",
+                HandlerName = "Handler 2",
+                JobName = "Job 1",
                 HandlerState = HandlerState.Finished,
                 TotalJobsAvailable = 0,
                 JobsPending = 0,
                 JobsAvailable = 0,
                 TotalJobsProcessed = 77744,
-                TotalJobsFailed = 1
-            });
+                TotalJobsFailed = 1,
+                LastStartTime = DateTime.Now,
+                NextStartTime = DateTime.Now.AddMinutes(4)
+            }));
 
             // Clients
             MainInfoViewModel.Clients.Add(new ClientInfoViewModel
