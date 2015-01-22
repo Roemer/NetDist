@@ -1,9 +1,10 @@
-﻿using Owin;
+﻿using Newtonsoft.Json.Serialization;
+using Owin;
 using System;
 using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 using System.Web.Http;
-using Newtonsoft.Json.Serialization;
+using System.Web.Http.Dispatcher;
 
 namespace NetDist.Server.WebApi
 {
@@ -12,6 +13,13 @@ namespace NetDist.Server.WebApi
     /// </summary>
     public class Startup
     {
+        private readonly ServerBase _server;
+
+        public Startup(ServerBase server)
+        {
+            _server = server;
+        }
+
         /// <summary>
         /// Do not delete this code! This makes sure that the dll "Microsoft.Owin.Host.HttpListener" is copied
         /// correctly to the output directory.
@@ -33,6 +41,8 @@ namespace NetDist.Server.WebApi
             var serializerSettings = config.Formatters.JsonFormatter.SerializerSettings;
             var contractResolver = (DefaultContractResolver)serializerSettings.ContractResolver;
             contractResolver.IgnoreSerializableAttribute = true;
+            // Replace the controller activator
+            config.Services.Replace(typeof(IHttpControllerActivator), new ServerControllerActivator(_server));
             // Add the configuration
             appBuilder.UseWebApi(config);
         }

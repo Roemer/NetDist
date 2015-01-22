@@ -69,9 +69,12 @@
   <ItemGroup>
     <Compile Include="Controllers\AdminController.cs" />
     <Compile Include="Controllers\ClientController.cs" />
+    <Compile Include="Controllers\ControllerBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ServerControllerActivator.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="WebApiServer.cs" />
+    <Compile Include="WebApiServerSettings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -42,6 +42,7 @@
   <ItemGroup>
     <Compile Include="ClientBase.cs" />
     <Compile Include="ClientStatusType.cs" />
+    <Compile Include="IClientSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="JobScriptProxy.cs" />
   </ItemGroup>

@@ -1,5 +1,6 @@
 ﻿using NetDist.Client.WebApi;
 using NetDist.Core.Utilities;
+using Wpf.Shared;
 
 namespace WpfClient.Models
 {
@@ -22,13 +23,16 @@ namespace WpfClient.Models
         /// </summary>
         public WebApiClient Client { get; private set; }
 
+        private readonly PortableConfiguration _conf = new PortableConfiguration(new JsonNetSerializer());
+
         /// <summary>
         /// Constructor
         /// </summary>
         public MainModel()
         {
             NetworkAnalyzer = new NetworkTrafficAnalyzer();
-            Client = new WebApiClient();
+            var settings = _conf.Load<WebApiClientSettings>("ClientSettings");
+            Client = new WebApiClient(settings);
         }
     }
 }

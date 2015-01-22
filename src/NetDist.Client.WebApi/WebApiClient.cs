@@ -11,9 +11,10 @@ namespace NetDist.Client.WebApi
     {
         private readonly WebApiClientSettings _settings;
 
-        public WebApiClient()
+        public WebApiClient(WebApiClientSettings settings)
         {
-            _settings = new WebApiClientSettings();
+            _settings = settings;
+            InitializeSettings(settings);
         }
 
         private static void DummyFunctionToMakeSureReferencesGetCopiedProperly()

@@ -48,6 +48,11 @@ namespace NetDist.Server
         protected string PackagesFolder { get { return Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath), "packages"); } }
 
         /// <summary>
+        /// Settings object
+        /// </summary>
+        private IServerSettings _settings;
+
+        /// <summary>
         /// Constructor
         /// </summary>
         protected ServerBase()
@@ -55,6 +60,15 @@ namespace NetDist.Server
             Logger = new Logger();
             _loadedHandlers = new ConcurrentDictionary<Guid, Tuple<AppDomain, LoadedHandler>>();
             _knownClients = new ConcurrentDictionary<Guid, ExtendedClientInfo>();
+        }
+
+        protected void InitializeSettings(IServerSettings settings)
+        {
+            _settings = settings;
+            if (settings.AutoStart)
+            {
+                Start();
+            }
         }
 
         /// <summary>

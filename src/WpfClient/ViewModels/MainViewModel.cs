@@ -4,6 +4,7 @@ using NetDist.Jobs;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Wpf.Shared;
@@ -73,6 +74,7 @@ namespace WpfClient.ViewModels
         }
 
         #region Commands
+        public ICommand ShowSettingsCommand { get; private set; }
         public ICommand AddSingleJobCommand { get; private set; }
         public ICommand StartCommand { get; private set; }
         public ICommand StopCommand { get; private set; }
@@ -94,6 +96,11 @@ namespace WpfClient.ViewModels
             SelectedNetworkAdapter = NetworkAdapters[0];
 
             // Initialize commands
+            ShowSettingsCommand = new RelayCommand(o =>
+            {
+                const string settingsFile = "settings.json";
+                Process.Start("notepad.exe", settingsFile);
+            });
             AddSingleJobCommand = new RelayCommand(o => model.Client.GetAndStartJob());
             StartCommand = new RelayCommand(o => model.Client.StartProcessing());
             StopCommand = new RelayCommand(o => model.Client.StopProcessing());

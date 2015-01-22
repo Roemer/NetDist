@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Windows;
@@ -68,6 +69,7 @@ namespace WpfServerAdmin.ViewModels
         public ObservableCollection<ClientInfoViewModel> Clients { get; set; }
         public ObservableCollection<PackageInfoViewModel> Packages { get; set; }
 
+        public ICommand ShowSettingsCommand { get; private set; }
         public ICommand UploadJobScriptCommand { get; private set; }
         public ICommand UploadPackageCommand { get; private set; }
 
@@ -77,6 +79,12 @@ namespace WpfServerAdmin.ViewModels
             Handlers.CollectionChanged += Handlers_CollectionChanged;
             Clients = new ObservableCollection<ClientInfoViewModel>();
             Packages = new ObservableCollection<PackageInfoViewModel>();
+
+            ShowSettingsCommand = new RelayCommand(o =>
+            {
+                const string settingsFile = "settings.json";
+                Process.Start("notepad.exe", settingsFile);
+            });
 
             UploadJobScriptCommand = new RelayCommand(o =>
             {

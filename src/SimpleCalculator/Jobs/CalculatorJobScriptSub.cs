@@ -23,6 +23,7 @@ namespace SimpleCalculator.Jobs
         {
             handlerSettings.HandlerName = "Calculator";
             handlerSettings.JobName = "Calculator - Sub";
+            handlerSettings.AutoStart = true;
         }
 
         public override void FillCustomSettings(CalculatorHandlerSettings customSettings)

@@ -1,24 +1,40 @@
 ﻿using Microsoft.Owin.Hosting;
+using NetDist.Logging;
 using System;
 
 namespace NetDist.Server.WebApi
 {
     public class WebApiServer : ServerBase
     {
-        // Singleton
-        public static readonly WebApiServer Instance = new WebApiServer();
-        private WebApiServer() { }
+        /// <summary>
+        /// Settings object
+        /// </summary>
+        private readonly WebApiServerSettings _settings;
 
         /// <summary>
         /// Reference to the web-api server object
         /// </summary>
         private IDisposable _app;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        public WebApiServer(WebApiServerSettings settings, params EventHandler<LogEventArgs>[] defaultLogEvents)
+        {
+            foreach (var logEvent in defaultLogEvents)
+            {
+                Logger.LogEvent += logEvent;
+            }
+            _settings = settings;
+            InitializeSettings(settings);
+        }
+
         protected override bool InternalStart()
         {
-            const string baseAddress = "http://*:9000/";
-            Logger.Info("Starting OWIN at '{0}'", baseAddress);
-            _app = WebApp.Start<Startup>(new StartOptions(baseAddress));
+            var baseUri = String.Format("{0}://{1}:{2}", "http", "*", _settings.Port);
+            Logger.Info("Starting OWIN at '{0}'", baseUri);
+            _app = WebApp.Start(new StartOptions(baseUri), builder => new Startup(this).Configuration(builder));
+
             return true;
         }
 

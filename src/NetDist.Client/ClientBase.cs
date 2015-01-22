@@ -69,7 +69,6 @@ namespace NetDist.Client
         protected ClientBase()
         {
             // General initialization
-            NumberOfParallelJobs = 3;
             Jobs = new ObservableCollection<Job>();
 
             // Initialize basic information about the client
@@ -80,6 +79,15 @@ namespace NetDist.Client
                 StartDate = DateTime.Now,
                 Version = "unknown"
             };
+        }
+
+        protected void InitializeSettings(IClientSettings settings)
+        {
+            NumberOfParallelJobs = settings.NumberOfParallelJobs;
+            if (settings.AutoStart)
+            {
+                StartProcessing();
+            }
         }
 
         /// <summary>

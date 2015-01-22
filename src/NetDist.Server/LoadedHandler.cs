@@ -228,6 +228,13 @@ namespace NetDist.Server
             handlerInstance.Initialize();
             // Assign the handler
             _handler = handlerInstance;
+
+            // Autostart if wanted
+            if (_handlerSettings.AutoStart)
+            {
+                StartJobHandler();
+            }
+
             // Fill and return the info object
             result.HandlerId = Id;
             return result;

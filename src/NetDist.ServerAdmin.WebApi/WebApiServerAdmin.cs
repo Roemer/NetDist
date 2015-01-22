@@ -10,9 +10,9 @@ namespace NetDist.ServerAdmin.WebApi
     {
         private readonly WebApiServerAdminSettings _settings;
 
-        public WebApiServerAdmin()
+        public WebApiServerAdmin(WebApiServerAdminSettings settings)
         {
-            _settings = new WebApiServerAdminSettings();
+            _settings = settings;
         }
 
         private static void DummyFunctionToMakeSureReferencesGetCopiedProperly()

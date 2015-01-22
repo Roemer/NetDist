@@ -10,13 +10,16 @@ using System.Web.Http;
 namespace NetDist.Server.WebApi.Controllers
 {
     [RoutePrefix("api/client")]
-    public class ClientController : ApiController
+    public class ClientController : ControllerBase
     {
+        public ClientController(ServerBase server)
+            : base(server) { }
+
         [HttpGet]
         [Route("getjob/{id}")]
         public IHttpActionResult GetJob(Guid id)
         {
-            var job = WebApiServer.Instance.GetJob(id);
+            var job = Server.GetJob(id);
             return Ok(job);
         }
 
@@ -24,7 +27,7 @@ namespace NetDist.Server.WebApi.Controllers
         [Route("gethandlerjobinfo/{id}")]
         public IHttpActionResult GetHandlerClientInfo(Guid id)
         {
-            var handlerClientInfo = WebApiServer.Instance.GetHandlerJobInfo(id);
+            var handlerClientInfo = Server.GetHandlerJobInfo(id);
             return Ok(handlerClientInfo);
         }
 
@@ -32,7 +35,7 @@ namespace NetDist.Server.WebApi.Controllers
         [Route("getfile/{id}/{file}")]
         public HttpResponseMessage GetFile(Guid id, string file)
         {
-            var fileContent = WebApiServer.Instance.GetFile(id, file);
+            var fileContent = Server.GetFile(id, file);
             var result = new HttpResponseMessage(HttpStatusCode.OK);
             var stream = new MemoryStream(fileContent);
             result.Content = new StreamContent(stream);
@@ -48,7 +51,7 @@ namespace NetDist.Server.WebApi.Controllers
         public IHttpActionResult Result()
         {
             var result = Request.Content.ReadAsAsync<JobResult>().Result;
-            WebApiServer.Instance.ReceiveResult(result);
+            Server.ReceiveResult(result);
             return Ok();
         }
 
@@ -57,7 +60,7 @@ namespace NetDist.Server.WebApi.Controllers
         public IHttpActionResult Info()
         {
             var info = Request.Content.ReadAsAsync<ClientInfo>().Result;
-            WebApiServer.Instance.ReceivedClientInfo(info);
+            Server.ReceivedClientInfo(info);
             return Ok();
         }
     }

@@ -16,7 +16,7 @@
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File" Click="MenuItem_Click">
-                <MenuItem Header="_Settings" />
+                <MenuItem Header="_Settings" Command="{Binding ShowSettingsCommand}" />
                 <Separator />
                 <MenuItem Header="_Exit" />
             </MenuItem>

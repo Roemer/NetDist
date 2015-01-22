@@ -4,13 +4,16 @@ using System.Web.Http;
 namespace NetDist.Server.WebApi.Controllers
 {
     [RoutePrefix("api/admin")]
-    public class AdminController : ApiController
+    public class AdminController : ControllerBase
     {
+        public AdminController(ServerBase server)
+            : base(server) { }
+
         [HttpGet]
         [Route("stats")]
         public IHttpActionResult Statistics()
         {
-            var statistics = WebApiServer.Instance.GetStatistics();
+            var statistics = Server.GetStatistics();
             return Ok(statistics);
         }
 
@@ -19,7 +22,7 @@ namespace NetDist.Server.WebApi.Controllers
         public IHttpActionResult AddJobHandler()
         {
             var jobScript = Request.Content.ReadAsStringAsync().Result;
-            var addHandlerResult = WebApiServer.Instance.AddJobHandler(jobScript);
+            var addHandlerResult = Server.AddJobHandler(jobScript);
             return Ok(addHandlerResult);
         }
 
@@ -27,7 +30,7 @@ namespace NetDist.Server.WebApi.Controllers
         [Route("removejobhandler/{id}")]
         public IHttpActionResult RemoveJobHandler(Guid id)
         {
-            var success = WebApiServer.Instance.RemoveJobHandler(id);
+            var success = Server.RemoveJobHandler(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
@@ -35,7 +38,7 @@ namespace NetDist.Server.WebApi.Controllers
         [Route("startjobhandler/{id}")]
         public IHttpActionResult StartJobHandler(Guid id)
         {
-            var success = WebApiServer.Instance.StartJobHandler(id);
+            var success = Server.StartJobHandler(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
@@ -43,7 +46,7 @@ namespace NetDist.Server.WebApi.Controllers
         [Route("stopjobhandler/{id}")]
         public IHttpActionResult StopJobHandler(Guid id)
         {
-            var success = WebApiServer.Instance.StopJobHandler(id);
+            var success = Server.StopJobHandler(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
@@ -52,7 +55,7 @@ namespace NetDist.Server.WebApi.Controllers
         public IHttpActionResult AddPackage()
         {
             var bytes = Request.Content.ReadAsByteArrayAsync().Result;
-            var success = WebApiServer.Instance.RegisterPackage(bytes);
+            var success = Server.RegisterPackage(bytes);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
@@ -60,7 +63,7 @@ namespace NetDist.Server.WebApi.Controllers
         [Route("getpackages")]
         public IHttpActionResult GetPackages()
         {
-            var packages = WebApiServer.Instance.GetRegisteredPackages();
+            var packages = Server.GetRegisteredPackages();
             return Ok(packages);
         }
     }
