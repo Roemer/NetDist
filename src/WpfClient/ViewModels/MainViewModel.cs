@@ -14,7 +14,6 @@ namespace WpfClient.ViewModels
     public class MainViewModel : ObservableObject
     {
         private readonly MainModel _model;
-        private readonly ObservableViewModelCollection<JobInfoViewModel, ClientJob> _jobs;
         private PropertyChangedProxy<ClientBase, ClientStatusType> _statusPropertyChangedProxy;
 
         public ClientStatusType Status { get { return _model.Client.Status; } }
@@ -67,10 +66,7 @@ namespace WpfClient.ViewModels
             get { return SizeSuffix.AddSizeSuffix((ulong)_model.NetworkAnalyzer.TotalTrafficOut); }
         }
 
-        public ObservableCollection<JobInfoViewModel> Jobs
-        {
-            get { return _jobs; }
-        }
+        public ObservableCollection<JobInfoViewModel> Jobs { get; set; }
 
         #region Commands
         public ICommand ShowSettingsCommand { get; private set; }
@@ -82,7 +78,20 @@ namespace WpfClient.ViewModels
         public MainViewModel(MainModel model)
         {
             _model = model;
-            _jobs = new ObservableViewModelCollection<JobInfoViewModel, ClientJob>(Dispatcher.CurrentDispatcher, model.Client.Jobs, job => new JobInfoViewModel(job));
+            Jobs = new ObservableCollection<JobInfoViewModel>();
+
+            var dispatcher = Dispatcher.CurrentDispatcher;
+            model.Client.JobAddedEvent += (sender, args) =>
+            {
+                dispatcher.Invoke(DispatcherPriority.DataBind, new Action(
+                    () => Jobs.Add(new JobInfoViewModel(args.ClientJob))));
+            };
+            model.Client.JobRemovedEvent += (sender, args) =>
+            {
+                dispatcher.Invoke(DispatcherPriority.DataBind, new Action(
+                    () => Jobs.Remove(new JobInfoViewModel(args.ClientJob))));
+            };
+
             _statusPropertyChangedProxy = new PropertyChangedProxy<ClientBase, ClientStatusType>(_model.Client, m => m.Status, newValue =>
             {
                 OnPropertyChanged(() => Status);

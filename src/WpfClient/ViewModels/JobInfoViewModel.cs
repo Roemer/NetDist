@@ -1,15 +1,16 @@
 ﻿using NetDist.Client;
 using NetDist.Core.Utilities;
-using NetDist.Jobs.DataContracts;
 using System;
 
 namespace WpfClient.ViewModels
 {
-    public class JobInfoViewModel : ObservableObject
+    public class JobInfoViewModel : ObservableObject, IEquatable<JobInfoViewModel>
     {
-        public Guid JobId { get { return _job.Id; } }
-        public string HandlerName { get; private set; }
-        public Guid HandlerId { get { return _job.HandlerId; } }
+        private readonly ClientJob _clientJob;
+
+        public Guid JobId { get { return _clientJob.Job.Id; } }
+        public string HandlerName { get { return _clientJob.HandlerName; } }
+        public Guid HandlerId { get { return _clientJob.Job.HandlerId; } }
         public string JobInput { get; private set; }
         public DateTime StartDate { get; private set; }
 
@@ -18,18 +19,17 @@ namespace WpfClient.ViewModels
             get { return DateTime.Now - StartDate; }
         }
 
-        private readonly Job _job;
         private PropertyChangedProxy<ClientJob, string> _statusPropertyChangedProxy;
 
         public JobInfoViewModel(ClientJob clientJob)
         {
-            _job = clientJob.Job;
+            _clientJob = clientJob;
+
             StartDate = DateTime.Now;
-            JobInput = _job.GetInput();
+            JobInput = clientJob.Job.GetInput();
 
             _statusPropertyChangedProxy = new PropertyChangedProxy<ClientJob, string>(clientJob, m => m.HandlerName, newValue =>
             {
-                HandlerName = newValue;
                 OnPropertyChanged(() => HandlerName);
             });
         }
@@ -37,6 +37,11 @@ namespace WpfClient.ViewModels
         public void RefreshDuration()
         {
             OnPropertyChanged(() => Duration);
+        }
+
+        public bool Equals(JobInfoViewModel other)
+        {
+            return JobId == other.JobId;
         }
     }
 }

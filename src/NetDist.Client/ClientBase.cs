@@ -1,11 +1,11 @@
 ﻿using Microsoft.VisualBasic.Devices;
 using NetDist.Core;
+using NetDist.Core.Extensions;
 using NetDist.Core.Utilities;
 using NetDist.Jobs.DataContracts;
 using System;
-using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,10 +36,13 @@ namespace NetDist.Client
             set { SetProperty(value); }
         }
 
+        public event EventHandler<ClientJobEventArgs> JobAddedEvent;
+        public event EventHandler<ClientJobEventArgs> JobRemovedEvent;
+
         /// <summary>
         /// List of jobs currently in progress
         /// </summary>
-        public ObservableCollection<ClientJob> Jobs { get; set; }
+        private ConcurrentDictionary<Guid, ClientJob> Jobs { get; set; }
 
         /// <summary>
         /// Flag to indicate that new jobs can be started
@@ -73,7 +76,7 @@ namespace NetDist.Client
         protected ClientBase()
         {
             // General initialization
-            Jobs = new ObservableCollection<ClientJob>();
+            Jobs = new ConcurrentDictionary<Guid, ClientJob>();
 
             // Initialize basic information about the client
             ClientInfo = new ClientInfo
@@ -134,14 +137,24 @@ namespace NetDist.Client
             if (nextJob != null)
             {
                 var clientJob = new ClientJob(nextJob);
-                lock (((ICollection)Jobs).SyncRoot)
-                {
-                    Jobs.Add(clientJob);
-                }
+                Jobs.TryAdd(clientJob.Job.Id, clientJob);
+                OnJobAddedEvent(new ClientJobEventArgs(clientJob));
                 Task.Factory.StartNew(ProcessJob, clientJob);
                 return true;
             }
             return false;
+        }
+
+        private void OnJobAddedEvent(ClientJobEventArgs e)
+        {
+            var handler = JobAddedEvent;
+            if (handler != null) handler(this, e);
+        }
+
+        private void OnJobRemovedEvent(ClientJobEventArgs e)
+        {
+            var handler = JobRemovedEvent;
+            if (handler != null) handler(this, e);
         }
 
         /// <summary>
@@ -254,10 +267,8 @@ namespace NetDist.Client
                 jobResult = new JobResult(job, ClientInfo.Id, ex);
             }
             SendResult(jobResult);
-            lock (((ICollection)Jobs).SyncRoot)
-            {
-                Jobs.Remove(clientJob);
-            }
+            Jobs.Remove(clientJob.Job.Id);
+            OnJobRemovedEvent(new ClientJobEventArgs(clientJob));
             if (Jobs.Count < NumberOfParallelJobs)
             {
                 _allJobsDone.Set();

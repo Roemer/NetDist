@@ -48,6 +48,7 @@
     <Compile Include="ClientInfo.cs" />
     <Compile Include="EventSink.cs" />
     <Compile Include="ExtendedClientInfo.cs" />
+    <Compile Include="Extensions\ConcurrentDictionaryExtensionMethods.cs" />
     <Compile Include="Extensions\DictionaryExtensionMethods.cs" />
     <Compile Include="HandlerJobInfo.cs" />
     <Compile Include="HandlerInfo.cs" />

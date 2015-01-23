@@ -415,6 +415,8 @@ namespace NetDist.Server
                     {
                         _controlTask.Wait();
                     }
+                    // Set the state to stopped
+                    HandlerState = HandlerState.Stopped;
                     // Reset the control task
                     _controlTask = null;
                     // Clear the various queues/lists/stats
@@ -428,7 +430,6 @@ namespace NetDist.Server
                     Interlocked.Exchange(ref _totalFailedJobs, 0);
                     // Signal the handler to stop
                     _handler.OnStop();
-                    HandlerState = HandlerState.Stopped;
                     return true;
                 }
             }

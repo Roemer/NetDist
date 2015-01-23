@@ -60,7 +60,7 @@ namespace NetDist.Handlers
         /// <summary>
         /// Method to get the next batch of pending jobs
         /// </summary>
-        public abstract void CreateMoreJobs();
+        public virtual void CreateMoreJobs() { }
 
         /// <summary>
         /// Event when a new job is enqueued
