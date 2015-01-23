@@ -109,7 +109,7 @@ namespace WpfClient.ViewModels
                 const string settingsFile = "settings.json";
                 Process.Start("notepad.exe", settingsFile);
             });
-            AddSingleJobCommand = new RelayCommand(o => model.Client.GetAndStartJob());
+            AddSingleJobCommand = new RelayCommand(o => model.Client.ManuallyStartJob());
             StartCommand = new RelayCommand(o => model.Client.StartProcessing());
             StopCommand = new RelayCommand(o => model.Client.StopProcessing());
 

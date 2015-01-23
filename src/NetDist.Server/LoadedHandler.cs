@@ -580,7 +580,7 @@ namespace NetDist.Server
                 // Refill available jobs if needed
                 if (_availableJobs.IsEmpty)
                 {
-                    Logger.Debug("Job queue is empty, adding new jobs");
+                    Logger.Debug("Job queue is empty, requesting new jobs");
                     // Fill with jobs
                     _handler.CreateMoreJobs();
                     Logger.Debug("Job queue contains now {0} job(s)", _availableJobs.Count);

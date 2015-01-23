@@ -127,10 +127,16 @@ namespace NetDist.Client
             _stoppedWaitHandle.Set();
         }
 
+        public bool ManuallyStartJob()
+        {
+            SendClientUpdateIfNeeded();
+            return GetAndStartJob();
+        }
+
         /// <summary>
         /// Tries to get a new job and starts processing it
         /// </summary>
-        public bool GetAndStartJob()
+        private bool GetAndStartJob()
         {
             var nextJob = GetJob();
             if (nextJob != null)
@@ -156,6 +162,16 @@ namespace NetDist.Client
             if (handler != null) handler(this, e);
         }
 
+        private void SendClientUpdateIfNeeded()
+        {
+            if (_nextStatusUpdate < DateTime.Now)
+            {
+                UpdateClientInfo();
+                SendInfo();
+                _nextStatusUpdate = DateTime.Now.AddMinutes(1);
+            }
+        }
+
         /// <summary>
         /// Main application loop to fetch and start processing jobs
         /// </summary>
@@ -164,12 +180,7 @@ namespace NetDist.Client
             while (_fetchNewJobs)
             {
                 // Send client info regularly
-                if (_nextStatusUpdate < DateTime.Now)
-                {
-                    UpdateClientInfo();
-                    SendInfo();
-                    _nextStatusUpdate = DateTime.Now.AddMinutes(1);
-                }
+                SendClientUpdateIfNeeded();
 
                 var sleepTime = 10000;
                 if (Jobs.Count >= NumberOfParallelJobs)
