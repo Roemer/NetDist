@@ -253,6 +253,8 @@ namespace NetDist.Server
             var handlerInstance = (IHandler)Activator.CreateInstance(typeToLoad);
             // Initialize the handler with the custom settings
             handlerInstance.InitializeCustomSettings(customSettings);
+            // Attach to the logger
+            handlerInstance.Logger.LogEvent += (sender, args) => Logger.Log(args.LogLevel, args.Exception, args.Message);
             // Call the virtual initialize method
             handlerInstance.Initialize();
             // Event when a job was added
@@ -607,7 +609,7 @@ namespace NetDist.Server
         /// <summary>
         /// Register the log event to the given sink
         /// </summary>
-        public void RegisterSink(EventSink<LogEventArgs> sink)
+        public void RegisterLogEventSink(EventSink<LogEventArgs> sink)
         {
             Logger.LogEvent += sink.CallbackMethod;
         }

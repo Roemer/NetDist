@@ -190,9 +190,9 @@ namespace NetDist.Server
             });
             // Create a loaded handler wrapper in the new app-domain
             var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new object[] { jobScriptFile, PackagesFolder }, null, null);
-            // Create a interchangeable event sink to register cross-domain events
+            // Create a interchangeable event sink to register cross-domain events to catch logging events
             var sink = new EventSink<LogEventArgs>();
-            loadedHandler.RegisterSink(sink);
+            loadedHandler.RegisterLogEventSink(sink);
             sink.NotificationFired += (sender, args) => Logger.Log(args.LogLevel, args.Exception, args.Message);
             // Initialize the handler
             var initResult = loadedHandler.Initialize();

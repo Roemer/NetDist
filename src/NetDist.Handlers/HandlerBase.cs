@@ -1,5 +1,6 @@
 ﻿using NetDist.Core;
 using NetDist.Jobs;
+using NetDist.Logging;
 using System;
 using System.Threading;
 
@@ -66,6 +67,20 @@ namespace NetDist.Handlers
         /// Event when a new job is enqueued
         /// </summary>
         public event Action<IJobInput, object> EnqueueJobEvent;
+
+        /// <summary>
+        /// The logger object
+        /// </summary>
+        public Logger Logger { get; private set; }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        protected HandlerBase()
+        {
+            // Initialize the logger
+            Logger = new Logger();
+        }
 
         /// <summary>
         /// Enqueues a new job

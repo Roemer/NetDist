@@ -14,6 +14,7 @@ namespace SimpleCalculator.Handlers
 
         public override void CreateMoreJobs()
         {
+            Logger.Info("Adding 50 more jobs");
             var random = new Random();
             for (var i = 0; i < 50; i++)
             {

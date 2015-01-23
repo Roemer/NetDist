@@ -1,4 +1,5 @@
 ﻿using NetDist.Jobs;
+using NetDist.Logging;
 using System;
 
 namespace NetDist.Handlers
@@ -18,6 +19,11 @@ namespace NetDist.Handlers
         /// Event when a new job is enqueued
         /// </summary>
         event Action<IJobInput, object> EnqueueJobEvent;
+
+        /// <summary>
+        /// The logger object
+        /// </summary>
+        Logger Logger { get; }
 
         /// <summary>
         /// Initializes the custom settings object from the serialized string
