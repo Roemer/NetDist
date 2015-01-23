@@ -5,7 +5,6 @@ using NetDist.Core.Utilities;
 using NetDist.Jobs.DataContracts;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,27 +35,27 @@ namespace NetDist.Client
             set { SetProperty(value); }
         }
 
+        /// <summary>
+        /// Event to be notified when a job was added
+        /// </summary>
         public event EventHandler<ClientJobEventArgs> JobAddedEvent;
+        /// <summary>
+        /// Event to be notified when a job was removed
+        /// </summary>
         public event EventHandler<ClientJobEventArgs> JobRemovedEvent;
 
         /// <summary>
         /// List of jobs currently in progress
         /// </summary>
         private ConcurrentDictionary<Guid, ClientJob> Jobs { get; set; }
-
         /// <summary>
         /// Flag to indicate that new jobs can be started
         /// </summary>
         private bool _fetchNewJobs;
         /// <summary>
-        /// Dictionary to lock while a job is downloading the files for a handler
-        /// so no other thread will download them as well
+        /// Dictionary for each handler with the current state and information
         /// </summary>
-        private readonly Dictionary<Guid, ManualResetEvent> _downloadFileLocks = new Dictionary<Guid, ManualResetEvent>();
-        /// <summary>
-        /// Dictionary with the job assembly name of each handler
-        /// </summary>
-        private readonly Dictionary<Guid, Tuple<HandlerJobInfo, string>> _handlerJobInfo = new Dictionary<Guid, Tuple<HandlerJobInfo, string>>();
+        private readonly ConcurrentDictionary<Guid, ClientHandlerState> _handlerStates = new ConcurrentDictionary<Guid, ClientHandlerState>();
         /// <summary>
         /// EventWaitHandle to set when all jobs are processed
         /// </summary>
@@ -208,40 +207,62 @@ namespace NetDist.Client
             // Setup
             var clientJob = (ClientJob)state;
             var job = clientJob.Job;
-            JobResult jobResult;
+            // Build the path to the local folder
             var localHandlerFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, job.HandlerId.ToString());
+            // Make sure that the directory exists
             Directory.CreateDirectory(localHandlerFolder);
 
-            // Check if we already have a lock for this handler
-            if (_downloadFileLocks.ContainsKey(job.HandlerId))
+            // Get or add the state for the current handler
+            var currentHandlerState = _handlerStates.GetOrAdd(job.HandlerId, guid => new ClientHandlerState());
+
+            // Check if the handler isn't initialized yet
+            if (!currentHandlerState.IsInitialized)
             {
-                // If so, wait for it
-                _downloadFileLocks[job.HandlerId].WaitOne();
-            }
-            // Check if we don't know this handler already
-            else if (!_handlerJobInfo.ContainsKey(job.HandlerId))
-            {
-                // Create a lock for this handler id
-                var resetEvent = new ManualResetEvent(false);
-                _downloadFileLocks.Add(job.HandlerId, resetEvent);
-                // Get information about the handler
-                var handlerInfo = GetHandlerJobInfo(job.HandlerId);
-                // Download the needed files
-                var mainFilePath = DownloadAndSaveFile(job.HandlerId, localHandlerFolder, handlerInfo.JobAssemblyName);
-                foreach (var file in handlerInfo.Depdendencies)
+                // Lock the handler
+                lock (currentHandlerState)
                 {
-                    DownloadAndSaveFile(job.HandlerId, localHandlerFolder, file);
+                    // Check again if it isn't initialized yet
+                    if (!currentHandlerState.IsInitialized)
+                    {
+                        // Get information about the handler
+                        var handlerInfo = GetHandlerJobInfo(job.HandlerId);
+                        // Download the main assembly
+                        var mainAssemblyContent = DownloadFile(job.HandlerId, handlerInfo.JobAssemblyName);
+                        if (mainAssemblyContent == null)
+                        {
+                            // Could not find the assembly file
+                            var jobResult = new JobResult(job, ClientInfo.Id, new Exception("Job assembly not found"));
+                            RemoveAndReturnJobResult(clientJob, jobResult);
+                            return;
+                        }
+                        var mainAssemblyFullPath = Path.Combine(localHandlerFolder, handlerInfo.JobAssemblyName);
+                        SaveContentAsFile(mainAssemblyFullPath, mainAssemblyContent);
+                        // Download the dependencies
+                        foreach (var file in handlerInfo.Depdendencies)
+                        {
+                            var dependencyContent = DownloadFile(job.HandlerId, file);
+                            if (dependencyContent == null)
+                            {
+                                // Could not find the dependency
+                                var jobResult = new JobResult(job, ClientInfo.Id, new Exception(String.Format("Dependency '{0}' not found", file)));
+                                RemoveAndReturnJobResult(clientJob, jobResult);
+                                return;
+                            }
+                            var dependencyPath = Path.Combine(localHandlerFolder, file);
+                            SaveContentAsFile(dependencyPath, dependencyContent);
+                        }
+                        // Finish initialization
+                        currentHandlerState.MainAssemblyName = mainAssemblyFullPath;
+                        currentHandlerState.HandlerJobInfo = handlerInfo;
+                        // Set as initialized
+                        currentHandlerState.IsInitialized = true;
+                    }
                 }
-                // Add the handler to the "known" list
-                _handlerJobInfo.Add(job.HandlerId, Tuple.Create(handlerInfo, mainFilePath));
-                // Reset the event
-                resetEvent.Set();
             }
 
-            // Now the handler is known and no lock is on it
-            var cachedHandlerInfo = _handlerJobInfo[job.HandlerId];
-            clientJob.HandlerName = cachedHandlerInfo.Item1.HandlerName;
-            var jobLibraryName = cachedHandlerInfo.Item2;
+            // Prepare to execute the job
+            clientJob.HandlerName = currentHandlerState.HandlerJobInfo.HandlerName;
+            var jobLibraryName = currentHandlerState.MainAssemblyName;
             try
             {
                 // Create an additional app-domain
@@ -258,14 +279,20 @@ namespace NetDist.Client
                 var jobScriptProxy = (JobScriptProxy)domain.CreateInstanceAndUnwrap(typeof(JobScriptProxy).Assembly.FullName, typeof(JobScriptProxy).FullName);
                 var jobLibraryFullPath = Path.Combine(localHandlerFolder, jobLibraryName);
                 // Execute the logic and get the result
-                jobResult = jobScriptProxy.RunJob(ClientInfo.Id, job, jobLibraryFullPath);
+                var jobResult = jobScriptProxy.RunJob(ClientInfo.Id, job, jobLibraryFullPath);
                 // Free the app domain
                 AppDomain.Unload(domain);
+                RemoveAndReturnJobResult(clientJob, jobResult);
             }
             catch (Exception ex)
             {
-                jobResult = new JobResult(job, ClientInfo.Id, ex);
+                var jobResult = new JobResult(job, ClientInfo.Id, ex);
+                RemoveAndReturnJobResult(clientJob, jobResult);
             }
+        }
+
+        private void RemoveAndReturnJobResult(ClientJob clientJob, JobResult jobResult)
+        {
             SendResult(jobResult);
             Jobs.Remove(clientJob.Job.Id);
             OnJobRemovedEvent(new ClientJobEventArgs(clientJob));
@@ -276,14 +303,20 @@ namespace NetDist.Client
         }
 
         /// <summary>
-        /// Download a file and save it in the given folder
+        /// Download a file
         /// </summary>
-        private string DownloadAndSaveFile(Guid handlerId, string localHandlerFolder, string fileName)
+        private byte[] DownloadFile(Guid handlerId, string fileName)
         {
             var fileContent = GetFile(handlerId, fileName);
-            var fullFilePath = Path.Combine(localHandlerFolder, fileName);
-            File.WriteAllBytes(fullFilePath, fileContent);
-            return fullFilePath;
+            return fileContent;
+        }
+
+        /// <summary>
+        /// Saves the bytes to a file
+        /// </summary>
+        private void SaveContentAsFile(string filePath, byte[] content)
+        {
+            File.WriteAllBytes(filePath, content);
         }
 
         #region Abstract methods to implement

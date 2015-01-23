@@ -36,6 +36,16 @@ namespace NetDist.Server.WebApi.Controllers
         public HttpResponseMessage GetFile(Guid id, string file)
         {
             var fileContent = Server.GetFile(id, file);
+            if (fileContent == null)
+            {
+                var resp = new HttpResponseMessage(HttpStatusCode.NotFound)
+                {
+                    Content = new StringContent(String.Format("File with name: {0}", file)),
+                    ReasonPhrase = "File Not Found"
+                };
+                return resp;
+            }
+
             var result = new HttpResponseMessage(HttpStatusCode.OK);
             var stream = new MemoryStream(fileContent);
             result.Content = new StreamContent(stream);

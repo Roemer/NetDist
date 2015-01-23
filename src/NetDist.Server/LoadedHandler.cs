@@ -369,6 +369,7 @@ namespace NetDist.Server
         public byte[] GetFile(string file)
         {
             var fullPath = Path.Combine(_currentPackageFolder, file);
+            if (!File.Exists(fullPath)) { return null; }
             var content = File.ReadAllBytes(fullPath);
             return content;
         }
