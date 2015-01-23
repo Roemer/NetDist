@@ -5,9 +5,9 @@ using System;
 namespace NetDist.Handlers
 {
     /// <summary>
-    /// Interface for the handlers
+    /// Interface for the handlers, used by the server only
     /// </summary>
-    public interface IHandler
+    internal interface IHandler
     {
         /// <summary>
         /// Used to check if a handler has finished all it's work

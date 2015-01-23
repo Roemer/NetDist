@@ -40,7 +40,7 @@ namespace NetDist.Handlers
         /// Converts the passed settings string to the generic settings object
         /// </summary>
         /// <param name="customSettings">Custom settings object</param>
-        public void InitializeCustomSettings(object customSettings)
+        void IHandler.InitializeCustomSettings(object customSettings)
         {
             Settings = (TSet)customSettings;
         }
@@ -66,7 +66,12 @@ namespace NetDist.Handlers
         /// <summary>
         /// Event when a new job is enqueued
         /// </summary>
-        public event Action<IJobInput, object> EnqueueJobEvent;
+        internal event Action<IJobInput, object> EnqueueJobEvent;
+        event Action<IJobInput, object> IHandler.EnqueueJobEvent
+        {
+            add { EnqueueJobEvent += value; }
+            remove { EnqueueJobEvent -= value; }
+        }
 
         /// <summary>
         /// The logger object
@@ -116,7 +121,7 @@ namespace NetDist.Handlers
         /// </summary>
         public abstract void ProcessResult(TIn jobInput, TOut jobResult);
 
-        public bool IsSameAs(IHandler otherHandler)
+        bool IHandler.IsSameAs(IHandler otherHandler)
         {
             // If parameter is null, return false
             if (ReferenceEquals(otherHandler, null))
@@ -135,7 +140,7 @@ namespace NetDist.Handlers
             {
                 return false;
             }
-            return IsSameSpecific(otherHandler);
+            return IsSameSpecific((HandlerBase<TSet, TIn, TOut>)otherHandler);
         }
 
         /// <summary>
@@ -143,7 +148,7 @@ namespace NetDist.Handlers
         /// </summary>
         /// <param name="otherHandler"></param>
         /// <returns></returns>
-        public virtual bool IsSameSpecific(IHandler otherHandler)
+        public virtual bool IsSameSpecific(HandlerBase<TSet, TIn, TOut> otherHandler)
         {
             return true;
         }
