@@ -12,8 +12,6 @@ namespace NetDist.Core.Utilities
                 try
                 {
                     var fs = new FileStream(fullPath, mode, access, share);
-                    fs.ReadByte();
-                    fs.Seek(0, SeekOrigin.Begin);
                     return fs;
                 }
                 catch (IOException)

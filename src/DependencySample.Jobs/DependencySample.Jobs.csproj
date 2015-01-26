@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DependencyJob1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -49,6 +50,10 @@
     <ProjectReference Include="..\DependencySample.Shared\DependencySample.Shared.csproj">
       <Project>{6ffd43f9-b99d-4af1-b746-f8f993cfb7b4}</Project>
       <Name>DependencySample.Shared</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NetDist.Jobs\NetDist.Jobs.csproj">
+      <Project>{ff8e83d4-62d9-4e0f-908c-9fd2c2c9c229}</Project>
+      <Name>NetDist.Jobs</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

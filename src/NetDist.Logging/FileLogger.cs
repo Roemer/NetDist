@@ -13,7 +13,8 @@ namespace NetDist.Logging
         private readonly string _basePath;
         private readonly string _filenameSuffix;
 
-        public FileLogger(string filenameSuffix, string basePath = null)
+        public FileLogger(string filenameSuffix, LogLevel maxLevel = LogLevel.Warn, string basePath = null)
+            : base(maxLevel)
         {
             _basePath = String.IsNullOrWhiteSpace(basePath) ? Path.Combine(Directory.GetCurrentDirectory(), @"Log\") : basePath;
             _filenameSuffix = filenameSuffix;
@@ -30,8 +31,8 @@ namespace NetDist.Logging
             Directory.CreateDirectory(Path.GetDirectoryName(_basePath) ?? String.Empty);
             // Write the to the file
             var fileName = String.Format("{0}{1:HH}_{2}.log", _basePath, DateTime.Now, _filenameSuffix);
-            var content = String.Format("[{0:yyyy-MM-dd HH:mm:ss}] {1} {2}\r\n", DateTime.Now, logLevel.ToString().ToUpper(), message);
-            using (var fs = FileUtility.WaitForFile(fileName, FileMode.OpenOrCreate, FileAccess.Write, FileShare.Read))
+            var content = String.Format("[{0:yyyy-MM-dd HH:mm:ss}] {1} {2}", DateTime.Now, logLevel.ToString().ToUpper(), message);
+            using (var fs = FileUtility.WaitForFile(fileName, FileMode.Append, FileAccess.Write, FileShare.Read))
             {
                 using (var sw = new StreamWriter(fs))
                 {

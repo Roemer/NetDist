@@ -1,4 +1,5 @@
 ﻿using NetDist.Handlers;
+using NetDist.Logging;
 using SimpleCalculator.Shared;
 using System;
 
@@ -9,12 +10,14 @@ namespace SimpleCalculator.Handlers
     {
         public override void Initialize()
         {
-            Console.WriteLine("NegateResult: {0}", Settings.NegateResult);
+            // Append a new logger
+            Logger.LogEvent += new FileLogger("Calculator", LogLevel.Debug).Log;
+            Logger.Debug("NegateResult: {0}", Settings.NegateResult);
         }
 
         public override void CreateMoreJobs()
         {
-            Logger.Info("Adding 50 more jobs");
+            Logger.Debug("Adding 50 more jobs");
             var random = new Random();
             for (var i = 0; i < 50; i++)
             {
@@ -24,7 +27,7 @@ namespace SimpleCalculator.Handlers
 
         public override void ProcessResult(CalculatorJobInput jobInput, CalculatorJobOutput jobResult)
         {
-            Console.WriteLine("Result: {0}", jobResult.Result * (Settings.NegateResult ? -1 : 1));
+            Logger.Info("Result: {0}", jobResult.Result * (Settings.NegateResult ? -1 : 1));
         }
     }
 }
