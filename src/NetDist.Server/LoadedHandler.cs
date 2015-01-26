@@ -102,6 +102,7 @@ namespace NetDist.Server
         private readonly object _lockObject = new object();
 
         private readonly JobScriptFile _jobScriptFile;
+        private readonly string _packageBaseFolder;
         private readonly string _currentPackageFolder;
         private string _jobAssemblyPath;
         private Task _schedulerTask;
@@ -120,6 +121,7 @@ namespace NetDist.Server
             // Initialization
             Id = Guid.NewGuid();
             _jobScriptFile = jobScriptFile;
+            _packageBaseFolder = packageBaseFolder;
             _currentPackageFolder = Path.Combine(packageBaseFolder, jobScriptFile.PackageName);
             Logger = new Logger();
             _availableJobs = new ConcurrentQueue<JobWrapper>();
@@ -213,9 +215,14 @@ namespace NetDist.Server
             result.HandlerName = _handlerSettings.HandlerName;
             result.JobName = _handlerSettings.JobName;
 
+            // Read the package information object
+            var manager = new PackageManager(_packageBaseFolder);
+            var packageInfo = manager.Get(_jobScriptFile.PackageName);
+
             // Initialize the handler
-            var pluginPath = Path.Combine(_currentPackageFolder, String.Format("{0}.dll", _jobScriptFile.PackageName));
-            var handlerAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(pluginPath));
+            // TODO: Search in more than just the first assembly
+            var handlerAssemblyPath = Path.Combine(_currentPackageFolder, packageInfo.HandlerAssemblies[0]);
+            var handlerAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(handlerAssemblyPath));
 
             // Try loading the types
             Type[] types;

@@ -52,6 +52,8 @@ namespace NetDist.Server
         /// </summary>
         private IServerSettings _settings;
 
+        private readonly PackageManager _packageManager;
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -60,6 +62,9 @@ namespace NetDist.Server
             Logger = new Logger();
             _loadedHandlers = new ConcurrentDictionary<Guid, Tuple<AppDomain, LoadedHandler>>();
             _knownClients = new ConcurrentDictionary<Guid, ExtendedClientInfo>();
+            _packageManager = new PackageManager(PackagesFolder);
+            // Make sure the packages folder exists
+            Directory.CreateDirectory(PackagesFolder);
         }
 
         protected void InitializeSettings(IServerSettings settings)
@@ -133,15 +138,9 @@ namespace NetDist.Server
         public List<PackageInfo> GetRegisteredPackages()
         {
             var info = new List<PackageInfo>();
-            foreach (var dir in new DirectoryInfo(PackagesFolder).EnumerateDirectories())
+            foreach (var file in new DirectoryInfo(PackagesFolder).EnumerateFiles())
             {
-                var pi = new PackageInfo();
-                pi.PackageName = dir.Name;
-                foreach (var file in dir.EnumerateFiles())
-                {
-                    pi.Files.Add(file.Name);
-                }
-                info.Add(pi);
+                info.Add(_packageManager.Get(Path.GetFileNameWithoutExtension(file.FullName)));
             }
             return info;
         }
@@ -149,8 +148,11 @@ namespace NetDist.Server
         /// <summary>
         /// Register a new package (handlers, dependencies, ...)
         /// </summary>
-        public bool RegisterPackage(byte[] zipcontent)
+        public bool RegisterPackage(PackageInfo packageInfo, byte[] zipcontent)
         {
+            // Save package information
+            _packageManager.Save(packageInfo);
+            // Unpack the zip file
             ZipUtility.ZipExtractToDirectory(zipcontent, PackagesFolder, true);
             Logger.Info("Registered new package");
             return true;
@@ -164,19 +166,19 @@ namespace NetDist.Server
         public AddJobHandlerResult AddJobHandler(string jobScriptFileContent)
         {
             // Prepare the info object
-            var info = new AddJobHandlerResult();
+            var addResult = new AddJobHandlerResult();
 
             // Parse the content
             var jobScriptFile = JobScriptFileParser.Parse(jobScriptFileContent);
             if (jobScriptFile.ParsingFailed)
             {
                 Logger.Error("Failed to parse job script: {0}", jobScriptFile.ErrorMessage);
-                info.SetError(AddJobHandlerErrorReason.ParsingFailed, jobScriptFile.ErrorMessage);
-                return info;
+                addResult.SetError(AddJobHandlerErrorReason.ParsingFailed, jobScriptFile.ErrorMessage);
+                return addResult;
             }
 
             // Add now known package name
-            info.PackageName = jobScriptFile.PackageName;
+            addResult.PackageName = jobScriptFile.PackageName;
 
             // Create an additional app-domain
             var domain = AppDomain.CreateDomain(Guid.NewGuid().ToString(), null, new AppDomainSetup
@@ -199,18 +201,18 @@ namespace NetDist.Server
             if (initResult.HasError)
             {
                 AppDomain.Unload(domain);
-                Logger.Warn("Failed to initialize handler for package: '{0}'", info.PackageName);
-                info.SetError(initResult.ErrorReason, initResult.ErrorMessage);
-                return info;
+                Logger.Warn("Failed to initialize handler for package: '{0}'", addResult.PackageName);
+                addResult.SetError(initResult.ErrorReason, initResult.ErrorMessage);
+                return addResult;
             }
             // Fill the info object from the result
-            info.HandlerId = initResult.HandlerId;
-            info.HandlerName = initResult.HandlerName;
-            info.JobName = initResult.JobName;
+            addResult.HandlerId = initResult.HandlerId;
+            addResult.HandlerName = initResult.HandlerName;
+            addResult.JobName = initResult.JobName;
             // Add the loaded handler to the dictionary
             _loadedHandlers[loadedHandler.Id] = new Tuple<AppDomain, LoadedHandler>(domain, loadedHandler);
             Logger.Info("Added handler: '{0}' ('{1}')", loadedHandler.FullName, loadedHandler.Id);
-            return info;
+            return addResult;
         }
 
         /// <summary>

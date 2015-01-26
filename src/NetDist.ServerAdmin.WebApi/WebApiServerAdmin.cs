@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Net.Http;
+using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 
 namespace NetDist.ServerAdmin.WebApi
@@ -62,7 +63,7 @@ namespace NetDist.ServerAdmin.WebApi
             return null;
         }
 
-        public override void AddPackage(byte[] packageZip)
+        public override void AddPackage(PackageInfo packageInfo, byte[] packageZip)
         {
             using (var client = new HttpClient())
             {
@@ -70,8 +71,11 @@ namespace NetDist.ServerAdmin.WebApi
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
+                var multiContent = new MultipartContent();
+                multiContent.Add(new ObjectContent<PackageInfo>(packageInfo, new JsonMediaTypeFormatter()));
+                multiContent.Add(new ByteArrayContent(packageZip));
                 // HTTP POST
-                var response = client.PostAsync("api/admin/addpackage", new ByteArrayContent(packageZip)).Result;
+                var response = client.PostAsync("api/admin/addpackage", multiContent).Result;
                 if (response.IsSuccessStatusCode)
                 {
                     var content = response.Content.ReadAsStringAsync().Result;

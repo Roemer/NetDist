@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Net.Http;
 using System.Web.Http;
+using NetDist.Core;
 
 namespace NetDist.Server.WebApi.Controllers
 {
@@ -54,8 +56,10 @@ namespace NetDist.Server.WebApi.Controllers
         [Route("addpackage")]
         public IHttpActionResult AddPackage()
         {
-            var bytes = Request.Content.ReadAsByteArrayAsync().Result;
-            var success = Server.RegisterPackage(bytes);
+            var multiPart = Request.Content.ReadAsMultipartAsync().Result;
+            var packageInfo = multiPart.Contents[0].ReadAsAsync<PackageInfo>().Result;
+            var zipFile = multiPart.Contents[1].ReadAsByteArrayAsync().Result;
+            var success = Server.RegisterPackage(packageInfo, zipFile);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 

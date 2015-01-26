@@ -128,8 +128,10 @@ namespace WpfServerAdmin
 
             PackageUploadViewModel = new PackageUploadViewModel
             {
-                MainLibraryPath = @"C:\somepath\someassembly.dll"
+                PackageName = @"ExamplePackage"
             };
+            PackageUploadViewModel.HandlerAssemblies.Add("handler1.dll");
+            PackageUploadViewModel.HandlerAssemblies.Add("handler2.dll");
             PackageUploadViewModel.Dependencies.Add("somefile.dll");
             PackageUploadViewModel.Dependencies.Add("someotherfile.dll");
         }

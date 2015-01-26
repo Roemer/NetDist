@@ -117,14 +117,29 @@ namespace WpfServerAdmin.ViewModels
                 var dialogResult = dialog.ShowDialog();
                 if (dialogResult.HasValue && dialogResult.Value)
                 {
+                    // Create the package object
+                    var packageInfo = new PackageInfo();
+                    packageInfo.PackageName = dialogViewModel.PackageName;
+                    packageInfo.HandlerAssemblies = new List<string>();
+                    foreach (var ass in dialogViewModel.HandlerAssemblies)
+                    {
+                        packageInfo.HandlerAssemblies.Add(Path.GetFileName(ass));
+                    }
+                    packageInfo.Dependencies = new List<string>();
+                    foreach (var dep in dialogViewModel.Dependencies)
+                    {
+                        packageInfo.Dependencies.Add(Path.GetFileName(dep));
+                    }
+
+                    // Prepare the infromation for the zip file
+                    var packageName = packageInfo.PackageName;
                     var filesToAdd = new List<string>();
-                    filesToAdd.Add(dialogViewModel.MainLibraryPath);
+                    filesToAdd.AddRange(dialogViewModel.HandlerAssemblies);
                     filesToAdd.AddRange(dialogViewModel.Dependencies);
                     // Create zip with files
-                    var packageName = Path.GetFileNameWithoutExtension(dialogViewModel.MainLibraryPath);
                     var zipBytes = ZipUtility.ZipCompressFilesToBytes(filesToAdd, CompressionLevel.Optimal, packageName);
                     // Uplad package zip
-                    ServerModel.Server.AddPackage(zipBytes);
+                    ServerModel.Server.AddPackage(packageInfo, zipBytes);
                 }
             });
         }

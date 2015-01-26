@@ -10,18 +10,25 @@
         Title="Package Upload" Height="365" Width="530">
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="44"/>
+            <RowDefinition Height="28"/>
             <RowDefinition Height="*"/>
-
-            <RowDefinition Height="40"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="28"/>
         </Grid.RowDefinitions>
-        <Button Content="Cancel" HorizontalAlignment="Right" Margin="0,0,10,10" Width="75" Height="20" VerticalAlignment="Bottom" Grid.Row="2" IsCancel="True"/>
-        <Button Content="Create and Upload" Margin="0,0,90,10" HorizontalAlignment="Right" Width="117" Height="20" VerticalAlignment="Bottom" Grid.Row="2" IsDefault="True" Click="Button_Click"/>
-        <TextBox Height="23" Margin="98,10,90,0" Text="{Binding MainLibraryPath}" VerticalAlignment="Top"/>
-        <Button Command="{Binding BrowseMainAssembly}"  Content="Browse" Margin="0,10,10,0" VerticalAlignment="Top" Height="20" HorizontalAlignment="Right" Width="75"/>
-        <Label Content="Main Library" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
-
-        <GroupBox Header="Dependencies (Handler and Client)" Margin="10" Grid.Row="1">
+        <DockPanel Grid.Row="0">
+            <Label Content="Package Name:" />
+            <TextBox Margin="2" Text="{Binding PackageName}"></TextBox>
+        </DockPanel>
+        <GroupBox Grid.Row="1" Header="Handler Assemblies">
+            <Grid>
+                <Grid Margin="0,0,90,0">
+                    <ListBox Name="HandlerAssembliesList" Margin="10" ItemsSource="{Binding HandlerAssemblies}" />
+                </Grid>
+                <Button Command="{Binding AddHandlerAssemblies}" Content="Add" Margin="0,10,10,0" VerticalAlignment="Top" Height="20" HorizontalAlignment="Right" Width="75"/>
+                <Button Command="{Binding RemoveHandlerAssemblies}" CommandParameter="{Binding ElementName=HandlerAssembliesList, Path=SelectedIndex}" Content="Remove" Margin="0,37,10,0" VerticalAlignment="Top" Height="20" HorizontalAlignment="Right" Width="75"/>
+            </Grid>
+        </GroupBox>
+        <GroupBox Grid.Row="2" Header="Dependencies (Handler and Client)">
             <Grid>
                 <Grid Margin="0,0,90,0">
                     <ListBox Name="DependencyList" Margin="10" ItemsSource="{Binding Dependencies}" />
@@ -30,5 +37,9 @@
                 <Button Command="{Binding RemoveDependency}" CommandParameter="{Binding ElementName=DependencyList, Path=SelectedIndex}" Content="Remove" Margin="0,37,10,0" VerticalAlignment="Top" Height="20" HorizontalAlignment="Right" Width="75"/>
             </Grid>
         </GroupBox>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" FlowDirection="RightToLeft">
+            <Button Width="72" TabIndex="45" Margin="2,2,2,2" IsCancel="True">Cancel</Button>
+            <Button Width="120" TabIndex="40" Margin="2,2,2,2" IsDefault="True" Click="Button_Click">Create and Upload</Button>
+        </StackPanel>
     </Grid>
 </Window>
