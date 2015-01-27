@@ -2,6 +2,7 @@
 using System;
 using System.Windows.Input;
 using Wpf.Shared;
+using WpfServerAdmin.Core;
 
 namespace WpfServerAdmin.ViewModels
 {
@@ -20,11 +21,12 @@ namespace WpfServerAdmin.ViewModels
 
         public ICommand StartCommand { get; private set; }
         public ICommand StopCommand { get; private set; }
+        public ICommand PauseCommand { get; private set; }
+        public ICommand DisableCommand { get; private set; }
+        public ICommand EnableCommand { get; private set; }
         public ICommand DeleteCommand { get; private set; }
 
-        public event Action<HandlerInfoViewModel> HandlerStartEvent;
-        public event Action<HandlerInfoViewModel> HandlerStopEvent;
-        public event Action<HandlerInfoViewModel> HandlerDeleteEvent;
+        public event EventHandler<HandlerEventArgs> HandlerEvent;
 
         private readonly HandlerInfo _handlerInfo;
 
@@ -32,27 +34,23 @@ namespace WpfServerAdmin.ViewModels
         {
             _handlerInfo = handlerInfo;
             Name = String.Format("{0}/{1}/{2}", _handlerInfo.PluginName, _handlerInfo.HandlerName, _handlerInfo.JobName);
-            StartCommand = new RelayCommand(param => { OnHandlerStartEvent(this); }, o => HandlerState == HandlerState.Stopped);
-            StopCommand = new RelayCommand(param => { OnHandlerStopEvent(this); }, o => HandlerState == HandlerState.Running);
-            DeleteCommand = new RelayCommand(param => { OnHandlerDeleteEvent(this); });
+            StartCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.Start, _handlerInfo.Id))
+                , o => HandlerState == HandlerState.Stopped || HandlerState == HandlerState.Paused || HandlerState == HandlerState.Idle);
+            StopCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.Stop, _handlerInfo.Id))
+                , o => HandlerState == HandlerState.Running);
+            PauseCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.Pause, _handlerInfo.Id))
+                , o => HandlerState == HandlerState.Running);
+            DisableCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.Disable, _handlerInfo.Id))
+                , o => HandlerState != HandlerState.Disabled);
+            EnableCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.Enable, _handlerInfo.Id))
+                , o => HandlerState == HandlerState.Disabled);
+            DeleteCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.Delete, _handlerInfo.Id)));
         }
 
-        private void OnHandlerStartEvent(HandlerInfoViewModel obj)
+        protected virtual void OnHandlerEvent(HandlerEventArgs e)
         {
-            var handler = HandlerStartEvent;
-            if (handler != null) handler(obj);
-        }
-
-        private void OnHandlerStopEvent(HandlerInfoViewModel obj)
-        {
-            var handler = HandlerStopEvent;
-            if (handler != null) handler(obj);
-        }
-
-        private void OnHandlerDeleteEvent(HandlerInfoViewModel obj)
-        {
-            var handler = HandlerDeleteEvent;
-            if (handler != null) handler(obj);
+            var handler = HandlerEvent;
+            if (handler != null) handler(this, e);
         }
     }
 }

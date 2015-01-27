@@ -61,7 +61,7 @@ namespace NetDist.Server
         /// <summary>
         /// Time when the handler was last started
         /// </summary>
-        public DateTime? LastStartTime { get; set; }
+        private DateTime? LastStartTime { get; set; }
 
         /// <summary>
         /// Time when the handler will start next time
@@ -111,6 +111,7 @@ namespace NetDist.Server
         private CancellationTokenSource _controlTaskCancelToken = new CancellationTokenSource();
         private readonly AutoResetEvent _jobsEmptyWaitHandle = new AutoResetEvent(false);
         private readonly AutoResetEvent _resultAvailableWaitHandle = new AutoResetEvent(false);
+        private readonly AutoResetEvent _pauseWaitHandle = new AutoResetEvent(false);
         private CrontabSchedule _cronSchedule;
 
         /// <summary>
@@ -292,14 +293,17 @@ namespace NetDist.Server
                 {
                     while (!_schedulerTaskCancelToken.IsCancellationRequested)
                     {
-                        if (NextStartTime < DateTime.Now)
+                        if (HandlerState != HandlerState.Disabled)
                         {
-                            lock (_lockObject)
+                            if (NextStartTime < DateTime.Now)
                             {
-                                if (HandlerState != HandlerState.Running)
+                                lock (_lockObject)
                                 {
-                                    StartJobHandler();
-                                    NextStartTime = _cronSchedule.GetNextOccurrence(DateTime.Now);
+                                    if (HandlerState != HandlerState.Running)
+                                    {
+                                        Start();
+                                        NextStartTime = _cronSchedule.GetNextOccurrence(DateTime.Now);
+                                    }
                                 }
                             }
                         }
@@ -311,7 +315,7 @@ namespace NetDist.Server
             // Autostart if wanted
             if (_handlerSettings.AutoStart)
             {
-                StartJobHandler();
+                Start();
             }
 
             // Fill and return the info object
@@ -364,6 +368,9 @@ namespace NetDist.Server
             return hInfo;
         }
 
+        /// <summary>
+        /// Get relevant information for the client for this handler
+        /// </summary>
         public HandlerJobInfo GetJobInfo()
         {
             var hInfo = new HandlerJobInfo
@@ -375,6 +382,9 @@ namespace NetDist.Server
             return hInfo;
         }
 
+        /// <summary>
+        /// Get the content of the requested file
+        /// </summary>
         public byte[] GetFile(string file)
         {
             var fullPath = Path.Combine(_currentPackageFolder, file);
@@ -386,7 +396,7 @@ namespace NetDist.Server
         /// <summary>
         /// Starts the job handler so jobs are generated and processed
         /// </summary>
-        public void StartJobHandler()
+        public bool Start()
         {
             lock (_lockObject)
             {
@@ -399,19 +409,28 @@ namespace NetDist.Server
                     _controlTask.ContinueWith(t =>
                     {
                         Logger.Error(t.Exception, "Exception in handler '{0}'", Id);
-                        StopJobHandler();
+                        Stop();
                     }, TaskContinuationOptions.OnlyOnFaulted);
                     HandlerState = HandlerState.Running;
                     _controlTask.Start();
                     LastStartTime = DateTime.Now;
+                    return true;
+                }
+                // If it is just paused, set it to running
+                if (HandlerState == HandlerState.Paused)
+                {
+                    HandlerState = HandlerState.Running;
+                    _pauseWaitHandle.Set();
+                    return true;
                 }
             }
+            return false;
         }
 
         /// <summary>
         /// Stops the job handler
         /// </summary>
-        public bool StopJobHandler()
+        public bool Stop()
         {
             lock (_lockObject)
             {
@@ -440,6 +459,46 @@ namespace NetDist.Server
                     Interlocked.Exchange(ref _totalFailedJobs, 0);
                     // Signal the handler to stop
                     _handler.OnStop();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Set the handler state to paused
+        /// </summary>
+        public bool Pause()
+        {
+            lock (_lockObject)
+            {
+                if (HandlerState == HandlerState.Running)
+                {
+                    HandlerState = HandlerState.Paused;
+                    _pauseWaitHandle.Reset();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public bool Disable()
+        {
+            lock (_lockObject)
+            {
+                Stop();
+                HandlerState = HandlerState.Disabled;
+            }
+            return true;
+        }
+
+        public bool Enable()
+        {
+            lock (_lockObject)
+            {
+                if (HandlerState == HandlerState.Disabled)
+                {
+                    HandlerState = HandlerState.Idle;
                     return true;
                 }
             }
@@ -553,6 +612,12 @@ namespace NetDist.Server
 
             while (!_controlTaskCancelToken.IsCancellationRequested)
             {
+                // Block until unpaused
+                if (HandlerState == HandlerState.Paused)
+                {
+                    _pauseWaitHandle.WaitOne();
+                }
+
                 // Collect results
                 JobWrapper finishedJob;
                 while (_finishedJobs.TryDequeue(out finishedJob))

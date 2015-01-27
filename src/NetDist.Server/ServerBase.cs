@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualBasic.Devices;
 using NetDist.Core;
+using NetDist.Core.Extensions;
 using NetDist.Core.Utilities;
 using NetDist.Jobs.DataContracts;
 using NetDist.Logging;
@@ -25,7 +26,7 @@ namespace NetDist.Server
         /// <summary>
         /// Dictionary which holds all currently loaded handlers
         /// </summary>
-        private readonly ConcurrentDictionary<Guid, Tuple<AppDomain, LoadedHandler>> _loadedHandlers;
+        private readonly Dictionary<Guid, Tuple<AppDomain, LoadedHandler>> _loadedHandlers;
 
         /// <summary>
         /// Dictionary which olds information about the known clients
@@ -60,16 +61,20 @@ namespace NetDist.Server
         protected ServerBase()
         {
             Logger = new Logger();
-            _loadedHandlers = new ConcurrentDictionary<Guid, Tuple<AppDomain, LoadedHandler>>();
+            _loadedHandlers = new Dictionary<Guid, Tuple<AppDomain, LoadedHandler>>();
             _knownClients = new ConcurrentDictionary<Guid, ExtendedClientInfo>();
             _packageManager = new PackageManager(PackagesFolder);
             // Make sure the packages folder exists
             Directory.CreateDirectory(PackagesFolder);
         }
 
+        /// <summary>
+        /// Initialize with the given settings
+        /// </summary>
         protected void InitializeSettings(IServerSettings settings)
         {
             _settings = settings;
+            // Autostart if wanted
             if (settings.AutoStart)
             {
                 Start();
@@ -146,7 +151,7 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Register a new package (handlers, dependencies, ...)
+        /// Register a package (handlers, dependencies, ...)
         /// </summary>
         public bool RegisterPackage(PackageInfo packageInfo, byte[] zipcontent)
         {
@@ -154,7 +159,7 @@ namespace NetDist.Server
             _packageManager.Save(packageInfo);
             // Unpack the zip file
             ZipUtility.ZipExtractToDirectory(zipcontent, PackagesFolder, true);
-            Logger.Info("Registered new package");
+            Logger.Info("Registered package '{0}' with {1} handler file(s) and {2} dependent file(s)", packageInfo.PackageName, packageInfo.HandlerAssemblies.Count, packageInfo.Dependencies.Count);
             return true;
         }
 
@@ -220,20 +225,28 @@ namespace NetDist.Server
         /// </summary>
         public bool RemoveJobHandler(Guid handlerId)
         {
-            Tuple<AppDomain, LoadedHandler> removedItem;
-            var success = _loadedHandlers.TryRemove(handlerId, out removedItem);
-            if (success)
+            Tuple<AppDomain, LoadedHandler> removedItem = null;
+            lock (_loadedHandlers.GetSyncRoot())
+            {
+                if (_loadedHandlers.ContainsKey(handlerId))
+                {
+                    removedItem = _loadedHandlers[handlerId];
+                    _loadedHandlers.Remove(handlerId);
+                }
+            }
+            if (removedItem != null)
             {
                 var handlerName = removedItem.Item2.FullName;
                 // Stop the handler
-                removedItem.Item2.StopJobHandler();
+                removedItem.Item2.Stop();
                 // Signal it to cleanup it's resources
                 removedItem.Item2.Shutdown();
                 // Unload the domain
                 AppDomain.Unload(removedItem.Item1);
                 Logger.Info("Removed handler: '{0}' ('{1}')", handlerName, handlerId);
+                return true;
             }
-            return success;
+            return false;
         }
 
         /// <summary>
@@ -241,13 +254,11 @@ namespace NetDist.Server
         /// </summary>
         public bool StartJobHandler(Guid id)
         {
-            Logger.Info("Starting Handler: '{0}'", id);
-            if (_loadedHandlers.ContainsKey(id))
+            return ExecuteOnHandler(id, handler =>
             {
-                _loadedHandlers[id].Item2.StartJobHandler();
-                return true;
-            }
-            return false;
+                Logger.Info("Starting handler '{0}'", handler.FullName);
+                return handler.Start();
+            });
         }
 
         /// <summary>
@@ -255,16 +266,55 @@ namespace NetDist.Server
         /// </summary>
         public bool StopJobHandler(Guid id)
         {
-            if (_loadedHandlers.ContainsKey(id))
+            return ExecuteOnHandler(id, handler =>
             {
-                var loadedHandler = _loadedHandlers[id].Item2;
-                var handlerStopped = loadedHandler.StopJobHandler();
-                if (handlerStopped)
+                Logger.Info("Stopping handler '{0}'", handler.FullName);
+                return handler.Stop();
+            });
+        }
+
+        public bool PauseJobHandler(Guid id)
+        {
+            return ExecuteOnHandler(id, handler =>
+            {
+                Logger.Info("Pausing handler '{0}'", handler.FullName);
+                return handler.Pause();
+            });
+        }
+
+        public bool DisableJobHandler(Guid id)
+        {
+            return ExecuteOnHandler(id, handler =>
+            {
+                Logger.Info("Disabling handler '{0}'", handler.FullName);
+                return handler.Disable();
+            });
+        }
+
+        public bool EnableJobHandler(Guid id)
+        {
+            return ExecuteOnHandler(id, handler =>
+            {
+                Logger.Info("Enabling handler '{0}'", handler.FullName);
+                return handler.Enable();
+            });
+        }
+
+        /// <summary>
+        /// Helper method to execute an action on a handler (if it exists)
+        /// </summary>
+        private bool ExecuteOnHandler(Guid handlerId, Func<LoadedHandler, bool> successAction)
+        {
+            lock (_loadedHandlers.GetSyncRoot())
+            {
+                if (_loadedHandlers.ContainsKey(handlerId))
                 {
-                    Logger.Info("Stopped Handler: '{0}' ('{1}')", loadedHandler.FullName, id);
+                    var loadedHandler = _loadedHandlers[handlerId].Item2;
+                    var retValue = successAction(loadedHandler);
+                    return retValue;
                 }
-                return handlerStopped;
             }
+            Logger.Warn("Handler '{0}' not found to execute action", handlerId);
             return false;
         }
 

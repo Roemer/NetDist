@@ -122,22 +122,30 @@ namespace NetDist.ServerAdmin.WebApi
 
         public override void StartJobHandler(Guid handlerId)
         {
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(_settings.ServerUri);
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                // HTTP GET
-                var response = client.GetAsync(String.Concat("api/admin/startjobhandler", "/", handlerId)).Result;
-                if (response.IsSuccessStatusCode)
-                {
-                    var content = response.Content.ReadAsStringAsync().Result;
-                }
-            }
+            CallJobHandlerAction(handlerId, "startjobhandler");
         }
 
         public override void StopJobHandler(Guid handlerId)
+        {
+            CallJobHandlerAction(handlerId, "stopjobhandler");
+        }
+
+        public override void PauseJobHandler(Guid handlerId)
+        {
+            CallJobHandlerAction(handlerId, "pausejobhandler");
+        }
+
+        public override void DisableJobHandler(Guid handlerId)
+        {
+            CallJobHandlerAction(handlerId, "disablejobhandler");
+        }
+
+        public override void EnableJobHandler(Guid handlerId)
+        {
+            CallJobHandlerAction(handlerId, "enablejobhandler");
+        }
+
+        private void CallJobHandlerAction(Guid handlerId, string method)
         {
             using (var client = new HttpClient())
             {
@@ -146,7 +154,7 @@ namespace NetDist.ServerAdmin.WebApi
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 // HTTP GET
-                var response = client.GetAsync(String.Concat("api/admin/stopjobhandler", "/", handlerId)).Result;
+                var response = client.GetAsync(String.Concat("api/admin/", method, "/", handlerId)).Result;
                 if (response.IsSuccessStatusCode)
                 {
                     var content = response.Content.ReadAsStringAsync().Result;

@@ -10,6 +10,7 @@ using System.IO.Compression;
 using System.Windows;
 using System.Windows.Input;
 using Wpf.Shared;
+using WpfServerAdmin.Core;
 using WpfServerAdmin.Models;
 using WpfServerAdmin.Views;
 
@@ -150,9 +151,30 @@ namespace WpfServerAdmin.ViewModels
             {
                 foreach (HandlerInfoViewModel item in e.NewItems)
                 {
-                    item.HandlerStartEvent += model => ServerModel.Server.StartJobHandler(model.Id);
-                    item.HandlerStopEvent += model => ServerModel.Server.StopJobHandler(model.Id);
-                    item.HandlerDeleteEvent += model => ServerModel.Server.RemoveJobHandler(model.Id);
+                    item.HandlerEvent += (o, args) =>
+                    {
+                        switch (args.EventType)
+                        {
+                            case HandlerEventType.Start:
+                                ServerModel.Server.StartJobHandler(args.HandlerId);
+                                break;
+                            case HandlerEventType.Stop:
+                                ServerModel.Server.StopJobHandler(args.HandlerId);
+                                break;
+                            case HandlerEventType.Pause:
+                                ServerModel.Server.PauseJobHandler(args.HandlerId);
+                                break;
+                            case HandlerEventType.Disable:
+                                ServerModel.Server.DisableJobHandler(args.HandlerId);
+                                break;
+                            case HandlerEventType.Enable:
+                                ServerModel.Server.EnableJobHandler(args.HandlerId);
+                                break;
+                            case HandlerEventType.Delete:
+                                ServerModel.Server.RemoveJobHandler(args.HandlerId);
+                                break;
+                        }
+                    };
                 }
             }
         }

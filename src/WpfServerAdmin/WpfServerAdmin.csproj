@@ -56,6 +56,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Core\HandlerEventArgs.cs" />
+    <Compile Include="Core\HandlerEventType.cs" />
     <Compile Include="Models\ServerModel.cs" />
     <Compile Include="SampleDataContext.cs" />
     <Compile Include="ViewModels\ClientInfoViewModel.cs" />
@@ -142,6 +144,14 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="admin.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\disable.png" />
+    <Resource Include="Resources\enable.png" />
+    <Resource Include="Resources\pause.png" />
+    <Resource Include="Resources\remove.png" />
+    <Resource Include="Resources\start.png" />
+    <Resource Include="Resources\stop.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

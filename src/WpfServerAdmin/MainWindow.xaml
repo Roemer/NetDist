@@ -8,10 +8,17 @@
         xmlns:viewModels="clr-namespace:WpfServerAdmin.ViewModels"
         d:DataContext="{x:Static wpfServerAdmin:SampleDataContext.MainInfoViewModel}"
         Icon="admin.ico"
-        Title="NetDist Wpf Server Administrator" Height="373" Width="741" ResizeMode="CanResizeWithGrip">
+        Title="NetDist Wpf Server Administrator" Height="373" Width="806.745" ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <BitmapImage x:Key="CpuImageSource" UriSource="Resources/cpu.png" />
         <BitmapImage x:Key="RamImageSource" UriSource="Resources/ram.png" />
+        <Style x:Key="ImageDisabledTriggerStyle" TargetType="Image">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.5"></Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top">
@@ -132,24 +139,35 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Actions">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                        <Button Content="Start" Command="{Binding StartCommand}"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn>
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                        <Button Content="Stop" Command="{Binding StopCommand}" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn>
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                        <Button Content="Delete" Command="{Binding DeleteCommand}" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Command="{Binding StartCommand}" ToolTipService.ShowOnDisabled="True">
+                                                <Button.ToolTip>Start</Button.ToolTip>
+                                                <Image Width="20" Source="Resources/start.png" Style="{StaticResource ImageDisabledTriggerStyle}" />
+                                            </Button>
+                                            <Button Command="{Binding StopCommand}" ToolTipService.ShowOnDisabled="True">
+                                                <Button.ToolTip>Stop</Button.ToolTip>
+                                                <Image Width="20" Source="Resources/stop.png" Style="{StaticResource ImageDisabledTriggerStyle}" />
+                                            </Button>
+                                            <Button Command="{Binding PauseCommand}" ToolTipService.ShowOnDisabled="True">
+                                                <Button.ToolTip>Pause</Button.ToolTip>
+                                                <Image Width="20" Source="Resources/pause.png" Style="{StaticResource ImageDisabledTriggerStyle}" />
+                                            </Button>
+                                            <Button Command="{Binding EnableCommand}" ToolTipService.ShowOnDisabled="True">
+                                                <Button.ToolTip>Enable</Button.ToolTip>
+                                                <Image Width="20" Source="Resources/enable.png" Style="{StaticResource ImageDisabledTriggerStyle}" />
+                                            </Button>
+                                            <Button Command="{Binding DisableCommand}" ToolTipService.ShowOnDisabled="True">
+                                                <Button.ToolTip>Disable</Button.ToolTip>
+                                                <Image Width="20" Source="Resources/disable.png" Style="{StaticResource ImageDisabledTriggerStyle}" />
+                                            </Button>
+                                            <Button Command="{Binding DeleteCommand}" ToolTipService.ShowOnDisabled="True">
+                                                <Button.ToolTip>Delete</Button.ToolTip>
+                                                <Image Width="20" Source="Resources/remove.png" Style="{StaticResource ImageDisabledTriggerStyle}" />
+                                            </Button>
+                                        </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>

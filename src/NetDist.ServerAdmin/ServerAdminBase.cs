@@ -12,5 +12,8 @@ namespace NetDist.ServerAdmin
         public abstract void RemoveJobHandler(Guid handlerId);
         public abstract void StartJobHandler(Guid handlerId);
         public abstract void StopJobHandler(Guid handlerId);
+        public abstract void PauseJobHandler(Guid handlerId);
+        public abstract void EnableJobHandler(Guid handlerId);
+        public abstract void DisableJobHandler(Guid handlerId);
     }
 }

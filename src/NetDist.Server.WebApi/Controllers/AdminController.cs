@@ -52,6 +52,30 @@ namespace NetDist.Server.WebApi.Controllers
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
+        [HttpGet]
+        [Route("pausejobhandler/{id}")]
+        public IHttpActionResult PauseJobHandler(Guid id)
+        {
+            var success = Server.PauseJobHandler(id);
+            return success ? (IHttpActionResult)Ok() : BadRequest();
+        }
+
+        [HttpGet]
+        [Route("disablejobhandler/{id}")]
+        public IHttpActionResult DisableJobHandler(Guid id)
+        {
+            var success = Server.DisableJobHandler(id);
+            return success ? (IHttpActionResult)Ok() : BadRequest();
+        }
+
+        [HttpGet]
+        [Route("enablejobhandler/{id}")]
+        public IHttpActionResult EnableJobHandler(Guid id)
+        {
+            var success = Server.EnableJobHandler(id);
+            return success ? (IHttpActionResult)Ok() : BadRequest();
+        }
+
         [HttpPost]
         [Route("addpackage")]
         public IHttpActionResult AddPackage()
