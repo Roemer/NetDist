@@ -52,6 +52,7 @@
     <Compile Include="ServerBase.cs" />
     <Compile Include="XDomainObjects\JobHandlerInitializeResult.cs" />
     <Compile Include="XDomainObjects\JobScriptFile.cs" />
+    <Compile Include="XDomainObjects\LoadedHandlerProxy.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NetDist.Core\NetDist.Core.csproj">

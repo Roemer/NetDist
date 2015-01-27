@@ -22,10 +22,9 @@ using System.Threading.Tasks;
 namespace NetDist.Server
 {
     /// <summary>
-    /// Represents a handler which is loaded and active
-    /// This object runs in it's own domain
+    /// Represents a handler which is loaded. Contains the user-defined handler and eveything needed to control it
     /// </summary>
-    public class LoadedHandler : MarshalByRefObject
+    public class LoadedHandler
     {
         /// <summary>
         /// Logger object
@@ -51,7 +50,12 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Full name of the handler: PluginName/HandlerName/JobName
+        /// Package name of the package of this handler
+        /// </summary>
+        public string PackageName { get { return _jobScriptFile.PackageName; } }
+
+        /// <summary>
+        /// Full name of the handler: PackageName/HandlerName/JobName
         /// </summary>
         public string FullName
         {
@@ -105,19 +109,18 @@ namespace NetDist.Server
         private readonly string _packageBaseFolder;
         private readonly string _currentPackageFolder;
         private string _jobAssemblyPath;
-        private Task _schedulerTask;
         private Task _controlTask;
-        private CancellationTokenSource _schedulerTaskCancelToken = new CancellationTokenSource();
         private CancellationTokenSource _controlTaskCancelToken = new CancellationTokenSource();
         private readonly AutoResetEvent _jobsEmptyWaitHandle = new AutoResetEvent(false);
         private readonly AutoResetEvent _resultAvailableWaitHandle = new AutoResetEvent(false);
         private readonly AutoResetEvent _pauseWaitHandle = new AutoResetEvent(false);
-        private CrontabSchedule _cronSchedule;
+        private readonly AutoResetEvent _disabledWaitHandle = new AutoResetEvent(false);
+        CrontabSchedule _cronSchedule;
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public LoadedHandler(JobScriptFile jobScriptFile, string packageBaseFolder)
+        public LoadedHandler(string packageBaseFolder, JobScriptFile jobScriptFile)
         {
             // Initialization
             Id = Guid.NewGuid();
@@ -129,15 +132,6 @@ namespace NetDist.Server
             _pendingJobs = new Dictionary<Guid, JobWrapper>();
             _finishedJobs = new ConcurrentQueue<JobWrapper>();
             HandlerState = HandlerState.Stopped;
-        }
-
-        /// <summary>
-        /// Lifetime override of the proxy object
-        /// </summary>
-        public override object InitializeLifetimeService()
-        {
-            // Infinite lifetime
-            return null;
         }
 
         /// <summary>
@@ -267,11 +261,12 @@ namespace NetDist.Server
             handlerInstance.Initialize();
             // Event when a job was added
             handlerInstance.EnqueueJobEvent += EnqueueJob;
+            // Initial state is stopped
+            HandlerState = HandlerState.Stopped;
             // Assign the handler
             _handler = handlerInstance;
 
             // Initialize cron scheduler
-            _cronSchedule = null;
             NextStartTime = null;
             if (!String.IsNullOrWhiteSpace(_handlerSettings.Schedule))
             {
@@ -286,31 +281,15 @@ namespace NetDist.Server
                 }
             }
 
-            // Small task to regularly check for a scheduled start
-            if (_cronSchedule != null)
+            // Start the control thread
+            _controlTaskCancelToken = new CancellationTokenSource();
+            _controlTask = new Task(ControlThread, _controlTaskCancelToken.Token);
+            _controlTask.ContinueWith(t =>
             {
-                _schedulerTask = Task.Factory.StartNew(() =>
-                {
-                    while (!_schedulerTaskCancelToken.IsCancellationRequested)
-                    {
-                        if (HandlerState != HandlerState.Disabled)
-                        {
-                            if (NextStartTime < DateTime.Now)
-                            {
-                                lock (_lockObject)
-                                {
-                                    if (HandlerState != HandlerState.Running)
-                                    {
-                                        Start();
-                                        NextStartTime = _cronSchedule.GetNextOccurrence(DateTime.Now);
-                                    }
-                                }
-                            }
-                        }
-                        Thread.Sleep(5000);
-                    }
-                }, _schedulerTaskCancelToken.Token);
-            }
+                Logger.Fatal(t.Exception, "Exception in handler '{0}'", Id);
+                Stop();
+            }, TaskContinuationOptions.OnlyOnFaulted);
+            _controlTask.Start();
 
             // Autostart if wanted
             if (_handlerSettings.AutoStart)
@@ -326,17 +305,20 @@ namespace NetDist.Server
         /// <summary>
         /// Clear all resources
         /// </summary>
-        public void Shutdown()
+        public bool TearDown()
         {
-            if (_schedulerTask != null)
+            Disable();
+            if (_controlTask != null)
             {
-                _schedulerTaskCancelToken.Cancel();
+                // Notify the control task to stop
+                _controlTaskCancelToken.Cancel();
                 // Wait until the task is finished (but not when faulted)
-                if (!_schedulerTask.IsFaulted)
+                if (!_controlTask.IsFaulted)
                 {
-                    _schedulerTask.Wait();
+                    _controlTask.Wait();
                 }
             }
+            return true;
         }
 
         /// <summary>
@@ -383,44 +365,26 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Get the content of the requested file
-        /// </summary>
-        public byte[] GetFile(string file)
-        {
-            var fullPath = Path.Combine(_currentPackageFolder, file);
-            if (!File.Exists(fullPath)) { return null; }
-            var content = File.ReadAllBytes(fullPath);
-            return content;
-        }
-
-        /// <summary>
         /// Starts the job handler so jobs are generated and processed
         /// </summary>
         public bool Start()
         {
             lock (_lockObject)
             {
-                // Check if the control thread is not yet running
-                if (_controlTask == null)
-                {
-                    // Start the control task
-                    _controlTaskCancelToken = new CancellationTokenSource();
-                    _controlTask = new Task(ControlThread, _controlTaskCancelToken.Token);
-                    _controlTask.ContinueWith(t =>
-                    {
-                        Logger.Error(t.Exception, "Exception in handler '{0}'", Id);
-                        Stop();
-                    }, TaskContinuationOptions.OnlyOnFaulted);
-                    HandlerState = HandlerState.Running;
-                    _controlTask.Start();
-                    LastStartTime = DateTime.Now;
-                    return true;
-                }
-                // If it is just paused, set it to running
                 if (HandlerState == HandlerState.Paused)
                 {
+                    // Continue processing
                     HandlerState = HandlerState.Running;
                     _pauseWaitHandle.Set();
+                    return true;
+                }
+                // Start if
+                if (HandlerState == HandlerState.Stopped || HandlerState == HandlerState.Finished)
+                {
+                    // Notify the handler that it has started
+                    _handler.OnStart();
+                    HandlerState = HandlerState.Running;
+                    LastStartTime = DateTime.Now;
                     return true;
                 }
             }
@@ -434,20 +398,10 @@ namespace NetDist.Server
         {
             lock (_lockObject)
             {
-                // Check if the control thread is running
-                if (_controlTask != null)
+                if (HandlerState == HandlerState.Running || HandlerState == HandlerState.Paused)
                 {
-                    // Notify the task to stop
-                    _controlTaskCancelToken.Cancel();
-                    // Wait until the task is finished (but not when faulted)
-                    if (!_controlTask.IsFaulted)
-                    {
-                        _controlTask.Wait();
-                    }
                     // Set the state to stopped
                     HandlerState = HandlerState.Stopped;
-                    // Reset the control task
-                    _controlTask = null;
                     // Clear the various queues/lists/stats
                     _availableJobs = new ConcurrentQueue<JobWrapper>();
                     lock (_pendingJobs.GetSyncRoot())
@@ -472,7 +426,7 @@ namespace NetDist.Server
         {
             lock (_lockObject)
             {
-                if (HandlerState == HandlerState.Running)
+                if (HandlerState == HandlerState.Running || HandlerState == HandlerState.Idle)
                 {
                     HandlerState = HandlerState.Paused;
                     _pauseWaitHandle.Reset();
@@ -482,6 +436,9 @@ namespace NetDist.Server
             return false;
         }
 
+        /// <summary>
+        /// Stop and disable processing
+        /// </summary>
         public bool Disable()
         {
             lock (_lockObject)
@@ -492,13 +449,17 @@ namespace NetDist.Server
             return true;
         }
 
+        /// <summary>
+        /// Re-enable processing
+        /// </summary>
         public bool Enable()
         {
             lock (_lockObject)
             {
                 if (HandlerState == HandlerState.Disabled)
                 {
-                    HandlerState = HandlerState.Idle;
+                    HandlerState = HandlerState.Stopped;
+                    _disabledWaitHandle.Set();
                     return true;
                 }
             }
@@ -508,8 +469,14 @@ namespace NetDist.Server
         /// <summary>
         /// Gets the next job from the available queue
         /// </summary>
-        public Job GetNextJob(Guid clientId)
+        public Job GetJob(Guid clientId)
         {
+            // Don't send out new jobs when not running
+            if (HandlerState != HandlerState.Running)
+            {
+                return null;
+            }
+
             JobWrapper assignedJob;
             var success = _availableJobs.TryDequeue(out assignedJob);
             if (success)
@@ -600,22 +567,103 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Control thread for this handler which is run when it is started
+        /// Control thread for this handler which is run while the handler exists
         /// - Refills the job-queue if needed
         /// - Checks for job timeouts and then resends the jobs
         /// - Collects and processes the results
+        /// - Controls various timings (idle-time, disabled, ...)
         /// </summary>
         private void ControlThread()
         {
-            // Notify the handler that it has started
-            _handler.OnStart();
+            // Initialize
+            const int defaultSleep = 5000;
 
+            // Initialize idle time
+            TimeSpan idleTimeStart = TimeSpan.Zero;
+            TimeSpan idleTimeEnd = TimeSpan.Zero;
+            bool hasValidIdleTime = false;
+            if (!String.IsNullOrWhiteSpace(_handlerSettings.IdleTime) && _handlerSettings.IdleTime.Contains("-"))
+            {
+                var idleTimeParts = _handlerSettings.IdleTime.Split(new[] { "-" }, StringSplitOptions.RemoveEmptyEntries);
+                var validFrom = TimeSpan.TryParse(idleTimeParts[0], out idleTimeStart);
+                var validTo = TimeSpan.TryParse(idleTimeParts[1], out idleTimeEnd);
+                if (validFrom && validTo)
+                {
+                    hasValidIdleTime = true;
+                }
+            }
+
+            // Control loop until the handler is being removed
             while (!_controlTaskCancelToken.IsCancellationRequested)
             {
+                // Block until re-enabled
+                if (HandlerState == HandlerState.Disabled)
+                {
+                    _disabledWaitHandle.WaitOne();
+                }
+
                 // Block until unpaused
                 if (HandlerState == HandlerState.Paused)
                 {
                     _pauseWaitHandle.WaitOne();
+                }
+
+                // (Re)start the handler if possible and needed
+                if (_cronSchedule != null)
+                {
+                    if (HandlerState == HandlerState.Finished || HandlerState == HandlerState.Stopped)
+                    {
+                        // Check if it should start according to the schedule
+                        if (NextStartTime < DateTime.Now)
+                        {
+                            lock (_lockObject)
+                            {
+                                Start();
+                            }
+                            NextStartTime = _cronSchedule.GetNextOccurrence(DateTime.Now);
+                        }
+                        else
+                        {
+                            // Don't to anything
+                            Thread.Sleep(defaultSleep);
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        // Handler is running, calculate the next start date from the current time
+                        NextStartTime = _cronSchedule.GetNextOccurrence(DateTime.Now);
+                    }
+                }
+
+                // Check for idle
+                bool isInIdleTime = false;
+                if (hasValidIdleTime)
+                {
+                    // Set to idle if needed
+                    var now = DateTime.Now.TimeOfDay;
+                    if (idleTimeStart < idleTimeEnd)
+                    {
+                        if (now >= idleTimeStart && now <= idleTimeEnd) { isInIdleTime = true; }
+                    }
+                    else
+                    {
+                        if (now >= idleTimeStart || now <= idleTimeEnd) { isInIdleTime = true; }
+                    }
+                }
+
+                // Check if we're outside the idletime but the handler is still idle
+                if (!isInIdleTime && HandlerState == HandlerState.Idle)
+                {
+                    // Set it to running
+                    HandlerState = HandlerState.Running;
+                }
+
+                // We're inside the idle time but the handler is still running
+                if (isInIdleTime && HandlerState == HandlerState.Running)
+                {
+                    // Set it to idle
+                    HandlerState = HandlerState.Idle;
                 }
 
                 // Collect results
@@ -668,22 +716,12 @@ namespace NetDist.Server
                     {
                         _handler.OnFinished();
                         HandlerState = HandlerState.Finished;
-                        _controlTask = null;
-                        return;
                     }
                 }
 
                 // Sleep a little or until any of the various events was set
-                WaitHandle.WaitAny(new[] { _controlTaskCancelToken.Token.WaitHandle, _jobsEmptyWaitHandle, _resultAvailableWaitHandle }, 5000);
+                WaitHandle.WaitAny(new[] { _controlTaskCancelToken.Token.WaitHandle, _jobsEmptyWaitHandle, _resultAvailableWaitHandle }, defaultSleep);
             }
-        }
-
-        /// <summary>
-        /// Register the log event to the given sink
-        /// </summary>
-        public void RegisterLogEventSink(EventSink<LogEventArgs> sink)
-        {
-            Logger.LogEvent += sink.CallbackMethod;
         }
     }
 }

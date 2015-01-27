@@ -31,6 +31,13 @@ namespace NetDist.Jobs
         public string Schedule { get; set; }
 
         /// <summary>
+        /// String to define a range when the handler should not send jobs
+        /// Example:
+        /// 22:00 - 06:00
+        /// </summary>
+        public string IdleTime { get; set; }
+
+        /// <summary>
         /// Names of the clients which are allowed to process this job
         /// Takes precedence if ClientsDenied is also set
         /// </summary>

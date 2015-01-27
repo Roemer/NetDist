@@ -4,6 +4,7 @@ using NetDist.Core.Extensions;
 using NetDist.Core.Utilities;
 using NetDist.Jobs.DataContracts;
 using NetDist.Logging;
+using NetDist.Server.XDomainObjects;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -26,7 +27,7 @@ namespace NetDist.Server
         /// <summary>
         /// Dictionary which holds all currently loaded handlers
         /// </summary>
-        private readonly Dictionary<Guid, Tuple<AppDomain, LoadedHandler>> _loadedHandlers;
+        private readonly Dictionary<Guid, Tuple<AppDomain, LoadedHandlerProxy>> _loadedHandlers;
 
         /// <summary>
         /// Dictionary which olds information about the known clients
@@ -61,7 +62,7 @@ namespace NetDist.Server
         protected ServerBase()
         {
             Logger = new Logger();
-            _loadedHandlers = new Dictionary<Guid, Tuple<AppDomain, LoadedHandler>>();
+            _loadedHandlers = new Dictionary<Guid, Tuple<AppDomain, LoadedHandlerProxy>>();
             _knownClients = new ConcurrentDictionary<Guid, ExtendedClientInfo>();
             _packageManager = new PackageManager(PackagesFolder);
             // Make sure the packages folder exists
@@ -195,8 +196,8 @@ namespace NetDist.Server
                 ShadowCopyFiles = "true",
                 AppDomainInitializerArguments = null
             });
-            // Create a loaded handler wrapper in the new app-domain
-            var loadedHandler = (LoadedHandler)domain.CreateInstanceAndUnwrap(typeof(LoadedHandler).Assembly.FullName, typeof(LoadedHandler).FullName, false, BindingFlags.Default, null, new object[] { jobScriptFile, PackagesFolder }, null, null);
+            // Create a proxy for the handler
+            var loadedHandler = (LoadedHandlerProxy)domain.CreateInstanceAndUnwrap(typeof(LoadedHandlerProxy).Assembly.FullName, typeof(LoadedHandlerProxy).FullName, false, BindingFlags.Default, null, new object[] { PackagesFolder, jobScriptFile }, null, null);
             // Create a interchangeable event sink to register cross-domain events to catch logging events
             var sink = new EventSink<LogEventArgs>();
             loadedHandler.RegisterLogEventSink(sink);
@@ -215,7 +216,7 @@ namespace NetDist.Server
             addResult.HandlerName = initResult.HandlerName;
             addResult.JobName = initResult.JobName;
             // Add the loaded handler to the dictionary
-            _loadedHandlers[loadedHandler.Id] = new Tuple<AppDomain, LoadedHandler>(domain, loadedHandler);
+            _loadedHandlers[loadedHandler.Id] = new Tuple<AppDomain, LoadedHandlerProxy>(domain, loadedHandler);
             Logger.Info("Added handler: '{0}' ('{1}')", loadedHandler.FullName, loadedHandler.Id);
             return addResult;
         }
@@ -225,7 +226,8 @@ namespace NetDist.Server
         /// </summary>
         public bool RemoveJobHandler(Guid handlerId)
         {
-            Tuple<AppDomain, LoadedHandler> removedItem = null;
+            // Search and remove the object from the loaded handlers
+            Tuple<AppDomain, LoadedHandlerProxy> removedItem = null;
             lock (_loadedHandlers.GetSyncRoot())
             {
                 if (_loadedHandlers.ContainsKey(handlerId))
@@ -237,10 +239,8 @@ namespace NetDist.Server
             if (removedItem != null)
             {
                 var handlerName = removedItem.Item2.FullName;
-                // Stop the handler
-                removedItem.Item2.Stop();
-                // Signal it to cleanup it's resources
-                removedItem.Item2.Shutdown();
+                // Stop and cleanup the handler
+                removedItem.Item2.TearDown();
                 // Unload the domain
                 AppDomain.Unload(removedItem.Item1);
                 Logger.Info("Removed handler: '{0}' ('{1}')", handlerName, handlerId);
@@ -301,24 +301,6 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Helper method to execute an action on a handler (if it exists)
-        /// </summary>
-        private bool ExecuteOnHandler(Guid handlerId, Func<LoadedHandler, bool> successAction)
-        {
-            lock (_loadedHandlers.GetSyncRoot())
-            {
-                if (_loadedHandlers.ContainsKey(handlerId))
-                {
-                    var loadedHandler = _loadedHandlers[handlerId].Item2;
-                    var retValue = successAction(loadedHandler);
-                    return retValue;
-                }
-            }
-            Logger.Warn("Handler '{0}' not found to execute action", handlerId);
-            return false;
-        }
-
-        /// <summary>
         /// Get a job from the current pending jobs in the handlers
         /// </summary>
         public Job GetJob(Guid clientId)
@@ -333,7 +315,7 @@ namespace NetDist.Server
                 }
                 var nextRandNumber = RandomGenerator.Instance.Next(handlersWithJobs.Length);
                 var randomHandler = handlersWithJobs[nextRandNumber];
-                var nextJob = randomHandler.Value.Item2.GetNextJob(clientId);
+                var nextJob = randomHandler.Value.Item2.GetJob(clientId);
                 if (nextJob == null)
                 {
                     // Can happen if the queue was empty between the "HasAvailableJobs" check and now
@@ -364,14 +346,14 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Gets a file from the specified handler
+        /// Gets a file from the package of the specified handler
         /// </summary>
         public byte[] GetFile(Guid handlerId, string file)
         {
             var handler = GetHandler(handlerId);
             if (handler != null)
             {
-                var fileContent = handler.GetFile(file);
+                var fileContent = _packageManager.GetFile(handler.PackageName, file);
                 return fileContent;
             }
             return null;
@@ -426,13 +408,34 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Get the handler for the given id
+        /// Try getting the handler for the given id
         /// </summary>
-        private LoadedHandler GetHandler(Guid handlerId)
+        private LoadedHandlerProxy GetHandler(Guid handlerId)
         {
-            Tuple<AppDomain, LoadedHandler> handler;
+            Tuple<AppDomain, LoadedHandlerProxy> handler;
             var hasHandler = _loadedHandlers.TryGetValue(handlerId, out handler);
             return hasHandler ? handler.Item2 : null;
+        }
+
+        /// <summary>
+        /// Helper method to execute an action on a handler (if it exists)
+        /// </summary>
+        private bool ExecuteOnHandler(Guid handlerId, Func<LoadedHandlerProxy, bool> successAction)
+        {
+            lock (_loadedHandlers.GetSyncRoot())
+            {
+                // Try getting the handler
+                var handler = GetHandler(handlerId);
+                if (handler != null)
+                {
+                    // Execute the action
+                    var retValue = successAction(handler);
+                    return retValue;
+                }
+            }
+            // Handler not found
+            Logger.Warn("Handler '{0}' not found to execute action", handlerId);
+            return false;
         }
     }
 }

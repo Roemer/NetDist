@@ -4,6 +4,10 @@ namespace NetDist.Core
     public enum HandlerState
     {
         /// <summary>
+        /// In defined idle time range
+        /// </summary>
+        Idle,
+        /// <summary>
         /// Running and processing jobs
         /// </summary>
         Running,
@@ -15,10 +19,6 @@ namespace NetDist.Core
         /// Finished all work
         /// </summary>
         Finished,
-        /// <summary>
-        /// In defined idle time range
-        /// </summary>
-        Idle,
         /// <summary>
         /// Paused, not started automatically
         /// </summary>

@@ -7,6 +7,7 @@ NetDist (short for ".Net Distribution") is a task or job distribution system for
 * Add as many clients as you want
 * All-in-one solution (server + server administrator + client)
 * Easily extensible (like other communications, currently only Web Api is implemented)
+* Idle time (timespan were a handler is not sending any jobs)
 
 ### Build Status
 |Repo|Appveyor|
@@ -39,5 +40,4 @@ Currently all the communication is implemented in Web Api. Other channels might 
 * Allow / disallow specific clients to run a job
 * Allow only one job of a specific type to concurrently run on a client
 * Notify the server about the job progress (percentage, status text)
-* Idle time (timespan were a handler is not sending any jobs)
 * MaxTimePerClient (maximum duration per day? a job can run per client)

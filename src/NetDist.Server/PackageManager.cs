@@ -3,6 +3,9 @@ using System.IO;
 
 namespace NetDist.Server
 {
+    /// <summary>
+    /// Helper class to manage the packages
+    /// </summary>
     public class PackageManager
     {
         private readonly string _packagesFolder;
@@ -15,16 +18,29 @@ namespace NetDist.Server
         public void Save(PackageInfo packageInfo)
         {
             var serializedInfo = JobObjectSerializer.Serialize(packageInfo);
-            File.WriteAllText(BuildFileName(packageInfo.PackageName), serializedInfo);
+            File.WriteAllText(BuildInfoFileName(packageInfo.PackageName), serializedInfo);
         }
 
         public PackageInfo Get(string packageName)
         {
-            var content = File.ReadAllText(BuildFileName(packageName));
+            var content = File.ReadAllText(BuildInfoFileName(packageName));
             return JobObjectSerializer.Deserialize<PackageInfo>(content);
         }
 
-        private string BuildFileName(string packageName)
+        public byte[] GetFile(string packageName, string fileName)
+        {
+            var fullPath = Path.Combine(BuildPackageFolderPath(packageName), fileName);
+            if (!File.Exists(fullPath)) { return null; }
+            var content = File.ReadAllBytes(fullPath);
+            return content;
+        }
+
+        private string BuildPackageFolderPath(string packageName)
+        {
+            return Path.Combine(_packagesFolder, packageName);
+        }
+
+        private string BuildInfoFileName(string packageName)
         {
             return Path.Combine(_packagesFolder, packageName) + ".json";
         }
