@@ -146,7 +146,7 @@ namespace NetDist.Server
             var info = new List<PackageInfo>();
             foreach (var file in new DirectoryInfo(PackagesFolder).EnumerateFiles())
             {
-                info.Add(_packageManager.Get(Path.GetFileNameWithoutExtension(file.FullName)));
+                info.Add(_packageManager.GetInfo(Path.GetFileNameWithoutExtension(file.FullName)));
             }
             return info;
         }
@@ -196,13 +196,13 @@ namespace NetDist.Server
                 AppDomainInitializerArguments = null
             });
             // Create a proxy for the handler
-            var loadedHandler = (LoadedHandlerProxy)domain.CreateInstanceAndUnwrap(typeof(LoadedHandlerProxy).Assembly.FullName, typeof(LoadedHandlerProxy).FullName, false, BindingFlags.Default, null, new object[] { PackagesFolder, jobScriptFile }, null, null);
+            var loadedHandler = (LoadedHandlerProxy)domain.CreateInstanceAndUnwrap(typeof(LoadedHandlerProxy).Assembly.FullName, typeof(LoadedHandlerProxy).FullName, false, BindingFlags.Default, null, new object[] { PackagesFolder }, null, null);
             // Create a interchangeable event sink to register cross-domain events to catch logging events
             var sink = new EventSink<LogEventArgs>();
             loadedHandler.RegisterLogEventSink(sink);
             sink.NotificationFired += (sender, args) => Logger.Log(args.LogLevel, args.Exception, args.Message);
             // Initialize the handler
-            var initResult = loadedHandler.Initialize();
+            var initResult = loadedHandler.Initialize(jobScriptFile);
             if (initResult.HasError)
             {
                 AppDomain.Unload(domain);

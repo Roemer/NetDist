@@ -1,21 +1,17 @@
-﻿using Microsoft.CSharp;
-using NCrontab;
+﻿using NCrontab;
 using NetDist.Core;
 using NetDist.Core.Extensions;
-using NetDist.Core.Utilities;
 using NetDist.Handlers;
 using NetDist.Jobs;
 using NetDist.Jobs.DataContracts;
 using NetDist.Logging;
 using NetDist.Server.XDomainObjects;
 using System;
-using System.CodeDom.Compiler;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -105,9 +101,9 @@ namespace NetDist.Server
         /// </summary>
         private readonly object _lockObject = new object();
 
-        private readonly JobScriptFile _jobScriptFile;
         private readonly string _packageBaseFolder;
-        private readonly string _currentPackageFolder;
+        private JobScriptFile _jobScriptFile;
+        private string _currentPackageFolder;
         private string _jobAssemblyPath;
         private Task _controlTask;
         private CancellationTokenSource _controlTaskCancelToken = new CancellationTokenSource();
@@ -120,13 +116,11 @@ namespace NetDist.Server
         /// <summary>
         /// Constructor
         /// </summary>
-        public LoadedHandler(string packageBaseFolder, JobScriptFile jobScriptFile)
+        public LoadedHandler(string packageBaseFolder)
         {
             // Initialization
             Id = Guid.NewGuid();
-            _jobScriptFile = jobScriptFile;
             _packageBaseFolder = packageBaseFolder;
-            _currentPackageFolder = Path.Combine(packageBaseFolder, jobScriptFile.PackageName);
             Logger = new Logger();
             _availableJobs = new ConcurrentQueue<JobWrapper>();
             _pendingJobs = new Dictionary<Guid, JobWrapper>();
@@ -137,50 +131,35 @@ namespace NetDist.Server
         /// <summary>
         /// Initializes the handler and everything it needs to run
         /// </summary>
-        public JobScriptInitializeResult Initialize()
+        public JobScriptInitializeResult Initialize(JobScriptFile jobScriptFile)
         {
+            // Initialization
+            _jobScriptFile = jobScriptFile;
+            _currentPackageFolder = Path.Combine(_packageBaseFolder, jobScriptFile.PackageName);
+
             // Preparations
             var result = new JobScriptInitializeResult
             {
                 PackageName = _jobScriptFile.PackageName
             };
 
-            // Prepare compiler
-            var codeProvider = new CSharpCodeProvider();
-            var options = new CompilerParameters
-            {
-                GenerateInMemory = false,
-                OutputAssembly = Path.Combine(_currentPackageFolder, String.Format("_job_{0}.dll", HashCalculator.CalculateMd5Hash(_jobScriptFile.JobScript))),
-                IncludeDebugInformation = true,
-                CompilerOptions = String.Format("/lib:\"{0}\"", _currentPackageFolder)
-            };
-            // Add libraries
-            foreach (var library in _jobScriptFile.CompilerLibraries)
-            {
-                options.ReferencedAssemblies.Add(library);
-            }
             // Compile it
-            var compilerResults = codeProvider.CompileAssemblyFromSource(options, _jobScriptFile.JobScript);
-            if (compilerResults.Errors.HasErrors)
+            var compileResult = JobScriptCompiler.Compile(jobScriptFile, _currentPackageFolder);
+            // Check for compilation error
+            if (compileResult.ResultType == CompileResultType.Failed)
             {
-                var sbOutput = new StringBuilder();
-                for (int i = 0; i < compilerResults.Output.Count; i++)
-                {
-                    sbOutput.AppendLine(compilerResults.Output[i]);
-                }
-                result.CompileOutput = sbOutput.ToString();
-                var sbError = new StringBuilder();
-                for (int i = 0; i < compilerResults.Errors.Count; i++)
-                {
-                    sbError.AppendFormat("{0}: {1}", i, compilerResults.Errors[i]).AppendLine();
-                }
-                var errorString = sbError.ToString();
-                Logger.Error("Failed to compile job script: {0}", errorString);
+                Logger.Error("Failed to compile job script: {0}", compileResult.ErrorString);
                 // Fill result object
-                result.SetError(AddJobScriptErrorReason.CompilationFailed, errorString);
+                result.SetError(AddJobScriptErrorReason.CompilationFailed, compileResult.ErrorString);
                 return result;
             }
-            _jobAssemblyPath = compilerResults.PathToAssembly;
+            // Check if it already was compiled
+            if (compileResult.ResultType == CompileResultType.AlreadyCompiled)
+            {
+                Logger.Info("Job script already exists");
+            }
+            // Assign the path to the output assembly
+            _jobAssemblyPath = compileResult.OutputAssembly;
             result.JobAssemblyPath = _jobAssemblyPath;
 
             // Instantiate the job to get out the settings
@@ -212,7 +191,7 @@ namespace NetDist.Server
 
             // Read the package information object
             var manager = new PackageManager(_packageBaseFolder);
-            var packageInfo = manager.Get(_jobScriptFile.PackageName);
+            var packageInfo = manager.GetInfo(_jobScriptFile.PackageName);
 
             // Initialize the handler
             // TODO: Search in more than just the first assembly

@@ -21,10 +21,15 @@ namespace NetDist.Server
             File.WriteAllText(BuildInfoFileName(packageInfo.PackageName), serializedInfo);
         }
 
-        public PackageInfo Get(string packageName)
+        public PackageInfo GetInfo(string packageName)
         {
             var content = File.ReadAllText(BuildInfoFileName(packageName));
             return JobObjectSerializer.Deserialize<PackageInfo>(content);
+        }
+
+        public string GetPackagePath(string packageName)
+        {
+            return BuildPackageFolderPath(packageName);
         }
 
         public byte[] GetFile(string packageName, string fileName)

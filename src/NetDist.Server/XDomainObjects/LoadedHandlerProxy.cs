@@ -38,9 +38,9 @@ namespace NetDist.Server.XDomainObjects
         /// <summary>
         /// Constructor
         /// </summary>
-        public LoadedHandlerProxy(string packageBaseFolder, JobScriptFile jobScriptFile)
+        public LoadedHandlerProxy(string packageBaseFolder)
         {
-            _loadedHandler = new LoadedHandler(packageBaseFolder, jobScriptFile);
+            _loadedHandler = new LoadedHandler(packageBaseFolder);
         }
 
         /// <summary>
@@ -55,9 +55,10 @@ namespace NetDist.Server.XDomainObjects
         /// <summary>
         /// Initialize the handler according all the information
         /// </summary>
-        public JobScriptInitializeResult Initialize()
+        /// <param name="jobScriptFile"></param>
+        public JobScriptInitializeResult Initialize(JobScriptFile jobScriptFile)
         {
-            return _loadedHandler.Initialize();
+            return _loadedHandler.Initialize(jobScriptFile);
         }
 
         /// <summary>
