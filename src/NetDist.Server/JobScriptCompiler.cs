@@ -1,5 +1,4 @@
 ﻿using Microsoft.CSharp;
-using NetDist.Core.Utilities;
 using NetDist.Server.XDomainObjects;
 using System;
 using System.CodeDom.Compiler;
@@ -11,8 +10,7 @@ namespace NetDist.Server
     {
         private static string BuildScriptAssemblyName(JobScriptFile jobScriptFile)
         {
-            var jobScriptHash = HashCalculator.CalculateMd5Hash(jobScriptFile.JobScript);
-            return String.Format("_job_{0}.dll", jobScriptHash);
+            return String.Format("_job_{0}.dll", jobScriptFile.Hash);
         }
 
         public static JobScriptCompileResult Compile(JobScriptFile jobScriptFile, string currentPackageFolder)

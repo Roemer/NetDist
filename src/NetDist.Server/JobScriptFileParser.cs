@@ -1,4 +1,5 @@
-﻿using NetDist.Server.XDomainObjects;
+﻿using NetDist.Core.Utilities;
+using NetDist.Server.XDomainObjects;
 using System;
 using System.Text.RegularExpressions;
 
@@ -22,8 +23,11 @@ namespace NetDist.Server
                 return CreateWithError("Content is empty");
             }
 
+            // Calculate a hash over the entire file
+            var hash = HashCalculator.CalculateMd5Hash(jobFileContent);
+
             // Build the file object
-            var jobFile = new JobScriptFile();
+            var jobFile = new JobScriptFile(hash);
 
             // Search for compiler libraries
             var compilerLibrariesString = GetValueWithRegex(jobFileContent, RegCompilerLibraries);
@@ -60,7 +64,7 @@ namespace NetDist.Server
         /// </summary>
         private static JobScriptFile CreateWithError(string errorMessage)
         {
-            var jobFile = new JobScriptFile();
+            var jobFile = new JobScriptFile(null);
             jobFile.SetError(errorMessage);
             return jobFile;
         }

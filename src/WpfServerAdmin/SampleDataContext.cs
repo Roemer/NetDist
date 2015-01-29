@@ -24,7 +24,7 @@ namespace WpfServerAdmin
             MainInfoViewModel.Handlers.Add(new HandlerInfoViewModel(new HandlerInfo
             {
                 Id = Guid.NewGuid(),
-                PluginName = "Plugin 1",
+                PackageName = "Plugin 1",
                 HandlerName = "Handler 1",
                 JobName = "Job 1",
                 HandlerState = HandlerState.Running,
@@ -40,7 +40,7 @@ namespace WpfServerAdmin
             MainInfoViewModel.Handlers.Add(new HandlerInfoViewModel(new HandlerInfo
             {
                 Id = Guid.NewGuid(),
-                PluginName = "Plugin 2",
+                PackageName = "Plugin 2",
                 HandlerName = "Handler 1",
                 JobName = "Job 3",
                 HandlerState = HandlerState.Stopped,
@@ -56,7 +56,7 @@ namespace WpfServerAdmin
             MainInfoViewModel.Handlers.Add(new HandlerInfoViewModel(new HandlerInfo
             {
                 Id = Guid.NewGuid(),
-                PluginName = "Plugin 3",
+                PackageName = "Plugin 3",
                 HandlerName = "Handler 2",
                 JobName = "Job 1",
                 HandlerState = HandlerState.Finished,

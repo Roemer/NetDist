@@ -1,7 +1,7 @@
-﻿using NetDist.Jobs;
-using System;
-using NetDist.Core;
+﻿using NetDist.Core;
+using NetDist.Jobs;
 using NetDist.Jobs.DataContracts;
+using System;
 
 namespace NetDist.Server
 {
@@ -69,10 +69,11 @@ namespace NetDist.Server
         /// <summary>
         /// Create a job out of this wrapper
         /// </summary>
-        public Job CreateJob()
+        public Job CreateJob(string hash)
         {
             var jobInputString = JobObjectSerializer.Serialize(JobInput);
-            return new Job(Id, HandlerId, jobInputString);
+            var job = new Job(Id, HandlerId, jobInputString, hash);
+            return job;
         }
     }
 }

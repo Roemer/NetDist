@@ -63,9 +63,9 @@ namespace NetDist.Server.XDomainObjects
         /// <summary>
         /// Replaces the job script assembly with a new one
         /// </summary>
-        public bool ReplaceJobScript(string newJobAssemblyPath)
+        public bool ReplaceJobScript(JobScriptFile jobScriptFile, string newJobAssemblyPath)
         {
-            return _loadedHandler.ReplaceJobScript(newJobAssemblyPath);
+            return _loadedHandler.ReplaceJobScript(jobScriptFile, newJobAssemblyPath);
         }
 
         /// <summary>

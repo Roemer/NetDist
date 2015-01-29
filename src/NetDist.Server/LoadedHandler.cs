@@ -248,13 +248,14 @@ namespace NetDist.Server
         /// <summary>
         /// Replaces the job script assembly with a new one
         /// </summary>
-        public bool ReplaceJobScript(string newJobAssemblyPath)
+        public bool ReplaceJobScript(JobScriptFile jobScriptFile, string newJobAssemblyPath)
         {
             // Don't replace it if it is the same as already registered
             if (newJobAssemblyPath == _jobAssemblyPath)
             {
                 return false;
             }
+            _jobScriptFile = jobScriptFile;
             _jobAssemblyPath = newJobAssemblyPath;
             return true;
         }
@@ -286,7 +287,7 @@ namespace NetDist.Server
             var hInfo = new HandlerInfo
             {
                 Id = Id,
-                PluginName = _jobScriptFile.PackageName,
+                PackageName = _jobScriptFile.PackageName,
                 HandlerName = _handlerSettings.HandlerName,
                 JobName = _handlerSettings.JobName,
                 JobsAvailable = _availableJobs.Count,
@@ -452,7 +453,7 @@ namespace NetDist.Server
                     // If not, set the waithandle to get new jobs
                     _jobsEmptyWaitHandle.Set();
                 }
-                return assignedJob.CreateJob();
+                return assignedJob.CreateJob(_jobScriptFile.Hash);
             }
             return null;
         }

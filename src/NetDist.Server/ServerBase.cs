@@ -221,7 +221,7 @@ namespace NetDist.Server
                     {
                         // Found an existing same handler
                         // Replace only the job file
-                        var replaceSuccess = handler.Value.Item2.ReplaceJobScript(compileResult.OutputAssembly);
+                        var replaceSuccess = handler.Value.Item2.ReplaceJobScript(jobScriptFile, compileResult.OutputAssembly);
                         if (replaceSuccess)
                         {
                             addResult.SetUpdated(AddJobScriptUpdateType.JobScriptReplaced, handler.Value.Item2.Id);

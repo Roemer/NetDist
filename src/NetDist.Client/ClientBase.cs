@@ -226,14 +226,14 @@ namespace NetDist.Client
             // Get or add the state for the current handler
             var currentHandlerState = _handlerStates.GetOrAdd(job.HandlerId, guid => new ClientHandlerState());
 
-            // Check if the handler isn't initialized yet
-            if (!currentHandlerState.IsInitialized)
+            // Check if the handler isn't initialized yet or the hash changed
+            if (!currentHandlerState.IsInitialized || currentHandlerState.Hash != job.Hash)
             {
                 // Lock the handler
                 lock (currentHandlerState)
                 {
-                    // Check again if it isn't initialized yet
-                    if (!currentHandlerState.IsInitialized)
+                    // Check again if it isn't initialized yet or the hash changed
+                    if (!currentHandlerState.IsInitialized || currentHandlerState.Hash != job.Hash)
                     {
                         // Get information about the handler
                         var handlerInfo = GetHandlerJobInfo(job.HandlerId);
@@ -265,6 +265,7 @@ namespace NetDist.Client
                         // Finish initialization
                         currentHandlerState.MainAssemblyName = mainAssemblyFullPath;
                         currentHandlerState.HandlerJobInfo = handlerInfo;
+                        currentHandlerState.Hash = job.Hash;
                         // Set as initialized
                         currentHandlerState.IsInitialized = true;
                     }

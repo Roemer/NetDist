@@ -7,5 +7,6 @@ namespace NetDist.Client
         public bool IsInitialized { get; set; }
         public string MainAssemblyName { get; set; }
         public HandlerJobInfo HandlerJobInfo { get; set; }
+        public string Hash { get; set; }
     }
 }

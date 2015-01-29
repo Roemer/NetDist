@@ -33,7 +33,7 @@ namespace WpfServerAdmin.ViewModels
         public HandlerInfoViewModel(HandlerInfo handlerInfo)
         {
             _handlerInfo = handlerInfo;
-            Name = String.Format("{0}/{1}/{2}", _handlerInfo.PluginName, _handlerInfo.HandlerName, _handlerInfo.JobName);
+            Name = String.Format("{0}/{1}/{2}", _handlerInfo.PackageName, _handlerInfo.HandlerName, _handlerInfo.JobName);
             StartCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.Start, _handlerInfo.Id))
                 , o => HandlerState == HandlerState.Stopped || HandlerState == HandlerState.Paused || HandlerState == HandlerState.Idle);
             StopCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.Stop, _handlerInfo.Id))
