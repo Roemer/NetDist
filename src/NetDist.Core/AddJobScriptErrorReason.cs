@@ -5,7 +5,7 @@
         None,
         ParsingFailed,
         CompilationFailed,
-        JobInitializerMissing,
+        HandlerInitializerMissing,
         JobScriptMissing,
         TypeException,
     }

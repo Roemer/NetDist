@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AddJobScriptErrorReason.cs" />
+    <Compile Include="AddJobScriptUpdateType.cs" />
     <Compile Include="ClientInfo.cs" />
     <Compile Include="EventSink.cs" />
     <Compile Include="ExtendedClientInfo.cs" />

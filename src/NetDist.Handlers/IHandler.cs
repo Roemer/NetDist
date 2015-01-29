@@ -51,11 +51,6 @@ namespace NetDist.Handlers
         void ProcessResult(IJobInput jobInput, string jobResultString);
 
         /// <summary>
-        /// Check if a handler is the same (to update it)
-        /// </summary>
-        bool IsSameAs(IHandler otherHandler);
-
-        /// <summary>
         /// Method which is called when the handler is started
         /// </summary>
         void OnStart();

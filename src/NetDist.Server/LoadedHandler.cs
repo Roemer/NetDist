@@ -55,7 +55,7 @@ namespace NetDist.Server
         /// </summary>
         public string FullName
         {
-            get { return String.Format("{0}/{1}/{2}", _jobScriptFile.PackageName, _handlerSettings.HandlerName, _handlerSettings.JobName); }
+            get { return Helpers.BuildFullName(_jobScriptFile.PackageName, _handlerSettings.HandlerName, _handlerSettings.JobName); }
         }
 
         /// <summary>
@@ -101,9 +101,8 @@ namespace NetDist.Server
         /// </summary>
         private readonly object _lockObject = new object();
 
-        private readonly string _packageBaseFolder;
+        private readonly PackageManager _packageManager;
         private JobScriptFile _jobScriptFile;
-        private string _currentPackageFolder;
         private string _jobAssemblyPath;
         private Task _controlTask;
         private CancellationTokenSource _controlTaskCancelToken = new CancellationTokenSource();
@@ -120,7 +119,7 @@ namespace NetDist.Server
         {
             // Initialization
             Id = Guid.NewGuid();
-            _packageBaseFolder = packageBaseFolder;
+            _packageManager = new PackageManager(packageBaseFolder);
             Logger = new Logger();
             _availableJobs = new ConcurrentQueue<JobWrapper>();
             _pendingJobs = new Dictionary<Guid, JobWrapper>();
@@ -131,11 +130,11 @@ namespace NetDist.Server
         /// <summary>
         /// Initializes the handler and everything it needs to run
         /// </summary>
-        public JobScriptInitializeResult Initialize(JobScriptFile jobScriptFile)
+        public JobScriptInitializeResult Initialize(LoadedHandlerInitializeParams loadedHandlerInitializeParams)
         {
             // Initialization
-            _jobScriptFile = jobScriptFile;
-            _currentPackageFolder = Path.Combine(_packageBaseFolder, jobScriptFile.PackageName);
+            _jobScriptFile = loadedHandlerInitializeParams.JobScriptFile;
+            var currentPackageFolder = _packageManager.GetPackagePath(_jobScriptFile.PackageName);
 
             // Preparations
             var result = new JobScriptInitializeResult
@@ -143,59 +142,23 @@ namespace NetDist.Server
                 PackageName = _jobScriptFile.PackageName
             };
 
-            // Compile it
-            var compileResult = JobScriptCompiler.Compile(jobScriptFile, _currentPackageFolder);
-            // Check for compilation error
-            if (compileResult.ResultType == CompileResultType.Failed)
-            {
-                Logger.Error("Failed to compile job script: {0}", compileResult.ErrorString);
-                // Fill result object
-                result.SetError(AddJobScriptErrorReason.CompilationFailed, compileResult.ErrorString);
-                return result;
-            }
-            // Check if it already was compiled
-            if (compileResult.ResultType == CompileResultType.AlreadyCompiled)
-            {
-                Logger.Info("Job script already exists");
-            }
             // Assign the path to the output assembly
-            _jobAssemblyPath = compileResult.OutputAssembly;
-            result.JobAssemblyPath = _jobAssemblyPath;
+            _jobAssemblyPath = loadedHandlerInitializeParams.JobAssemblyPath;
 
-            // Instantiate the job to get out the settings
-            var jobAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(_jobAssemblyPath));
-            // Search for the initializer
-            Type jobInitializerType = null;
-            foreach (var type in jobAssembly.GetTypes())
-            {
-                if (typeof(IHandlerInitializer).IsAssignableFrom(type))
-                {
-                    jobInitializerType = type;
-                    break;
-                }
-            }
-            if (jobInitializerType == null)
-            {
-                result.SetError(AddJobScriptErrorReason.JobInitializerMissing, "Job initializer type not found");
-                return result;
-            }
-            // Initialize the job
-            var jobInstance = (IHandlerInitializer)Activator.CreateInstance(jobInitializerType);
             // Read the settings
-            _handlerSettings = jobInstance.GetHandlerSettings();
-            var customSettings = jobInstance.GetCustomHandlerSettings();
+            IHandlerCustomSettings customSettings;
+            JobFileHandlerSettingsReader.LoadAssemblyAndReadSettings(_jobAssemblyPath, out _handlerSettings, out customSettings);
 
             // Add new information
             result.HandlerName = _handlerSettings.HandlerName;
             result.JobName = _handlerSettings.JobName;
 
             // Read the package information object
-            var manager = new PackageManager(_packageBaseFolder);
-            var packageInfo = manager.GetInfo(_jobScriptFile.PackageName);
+            var packageInfo = _packageManager.GetInfo(_jobScriptFile.PackageName);
 
             // Initialize the handler
             // TODO: Search in more than just the first assembly
-            var handlerAssemblyPath = Path.Combine(_currentPackageFolder, packageInfo.HandlerAssemblies[0]);
+            var handlerAssemblyPath = Path.Combine(currentPackageFolder, packageInfo.HandlerAssemblies[0]);
             var handlerAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(handlerAssemblyPath));
 
             // Try loading the types
@@ -210,6 +173,7 @@ namespace NetDist.Server
                 return result;
             }
 
+            // Search for the correct handler
             Type typeToLoad = null;
             foreach (var type in types)
             {
@@ -279,6 +243,20 @@ namespace NetDist.Server
             // Fill and return the info object
             result.HandlerId = Id;
             return result;
+        }
+
+        /// <summary>
+        /// Replaces the job script assembly with a new one
+        /// </summary>
+        public bool ReplaceJobScript(string newJobAssemblyPath)
+        {
+            // Don't replace it if it is the same as already registered
+            if (newJobAssemblyPath == _jobAssemblyPath)
+            {
+                return false;
+            }
+            _jobAssemblyPath = newJobAssemblyPath;
+            return true;
         }
 
         /// <summary>

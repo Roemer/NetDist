@@ -2,6 +2,7 @@
 using NetDist.Core;
 using NetDist.Core.Extensions;
 using NetDist.Core.Utilities;
+using NetDist.Jobs;
 using NetDist.Jobs.DataContracts;
 using NetDist.Logging;
 using NetDist.Server.XDomainObjects;
@@ -185,6 +186,57 @@ namespace NetDist.Server
             // Add now known package name
             addResult.PackageName = jobScriptFile.PackageName;
 
+            // Compile the job file
+            var compileResult = JobScriptCompiler.Compile(jobScriptFile, _packageManager.GetPackagePath(jobScriptFile.PackageName));
+            // Check for compilation error
+            if (compileResult.ResultType == CompileResultType.Failed)
+            {
+                Logger.Error("Failed to compile job script: {0}", compileResult.ErrorString);
+                addResult.SetError(AddJobScriptErrorReason.CompilationFailed, compileResult.ErrorString);
+                return addResult;
+            }
+            // Check if it already was compiled
+            if (compileResult.ResultType == CompileResultType.AlreadyCompiled)
+            {
+                Logger.Info("Job script already exists");
+            }
+
+            // Get the settings from the job file
+            HandlerSettings handlerSettings;
+            var readScuccess = JobFileHandlerSettingsReader.ReadSettingsInOwnDomain(compileResult.OutputAssembly, out handlerSettings);
+            if (!readScuccess)
+            {
+                Logger.Error("Handler initializer type not found");
+                addResult.SetError(AddJobScriptErrorReason.HandlerInitializerMissing, "Handler initializer type not found");
+                return addResult;
+            }
+
+            // Search for an already existing job handler
+            var currentFullName = Helpers.BuildFullName(jobScriptFile.PackageName, handlerSettings.HandlerName, handlerSettings.JobName);
+            lock (_loadedHandlers.GetSyncRoot())
+            {
+                foreach (var handler in _loadedHandlers)
+                {
+                    if (handler.Value.Item2.FullName == currentFullName)
+                    {
+                        // Found an existing same handler
+                        // Replace only the job file
+                        var replaceSuccess = handler.Value.Item2.ReplaceJobScript(compileResult.OutputAssembly);
+                        if (replaceSuccess)
+                        {
+                            addResult.SetUpdated(AddJobScriptUpdateType.JobScriptReplaced, handler.Value.Item2.Id);
+                            Logger.Info("Updated jobscript");
+                        }
+                        else
+                        {
+                            addResult.SetUpdated(AddJobScriptUpdateType.NoUpdateNeeded, handler.Value.Item2.Id);
+                            Logger.Info("No jobscript update needed");
+                        }
+                        return addResult;
+                    }
+                }
+            }
+
             // Create an additional app-domain
             var domain = AppDomain.CreateDomain(Guid.NewGuid().ToString(), null, new AppDomainSetup
             {
@@ -202,7 +254,13 @@ namespace NetDist.Server
             loadedHandler.RegisterLogEventSink(sink);
             sink.NotificationFired += (sender, args) => Logger.Log(args.LogLevel, args.Exception, args.Message);
             // Initialize the handler
-            var initResult = loadedHandler.Initialize(jobScriptFile);
+            var initParams = new LoadedHandlerInitializeParams
+            {
+                HandlerSettings = handlerSettings,
+                JobScriptFile = jobScriptFile,
+                JobAssemblyPath = compileResult.OutputAssembly
+            };
+            var initResult = loadedHandler.Initialize(initParams);
             if (initResult.HasError)
             {
                 AppDomain.Unload(domain);

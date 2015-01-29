@@ -14,7 +14,6 @@ namespace NetDist.Server.XDomainObjects
         public string PackageName { get; set; }
         public string HandlerName { get; set; }
         public string JobName { get; set; }
-        public string JobAssemblyPath { get; set; }
 
         public void SetError(AddJobScriptErrorReason errorReason, string errorMessage)
         {

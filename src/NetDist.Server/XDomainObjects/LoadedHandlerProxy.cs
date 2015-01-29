@@ -55,10 +55,17 @@ namespace NetDist.Server.XDomainObjects
         /// <summary>
         /// Initialize the handler according all the information
         /// </summary>
-        /// <param name="jobScriptFile"></param>
-        public JobScriptInitializeResult Initialize(JobScriptFile jobScriptFile)
+        public JobScriptInitializeResult Initialize(LoadedHandlerInitializeParams loadedHandlerInitializeParams)
         {
-            return _loadedHandler.Initialize(jobScriptFile);
+            return _loadedHandler.Initialize(loadedHandlerInitializeParams);
+        }
+
+        /// <summary>
+        /// Replaces the job script assembly with a new one
+        /// </summary>
+        public bool ReplaceJobScript(string newJobAssemblyPath)
+        {
+            return _loadedHandler.ReplaceJobScript(newJobAssemblyPath);
         }
 
         /// <summary>

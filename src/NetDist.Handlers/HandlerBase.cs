@@ -122,38 +122,6 @@ namespace NetDist.Handlers
         /// </summary>
         public abstract void ProcessResult(TIn jobInput, TOut jobResult);
 
-        bool IHandler.IsSameAs(IHandler otherHandler)
-        {
-            // If parameter is null, return false
-            if (ReferenceEquals(otherHandler, null))
-            {
-                return false;
-            }
-
-            // Optimization for a common success case
-            if (ReferenceEquals(this, otherHandler))
-            {
-                return true;
-            }
-
-            // If run-time types are not exactly the same, return false
-            if (GetType() != otherHandler.GetType())
-            {
-                return false;
-            }
-            return IsSameSpecific((HandlerBase<TSet, TIn, TOut>)otherHandler);
-        }
-
-        /// <summary>
-        /// Optional custom function for further equality checks
-        /// </summary>
-        /// <param name="otherHandler"></param>
-        /// <returns></returns>
-        public virtual bool IsSameSpecific(HandlerBase<TSet, TIn, TOut> otherHandler)
-        {
-            return true;
-        }
-
         public virtual void OnStart() { }
         public virtual void OnStop() { }
         public virtual void OnFinished() { }
