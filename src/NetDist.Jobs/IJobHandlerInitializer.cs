@@ -1,7 +1,7 @@
 ﻿
 namespace NetDist.Jobs
 {
-    public interface IJobHandlerInitializer
+    public interface IHandlerInitializer
     {
         HandlerSettings GetHandlerSettings();
         IHandlerCustomSettings GetCustomHandlerSettings();

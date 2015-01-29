@@ -107,7 +107,7 @@ namespace NetDist.Server
             // Stop the handlers
             foreach (var handler in _loadedHandlers)
             {
-                StopJobHandler(handler.Value.Item2.Id);
+                StopJobScript(handler.Value.Item2.Id);
             }
         }
 
@@ -165,21 +165,20 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Called when a new job handler is added
+        /// Called when a new job script is added
         /// Initializes and starts the appropriate handler
         /// </summary>
-        /// <param name="jobScriptFileContent">The full content of the job script file</param>
-        public AddJobHandlerResult AddJobHandler(string jobScriptFileContent)
+        public AddJobScriptResult AddJobScript(JobScriptInfo jobScriptInfo)
         {
             // Prepare the info object
-            var addResult = new AddJobHandlerResult();
+            var addResult = new AddJobScriptResult();
 
             // Parse the content
-            var jobScriptFile = JobScriptFileParser.Parse(jobScriptFileContent);
+            var jobScriptFile = JobScriptFileParser.Parse(jobScriptInfo.JobScript);
             if (jobScriptFile.ParsingFailed)
             {
                 Logger.Error("Failed to parse job script: {0}", jobScriptFile.ErrorMessage);
-                addResult.SetError(AddJobHandlerErrorReason.ParsingFailed, jobScriptFile.ErrorMessage);
+                addResult.SetError(AddJobScriptErrorReason.ParsingFailed, jobScriptFile.ErrorMessage);
                 return addResult;
             }
 
@@ -224,7 +223,7 @@ namespace NetDist.Server
         /// <summary>
         /// Stops and removes a job handler
         /// </summary>
-        public bool RemoveJobHandler(Guid handlerId)
+        public bool RemoveJobScript(Guid handlerId)
         {
             // Search and remove the object from the loaded handlers
             Tuple<AppDomain, LoadedHandlerProxy> removedItem = null;
@@ -252,7 +251,7 @@ namespace NetDist.Server
         /// <summary>
         /// Starts the handler so jobs are being distributed
         /// </summary>
-        public bool StartJobHandler(Guid id)
+        public bool StartJobScript(Guid id)
         {
             return ExecuteOnHandler(id, handler =>
             {
@@ -264,7 +263,7 @@ namespace NetDist.Server
         /// <summary>
         /// Stops a handler so no more jobs are distributed and processed
         /// </summary>
-        public bool StopJobHandler(Guid id)
+        public bool StopJobScript(Guid id)
         {
             return ExecuteOnHandler(id, handler =>
             {
@@ -273,7 +272,7 @@ namespace NetDist.Server
             });
         }
 
-        public bool PauseJobHandler(Guid id)
+        public bool PauseJobScript(Guid id)
         {
             return ExecuteOnHandler(id, handler =>
             {
@@ -282,7 +281,7 @@ namespace NetDist.Server
             });
         }
 
-        public bool DisableJobHandler(Guid id)
+        public bool DisableJobScript(Guid id)
         {
             return ExecuteOnHandler(id, handler =>
             {
@@ -291,7 +290,7 @@ namespace NetDist.Server
             });
         }
 
-        public bool EnableJobHandler(Guid id)
+        public bool EnableJobScript(Guid id)
         {
             return ExecuteOnHandler(id, handler =>
             {

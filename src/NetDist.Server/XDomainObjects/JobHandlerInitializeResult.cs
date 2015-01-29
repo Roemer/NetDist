@@ -4,10 +4,10 @@ using NetDist.Core;
 namespace NetDist.Server.XDomainObjects
 {
     [Serializable]
-    public class JobHandlerInitializeResult
+    public class JobScriptInitializeResult
     {
         public bool HasError { get; set; }
-        public AddJobHandlerErrorReason ErrorReason { get; set; }
+        public AddJobScriptErrorReason ErrorReason { get; set; }
         public string CompileOutput { get; set; }
         public string ErrorMessage { get; set; }
         public Guid HandlerId { get; set; }
@@ -16,7 +16,7 @@ namespace NetDist.Server.XDomainObjects
         public string JobName { get; set; }
         public string JobAssemblyPath { get; set; }
 
-        public void SetError(AddJobHandlerErrorReason errorReason, string errorMessage)
+        public void SetError(AddJobScriptErrorReason errorReason, string errorMessage)
         {
             HasError = true;
             ErrorMessage = errorMessage;

@@ -83,7 +83,7 @@ namespace NetDist.ServerAdmin.WebApi
             }
         }
 
-        public override AddJobHandlerResult AddJobHandler(string jobScript)
+        public override AddJobScriptResult AddJobScript(JobScriptInfo jobScriptInfo)
         {
             using (var client = new HttpClient())
             {
@@ -92,18 +92,18 @@ namespace NetDist.ServerAdmin.WebApi
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 // HTTP POST
-                var response = client.PostAsync("api/admin/addjobhandler", new StringContent(jobScript)).Result;
+                var response = client.PostAsJsonAsync("api/admin/addjobscript", jobScriptInfo).Result;
                 if (response.IsSuccessStatusCode)
                 {
                     var content = response.Content.ReadAsStringAsync().Result;
-                    var addHandlerResult = JsonConvert.DeserializeObject<AddJobHandlerResult>(content);
+                    var addHandlerResult = JsonConvert.DeserializeObject<AddJobScriptResult>(content);
                     return addHandlerResult;
                 }
             }
             return null;
         }
 
-        public override void RemoveJobHandler(Guid handlerId)
+        public override void RemoveJobScript(Guid handlerId)
         {
             using (var client = new HttpClient())
             {
@@ -112,7 +112,7 @@ namespace NetDist.ServerAdmin.WebApi
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 // HTTP GET
-                var response = client.GetAsync(String.Concat("api/admin/removejobhandler", "/", handlerId)).Result;
+                var response = client.GetAsync(String.Concat("api/admin/removejobscript", "/", handlerId)).Result;
                 if (response.IsSuccessStatusCode)
                 {
                     var content = response.Content.ReadAsStringAsync().Result;
@@ -120,32 +120,32 @@ namespace NetDist.ServerAdmin.WebApi
             }
         }
 
-        public override void StartJobHandler(Guid handlerId)
+        public override void StartJobScript(Guid handlerId)
         {
-            CallJobHandlerAction(handlerId, "startjobhandler");
+            CallJobScriptAction(handlerId, "startjobscript");
         }
 
-        public override void StopJobHandler(Guid handlerId)
+        public override void StopJobScript(Guid handlerId)
         {
-            CallJobHandlerAction(handlerId, "stopjobhandler");
+            CallJobScriptAction(handlerId, "stopjobscript");
         }
 
-        public override void PauseJobHandler(Guid handlerId)
+        public override void PauseJobScript(Guid handlerId)
         {
-            CallJobHandlerAction(handlerId, "pausejobhandler");
+            CallJobScriptAction(handlerId, "pausejobscript");
         }
 
-        public override void DisableJobHandler(Guid handlerId)
+        public override void DisableJobScript(Guid handlerId)
         {
-            CallJobHandlerAction(handlerId, "disablejobhandler");
+            CallJobScriptAction(handlerId, "disablejobscript");
         }
 
-        public override void EnableJobHandler(Guid handlerId)
+        public override void EnableJobScript(Guid handlerId)
         {
-            CallJobHandlerAction(handlerId, "enablejobhandler");
+            CallJobScriptAction(handlerId, "enablejobscript");
         }
 
-        private void CallJobHandlerAction(Guid handlerId, string method)
+        private void CallJobScriptAction(Guid handlerId, string method)
         {
             using (var client = new HttpClient())
             {

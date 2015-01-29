@@ -55,7 +55,7 @@ namespace NetDist.Server.XDomainObjects
         /// <summary>
         /// Initialize the handler according all the information
         /// </summary>
-        public JobHandlerInitializeResult Initialize()
+        public JobScriptInitializeResult Initialize()
         {
             return _loadedHandler.Initialize();
         }

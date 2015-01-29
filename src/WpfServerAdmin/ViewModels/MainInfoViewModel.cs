@@ -94,7 +94,8 @@ namespace WpfServerAdmin.ViewModels
                 if (fileSelected)
                 {
                     var fileContent = File.ReadAllText(selectedFile);
-                    var result = ServerModel.Server.AddJobHandler(fileContent);
+                    var jsInfo = new JobScriptInfo { JobScript = fileContent };
+                    var result = ServerModel.Server.AddJobScript(jsInfo);
                     if (result.HasError)
                     {
                         var msg = String.Format("Reason: {0}", result.ErrorReason);
@@ -156,22 +157,22 @@ namespace WpfServerAdmin.ViewModels
                         switch (args.EventType)
                         {
                             case HandlerEventType.Start:
-                                ServerModel.Server.StartJobHandler(args.HandlerId);
+                                ServerModel.Server.StartJobScript(args.HandlerId);
                                 break;
                             case HandlerEventType.Stop:
-                                ServerModel.Server.StopJobHandler(args.HandlerId);
+                                ServerModel.Server.StopJobScript(args.HandlerId);
                                 break;
                             case HandlerEventType.Pause:
-                                ServerModel.Server.PauseJobHandler(args.HandlerId);
+                                ServerModel.Server.PauseJobScript(args.HandlerId);
                                 break;
                             case HandlerEventType.Disable:
-                                ServerModel.Server.DisableJobHandler(args.HandlerId);
+                                ServerModel.Server.DisableJobScript(args.HandlerId);
                                 break;
                             case HandlerEventType.Enable:
-                                ServerModel.Server.EnableJobHandler(args.HandlerId);
+                                ServerModel.Server.EnableJobScript(args.HandlerId);
                                 break;
                             case HandlerEventType.Delete:
-                                ServerModel.Server.RemoveJobHandler(args.HandlerId);
+                                ServerModel.Server.RemoveJobScript(args.HandlerId);
                                 break;
                         }
                     };

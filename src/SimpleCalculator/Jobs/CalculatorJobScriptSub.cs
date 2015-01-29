@@ -17,9 +17,9 @@ using SimpleCalculator.Shared;
 
 namespace SimpleCalculator.Jobs
 {
-    public class CalculatorSubJobHandlerInitializer : JobHandlerInitializerBase<CalculatorHandlerSettings>
+    public class CalculatorSubHandlerInitializer : HandlerInitializerBase<CalculatorHandlerSettings>
     {
-        public override void FillJobHandlerSettings(HandlerSettings handlerSettings)
+        public override void FillHandlerSettings(HandlerSettings handlerSettings)
         {
             handlerSettings.HandlerName = "Calculator";
             handlerSettings.JobName = "Calculator - Sub";

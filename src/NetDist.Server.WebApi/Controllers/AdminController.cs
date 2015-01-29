@@ -20,59 +20,59 @@ namespace NetDist.Server.WebApi.Controllers
         }
 
         [HttpPost]
-        [Route("addjobhandler")]
-        public IHttpActionResult AddJobHandler()
+        [Route("addjobscript")]
+        public IHttpActionResult AddJobScript()
         {
-            var jobScript = Request.Content.ReadAsStringAsync().Result;
-            var addHandlerResult = Server.AddJobHandler(jobScript);
+            var jobScriptInfo = Request.Content.ReadAsAsync<JobScriptInfo>().Result;
+            var addHandlerResult = Server.AddJobScript(jobScriptInfo);
             return Ok(addHandlerResult);
         }
 
         [HttpGet]
-        [Route("removejobhandler/{id}")]
-        public IHttpActionResult RemoveJobHandler(Guid id)
+        [Route("removejobscript/{id}")]
+        public IHttpActionResult RemoveJobScript(Guid id)
         {
-            var success = Server.RemoveJobHandler(id);
+            var success = Server.RemoveJobScript(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
         [HttpGet]
-        [Route("startjobhandler/{id}")]
-        public IHttpActionResult StartJobHandler(Guid id)
+        [Route("startjobscript/{id}")]
+        public IHttpActionResult StartJobScript(Guid id)
         {
-            var success = Server.StartJobHandler(id);
+            var success = Server.StartJobScript(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
         [HttpGet]
-        [Route("stopjobhandler/{id}")]
-        public IHttpActionResult StopJobHandler(Guid id)
+        [Route("stopjobscript/{id}")]
+        public IHttpActionResult StopJobScript(Guid id)
         {
-            var success = Server.StopJobHandler(id);
+            var success = Server.StopJobScript(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
         [HttpGet]
-        [Route("pausejobhandler/{id}")]
-        public IHttpActionResult PauseJobHandler(Guid id)
+        [Route("pausejobscript/{id}")]
+        public IHttpActionResult PauseJobScript(Guid id)
         {
-            var success = Server.PauseJobHandler(id);
+            var success = Server.PauseJobScript(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
         [HttpGet]
-        [Route("disablejobhandler/{id}")]
-        public IHttpActionResult DisableJobHandler(Guid id)
+        [Route("disablejobscript/{id}")]
+        public IHttpActionResult DisableJobScript(Guid id)
         {
-            var success = Server.DisableJobHandler(id);
+            var success = Server.DisableJobScript(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 
         [HttpGet]
-        [Route("enablejobhandler/{id}")]
-        public IHttpActionResult EnableJobHandler(Guid id)
+        [Route("enablejobscript/{id}")]
+        public IHttpActionResult EnableJobScript(Guid id)
         {
-            var success = Server.EnableJobHandler(id);
+            var success = Server.EnableJobScript(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 

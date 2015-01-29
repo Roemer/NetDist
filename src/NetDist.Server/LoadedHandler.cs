@@ -137,10 +137,10 @@ namespace NetDist.Server
         /// <summary>
         /// Initializes the handler and everything it needs to run
         /// </summary>
-        public JobHandlerInitializeResult Initialize()
+        public JobScriptInitializeResult Initialize()
         {
             // Preparations
-            var result = new JobHandlerInitializeResult
+            var result = new JobScriptInitializeResult
             {
                 PackageName = _jobScriptFile.PackageName
             };
@@ -177,7 +177,7 @@ namespace NetDist.Server
                 var errorString = sbError.ToString();
                 Logger.Error("Failed to compile job script: {0}", errorString);
                 // Fill result object
-                result.SetError(AddJobHandlerErrorReason.CompilationFailed, errorString);
+                result.SetError(AddJobScriptErrorReason.CompilationFailed, errorString);
                 return result;
             }
             _jobAssemblyPath = compilerResults.PathToAssembly;
@@ -189,7 +189,7 @@ namespace NetDist.Server
             Type jobInitializerType = null;
             foreach (var type in jobAssembly.GetTypes())
             {
-                if (typeof(IJobHandlerInitializer).IsAssignableFrom(type))
+                if (typeof(IHandlerInitializer).IsAssignableFrom(type))
                 {
                     jobInitializerType = type;
                     break;
@@ -197,11 +197,11 @@ namespace NetDist.Server
             }
             if (jobInitializerType == null)
             {
-                result.SetError(AddJobHandlerErrorReason.JobInitializerMissing, "Job initializer type not found");
+                result.SetError(AddJobScriptErrorReason.JobInitializerMissing, "Job initializer type not found");
                 return result;
             }
             // Initialize the job
-            var jobInstance = (IJobHandlerInitializer)Activator.CreateInstance(jobInitializerType);
+            var jobInstance = (IHandlerInitializer)Activator.CreateInstance(jobInitializerType);
             // Read the settings
             _handlerSettings = jobInstance.GetHandlerSettings();
             var customSettings = jobInstance.GetCustomHandlerSettings();
@@ -227,7 +227,7 @@ namespace NetDist.Server
             }
             catch (ReflectionTypeLoadException ex)
             {
-                result.SetError(AddJobHandlerErrorReason.TypeException, ex.LoaderExceptions.First().Message);
+                result.SetError(AddJobScriptErrorReason.TypeException, ex.LoaderExceptions.First().Message);
                 return result;
             }
 
@@ -249,7 +249,7 @@ namespace NetDist.Server
             }
             if (typeToLoad == null)
             {
-                result.SetError(AddJobHandlerErrorReason.JobHandlerMissing, String.Format("Handler type for handler '{0}' not found", _handlerSettings.HandlerName));
+                result.SetError(AddJobScriptErrorReason.JobScriptMissing, String.Format("Handler type for handler '{0}' not found", _handlerSettings.HandlerName));
                 return result;
             }
             var handlerInstance = (IHandler)Activator.CreateInstance(typeToLoad);

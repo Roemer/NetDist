@@ -66,12 +66,12 @@ namespace NetDist.Handlers
         /// <summary>
         /// Event when a new job is enqueued
         /// </summary>
-        private Action<IJobInput, object> _enqueueJobHandler;
+        private Action<IJobInput, object> _enqueueJobEventHandler;
         event Action<IJobInput, object> IHandler.EnqueueJobEvent
         {
-            add { _enqueueJobHandler += value; }
+            add { _enqueueJobEventHandler += value; }
             // ReSharper disable once DelegateSubtraction
-            remove { _enqueueJobHandler -= value; }
+            remove { _enqueueJobEventHandler -= value; }
         }
 
         /// <summary>
@@ -102,7 +102,7 @@ namespace NetDist.Handlers
         /// </summary>
         private void OnEnqueueJob(IJobInput jobInput, object additionalData)
         {
-            var handler = _enqueueJobHandler;
+            var handler = _enqueueJobEventHandler;
             if (handler != null) handler(jobInput, additionalData);
         }
 

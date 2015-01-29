@@ -20,9 +20,9 @@ using NetDist.Jobs;
 
 namespace DependencySample.Jobs
 {
-    public class DependencyJob1HandlerInitializer : JobHandlerInitializerBase<DependencyHandlerSettings>
+    public class DependencyJob1HandlerInitializer : HandlerInitializerBase<DependencyHandlerSettings>
     {
-        public override void FillJobHandlerSettings(HandlerSettings handlerSettings)
+        public override void FillHandlerSettings(HandlerSettings handlerSettings)
         {
             handlerSettings.HandlerName = "Dependency";
             handlerSettings.JobName = "Dependency - 1";

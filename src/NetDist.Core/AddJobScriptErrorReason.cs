@@ -1,12 +1,12 @@
 ﻿namespace NetDist.Core
 {
-    public enum AddJobHandlerErrorReason
+    public enum AddJobScriptErrorReason
     {
         None,
         ParsingFailed,
         CompilationFailed,
         JobInitializerMissing,
-        JobHandlerMissing,
+        JobScriptMissing,
         TypeException,
     }
 }

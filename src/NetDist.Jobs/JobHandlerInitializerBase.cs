@@ -4,12 +4,12 @@ namespace NetDist.Jobs
     /// <summary>
     /// Class to initialize all the handler settings and the custom settings
     /// </summary>
-    public abstract class JobHandlerInitializerBase<T> : IJobHandlerInitializer where T : IHandlerCustomSettings, new()
+    public abstract class HandlerInitializerBase<T> : IHandlerInitializer where T : IHandlerCustomSettings, new()
     {
         public HandlerSettings GetHandlerSettings()
         {
             var handlerSettings = new HandlerSettings();
-            FillJobHandlerSettings(handlerSettings);
+            FillHandlerSettings(handlerSettings);
             return handlerSettings;
         }
 
@@ -20,7 +20,7 @@ namespace NetDist.Jobs
             return customHandlerSettings;
         }
 
-        public abstract void FillJobHandlerSettings(HandlerSettings handlerSettings);
+        public abstract void FillHandlerSettings(HandlerSettings handlerSettings);
         public abstract void FillCustomSettings(T customSettings);
     }
 }
