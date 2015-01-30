@@ -1,16 +1,12 @@
 ﻿using Microsoft.VisualBasic.Devices;
 using NetDist.Core;
-using NetDist.Core.Extensions;
 using NetDist.Core.Utilities;
-using NetDist.Jobs;
 using NetDist.Jobs.DataContracts;
 using NetDist.Logging;
-using NetDist.Server.XDomainObjects;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 
 namespace NetDist.Server
@@ -24,11 +20,6 @@ namespace NetDist.Server
         /// Logger object
         /// </summary>
         public Logger Logger { get; private set; }
-
-        /// <summary>
-        /// Dictionary which holds all currently loaded handlers
-        /// </summary>
-        private readonly Dictionary<Guid, Tuple<AppDomain, LoadedHandlerProxy>> _loadedHandlers;
 
         /// <summary>
         /// Dictionary which olds information about the known clients
@@ -56,6 +47,7 @@ namespace NetDist.Server
         private IServerSettings _settings;
 
         private readonly PackageManager _packageManager;
+        private readonly HandlerManager _handlerManager;
 
         /// <summary>
         /// Constructor
@@ -63,9 +55,9 @@ namespace NetDist.Server
         protected ServerBase()
         {
             Logger = new Logger();
-            _loadedHandlers = new Dictionary<Guid, Tuple<AppDomain, LoadedHandlerProxy>>();
             _knownClients = new ConcurrentDictionary<Guid, ExtendedClientInfo>();
             _packageManager = new PackageManager(PackagesFolder);
+            _handlerManager = new HandlerManager(Logger, _packageManager);
             // Make sure the packages folder exists
             Directory.CreateDirectory(PackagesFolder);
         }
@@ -77,7 +69,7 @@ namespace NetDist.Server
         {
             _settings = settings;
             // Autostart if wanted
-            if (settings.AutoStart)
+            if (_settings.AutoStart)
             {
                 Start();
             }
@@ -105,11 +97,8 @@ namespace NetDist.Server
             {
                 Logger.Info("Server failed to stop");
             }
-            // Stop the handlers
-            foreach (var handler in _loadedHandlers)
-            {
-                StopJobScript(handler.Value.Item2.Id);
-            }
+            // Stop all handlers
+            _handlerManager.StopAll();
         }
 
         /// <summary>
@@ -125,11 +114,8 @@ namespace NetDist.Server
             // CPU information
             info.CpuUsage = CpuUsageReader.GetValue();
             // Handler information
-            foreach (var kvp in _loadedHandlers)
-            {
-                var loadedHandler = kvp.Value.Item2;
-                info.Handlers.Add(loadedHandler.GetInfo());
-            }
+            var handlerStats = _handlerManager.GetStatistics();
+            info.Handlers.AddRange(handlerStats);
             // Client information
             foreach (var kvp in _knownClients)
             {
@@ -171,111 +157,7 @@ namespace NetDist.Server
         /// </summary>
         public AddJobScriptResult AddJobScript(JobScriptInfo jobScriptInfo)
         {
-            // Prepare the info object
-            var addResult = new AddJobScriptResult();
-
-            // Parse the content
-            var jobScriptFile = JobScriptFileParser.Parse(jobScriptInfo.JobScript);
-            if (jobScriptFile.ParsingFailed)
-            {
-                Logger.Error("Failed to parse job script: {0}", jobScriptFile.ErrorMessage);
-                addResult.SetError(AddJobScriptErrorReason.ParsingFailed, jobScriptFile.ErrorMessage);
-                return addResult;
-            }
-
-            // Add now known package name
-            addResult.PackageName = jobScriptFile.PackageName;
-
-            // Compile the job file
-            var compileResult = JobScriptCompiler.Compile(jobScriptFile, _packageManager.GetPackagePath(jobScriptFile.PackageName));
-            // Check for compilation error
-            if (compileResult.ResultType == CompileResultType.Failed)
-            {
-                Logger.Error("Failed to compile job script: {0}", compileResult.ErrorString);
-                addResult.SetError(AddJobScriptErrorReason.CompilationFailed, compileResult.ErrorString);
-                return addResult;
-            }
-            // Check if it already was compiled
-            if (compileResult.ResultType == CompileResultType.AlreadyCompiled)
-            {
-                Logger.Info("Job script already exists");
-            }
-
-            // Get the settings from the job file
-            HandlerSettings handlerSettings;
-            var readScuccess = JobFileHandlerSettingsReader.ReadSettingsInOwnDomain(compileResult.OutputAssembly, out handlerSettings);
-            if (!readScuccess)
-            {
-                Logger.Error("Handler initializer type not found");
-                addResult.SetError(AddJobScriptErrorReason.HandlerInitializerMissing, "Handler initializer type not found");
-                return addResult;
-            }
-
-            // Search for an already existing job handler
-            var currentFullName = Helpers.BuildFullName(jobScriptFile.PackageName, handlerSettings.HandlerName, handlerSettings.JobName);
-            lock (_loadedHandlers.GetSyncRoot())
-            {
-                foreach (var handler in _loadedHandlers)
-                {
-                    if (handler.Value.Item2.FullName == currentFullName)
-                    {
-                        // Found an existing same handler
-                        // Replace only the job file
-                        var replaceSuccess = handler.Value.Item2.ReplaceJobScript(jobScriptFile, compileResult.OutputAssembly);
-                        if (replaceSuccess)
-                        {
-                            addResult.SetUpdated(AddJobScriptUpdateType.JobScriptReplaced, handler.Value.Item2.Id);
-                            Logger.Info("Updated jobscript");
-                        }
-                        else
-                        {
-                            addResult.SetUpdated(AddJobScriptUpdateType.NoUpdateNeeded, handler.Value.Item2.Id);
-                            Logger.Info("No jobscript update needed");
-                        }
-                        return addResult;
-                    }
-                }
-            }
-
-            // Create an additional app-domain
-            var domain = AppDomain.CreateDomain(Guid.NewGuid().ToString(), null, new AppDomainSetup
-            {
-                ApplicationBase = AppDomain.CurrentDomain.SetupInformation.ApplicationBase,
-                ConfigurationFile = AppDomain.CurrentDomain.SetupInformation.ConfigurationFile,
-                ApplicationName = AppDomain.CurrentDomain.SetupInformation.ApplicationName,
-                LoaderOptimization = LoaderOptimization.MultiDomainHost,
-                ShadowCopyFiles = "true",
-                AppDomainInitializerArguments = null
-            });
-            // Create a proxy for the handler
-            var loadedHandler = (LoadedHandlerProxy)domain.CreateInstanceAndUnwrap(typeof(LoadedHandlerProxy).Assembly.FullName, typeof(LoadedHandlerProxy).FullName, false, BindingFlags.Default, null, new object[] { PackagesFolder }, null, null);
-            // Create a interchangeable event sink to register cross-domain events to catch logging events
-            var sink = new EventSink<LogEventArgs>();
-            loadedHandler.RegisterLogEventSink(sink);
-            sink.NotificationFired += (sender, args) => Logger.Log(args.LogLevel, args.Exception, args.Message);
-            // Initialize the handler
-            var initParams = new LoadedHandlerInitializeParams
-            {
-                HandlerSettings = handlerSettings,
-                JobScriptFile = jobScriptFile,
-                JobAssemblyPath = compileResult.OutputAssembly
-            };
-            var initResult = loadedHandler.Initialize(initParams);
-            if (initResult.HasError)
-            {
-                AppDomain.Unload(domain);
-                Logger.Warn("Failed to initialize handler for package: '{0}'", addResult.PackageName);
-                addResult.SetError(initResult.ErrorReason, initResult.ErrorMessage);
-                return addResult;
-            }
-            // Fill the info object from the result
-            addResult.HandlerId = initResult.HandlerId;
-            addResult.HandlerName = initResult.HandlerName;
-            addResult.JobName = initResult.JobName;
-            // Add the loaded handler to the dictionary
-            _loadedHandlers[loadedHandler.Id] = new Tuple<AppDomain, LoadedHandlerProxy>(domain, loadedHandler);
-            Logger.Info("Added handler: '{0}' ('{1}')", loadedHandler.FullName, loadedHandler.Id);
-            return addResult;
+            return _handlerManager.Add(jobScriptInfo);
         }
 
         /// <summary>
@@ -283,78 +165,38 @@ namespace NetDist.Server
         /// </summary>
         public bool RemoveJobScript(Guid handlerId)
         {
-            // Search and remove the object from the loaded handlers
-            Tuple<AppDomain, LoadedHandlerProxy> removedItem = null;
-            lock (_loadedHandlers.GetSyncRoot())
-            {
-                if (_loadedHandlers.ContainsKey(handlerId))
-                {
-                    removedItem = _loadedHandlers[handlerId];
-                    _loadedHandlers.Remove(handlerId);
-                }
-            }
-            if (removedItem != null)
-            {
-                var handlerName = removedItem.Item2.FullName;
-                // Stop and cleanup the handler
-                removedItem.Item2.TearDown();
-                // Unload the domain
-                AppDomain.Unload(removedItem.Item1);
-                Logger.Info("Removed handler: '{0}' ('{1}')", handlerName, handlerId);
-                return true;
-            }
-            return false;
+            return _handlerManager.Remove(handlerId);
         }
 
         /// <summary>
         /// Starts the handler so jobs are being distributed
         /// </summary>
-        public bool StartJobScript(Guid id)
+        public bool StartJobScript(Guid handlerId)
         {
-            return ExecuteOnHandler(id, handler =>
-            {
-                Logger.Info("Starting handler '{0}'", handler.FullName);
-                return handler.Start();
-            });
+            return _handlerManager.Start(handlerId);
         }
 
         /// <summary>
         /// Stops a handler so no more jobs are distributed and processed
         /// </summary>
-        public bool StopJobScript(Guid id)
+        public bool StopJobScript(Guid handlerId)
         {
-            return ExecuteOnHandler(id, handler =>
-            {
-                Logger.Info("Stopping handler '{0}'", handler.FullName);
-                return handler.Stop();
-            });
+            return _handlerManager.Stop(handlerId);
         }
 
-        public bool PauseJobScript(Guid id)
+        public bool PauseJobScript(Guid handlerId)
         {
-            return ExecuteOnHandler(id, handler =>
-            {
-                Logger.Info("Pausing handler '{0}'", handler.FullName);
-                return handler.Pause();
-            });
+            return _handlerManager.Pause(handlerId);
         }
 
-        public bool DisableJobScript(Guid id)
+        public bool DisableJobScript(Guid handlerId)
         {
-            return ExecuteOnHandler(id, handler =>
-            {
-                Logger.Info("Disabling handler '{0}'", handler.FullName);
-                return handler.Disable();
-            });
+            return _handlerManager.Disable(handlerId);
         }
 
-        public bool EnableJobScript(Guid id)
+        public bool EnableJobScript(Guid handlerId)
         {
-            return ExecuteOnHandler(id, handler =>
-            {
-                Logger.Info("Enabling handler '{0}'", handler.FullName);
-                return handler.Enable();
-            });
+            return _handlerManager.Enable(handlerId);
         }
 
         /// <summary>
@@ -363,29 +205,13 @@ namespace NetDist.Server
         public Job GetJob(Guid clientId)
         {
             Logger.Info("Client '{0}' requested a job", clientId);
-            for (var i = 0; i < 10; i++)
+            var job = _handlerManager.GetJob(clientId);
+            if (job != null)
             {
-                var handlersWithJobs = _loadedHandlers.Where(x => x.Value.Item2.HasAvailableJobs).ToArray();
-                if (handlersWithJobs.Length == 0)
-                {
-                    return null;
-                }
-                var nextRandNumber = RandomGenerator.Instance.Next(handlersWithJobs.Length);
-                var randomHandler = handlersWithJobs[nextRandNumber];
-                var nextJob = randomHandler.Value.Item2.GetJob(clientId);
-                if (nextJob == null)
-                {
-                    // Can happen if the queue was empty between the "HasAvailableJobs" check and now
-                    // just retry a few times
-                    Logger.Debug("Job queue was suddenly empty, try again");
-                    continue;
-                }
+                // Update statistics
                 _knownClients[clientId].JobsInProgress++;
-                Logger.Info("Client '{0}' got job '{1}' for handler '{2}'", clientId, nextJob.Id, randomHandler.Value.Item2.FullName);
-                return nextJob;
             }
-            Logger.Warn("Gave up getting a job");
-            return null;
+            return job;
         }
 
         /// <summary>
@@ -393,13 +219,7 @@ namespace NetDist.Server
         /// </summary>
         public HandlerJobInfo GetHandlerJobInfo(Guid handlerId)
         {
-            var handler = GetHandler(handlerId);
-            if (handler != null)
-            {
-                var info = handler.GetJobInfo();
-                return info;
-            }
-            return null;
+            return _handlerManager.GetHandlerJobInfo(handlerId);
         }
 
         /// <summary>
@@ -407,10 +227,10 @@ namespace NetDist.Server
         /// </summary>
         public byte[] GetFile(Guid handlerId, string file)
         {
-            var handler = GetHandler(handlerId);
-            if (handler != null)
+            var handlerInfo = _handlerManager.GetStatistics(handlerId);
+            if (handlerInfo != null)
             {
-                var fileContent = _packageManager.GetFile(handler.PackageName, file);
+                var fileContent = _packageManager.GetFile(handlerInfo.PackageName, file);
                 return fileContent;
             }
             return null;
@@ -421,20 +241,7 @@ namespace NetDist.Server
         /// </summary>
         public void ReceiveResult(JobResult result)
         {
-            if (result == null)
-            {
-                Logger.Error("Received invalid result");
-                return;
-            }
-            var handler = GetHandler(result.HandlerId);
-            if (handler == null)
-            {
-                Logger.Error("Got result for unknown handler: '{0}'", result.HandlerId);
-                return;
-            }
-            // Forward the result to the handler (also failed ones)
-            var success = handler.ReceivedResult(result);
-
+            var success = _handlerManager.ProcessResult(result);
             // Update statistics
             _knownClients[result.ClientId].JobsInProgress--;
             if (success)
@@ -462,37 +269,6 @@ namespace NetDist.Server
                 wrapper.LastCommunicationDate = DateTime.Now;
                 return wrapper;
             });
-        }
-
-        /// <summary>
-        /// Try getting the handler for the given id
-        /// </summary>
-        private LoadedHandlerProxy GetHandler(Guid handlerId)
-        {
-            Tuple<AppDomain, LoadedHandlerProxy> handler;
-            var hasHandler = _loadedHandlers.TryGetValue(handlerId, out handler);
-            return hasHandler ? handler.Item2 : null;
-        }
-
-        /// <summary>
-        /// Helper method to execute an action on a handler (if it exists)
-        /// </summary>
-        private bool ExecuteOnHandler(Guid handlerId, Func<LoadedHandlerProxy, bool> successAction)
-        {
-            lock (_loadedHandlers.GetSyncRoot())
-            {
-                // Try getting the handler
-                var handler = GetHandler(handlerId);
-                if (handler != null)
-                {
-                    // Execute the action
-                    var retValue = successAction(handler);
-                    return retValue;
-                }
-            }
-            // Handler not found
-            Logger.Warn("Handler '{0}' not found to execute action", handlerId);
-            return false;
         }
     }
 }

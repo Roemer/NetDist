@@ -8,11 +8,11 @@ namespace NetDist.Server
     /// </summary>
     public class PackageManager
     {
-        private readonly string _packagesFolder;
+        public string PackageBaseFolder { get; private set; }
 
         public PackageManager(string packagesFolder)
         {
-            _packagesFolder = packagesFolder;
+            PackageBaseFolder = packagesFolder;
         }
 
         public void Save(PackageInfo packageInfo)
@@ -42,12 +42,12 @@ namespace NetDist.Server
 
         private string BuildPackageFolderPath(string packageName)
         {
-            return Path.Combine(_packagesFolder, packageName);
+            return Path.Combine(PackageBaseFolder, packageName);
         }
 
         private string BuildInfoFileName(string packageName)
         {
-            return Path.Combine(_packagesFolder, packageName) + ".json";
+            return Path.Combine(PackageBaseFolder, packageName) + ".json";
         }
     }
 }
