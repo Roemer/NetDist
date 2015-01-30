@@ -97,8 +97,7 @@ namespace NetDist.Server
             {
                 Logger.Info("Server failed to stop");
             }
-            // Stop all handlers
-            _handlerManager.StopAll();
+            _handlerManager.TearDown();
         }
 
         /// <summary>
@@ -227,10 +226,10 @@ namespace NetDist.Server
         /// </summary>
         public byte[] GetFile(Guid handlerId, string file)
         {
-            var handlerInfo = _handlerManager.GetStatistics(handlerId);
-            if (handlerInfo != null)
+            var handlerPackageName = _handlerManager.GetPackageName(handlerId);
+            if (handlerPackageName != null)
             {
-                var fileContent = _packageManager.GetFile(handlerInfo.PackageName, file);
+                var fileContent = _packageManager.GetFile(handlerPackageName, file);
                 return fileContent;
             }
             return null;

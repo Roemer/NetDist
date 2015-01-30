@@ -4,26 +4,22 @@ namespace NetDist.Core
 {
     public class AddJobScriptResult
     {
-        public bool HasError { get; set; }
-        public AddJobScriptErrorReason ErrorReason { get; set; }
-        public string ErrorMessage { get; set; }
         public Guid HandlerId { get; set; }
-        public string PackageName { get; set; }
-        public string HandlerName { get; set; }
-        public string JobName { get; set; }
-        public AddJobScriptUpdateType UpdateType { get; set; }
+        public AddJobScriptStatus Status { get; set; }
+        public AddJobScriptError ErrorCode { get; set; }
+        public string ErrorMessage { get; set; }
 
-        public void SetUpdated(AddJobScriptUpdateType updateType, Guid handlerId)
+        public void SetOk(Guid handlerId, AddJobScriptStatus status)
         {
             HandlerId = handlerId;
-            UpdateType = updateType;
+            Status = status;
         }
 
-        public void SetError(AddJobScriptErrorReason errorReason, string errorMessage)
+        public void SetError(AddJobScriptError errorCode, string errorMessage)
         {
-            HasError = true;
+            Status = AddJobScriptStatus.Error;
+            ErrorCode = errorCode;
             ErrorMessage = errorMessage;
-            ErrorReason = errorReason;
         }
     }
 }

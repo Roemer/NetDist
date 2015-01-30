@@ -1,5 +1,4 @@
-﻿using NCrontab;
-using NetDist.Core;
+﻿using NetDist.Core;
 using NetDist.Core.Extensions;
 using NetDist.Handlers;
 using NetDist.Jobs;
@@ -46,29 +45,6 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Package name of the package of this handler
-        /// </summary>
-        public string PackageName { get { return _jobScriptFile.PackageName; } }
-
-        /// <summary>
-        /// Full name of the handler: PackageName/HandlerName/JobName
-        /// </summary>
-        public string FullName
-        {
-            get { return Helpers.BuildFullName(_jobScriptFile.PackageName, _handlerSettings.HandlerName, _handlerSettings.JobName); }
-        }
-
-        /// <summary>
-        /// Time when the handler was last started
-        /// </summary>
-        private DateTime? LastStartTime { get; set; }
-
-        /// <summary>
-        /// Time when the handler will start next time
-        /// </summary>
-        private DateTime? NextStartTime { get; set; }
-
-        /// <summary>
         /// Instance of the effective handler
         /// </summary>
         private IHandler _handler;
@@ -110,15 +86,14 @@ namespace NetDist.Server
         private readonly AutoResetEvent _resultAvailableWaitHandle = new AutoResetEvent(false);
         private readonly AutoResetEvent _pauseWaitHandle = new AutoResetEvent(false);
         private readonly AutoResetEvent _disabledWaitHandle = new AutoResetEvent(false);
-        CrontabSchedule _cronSchedule;
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public LoadedHandler(string packageBaseFolder)
+        public LoadedHandler(Guid id, string packageBaseFolder)
         {
             // Initialization
-            Id = Guid.NewGuid();
+            Id = id;
             _packageManager = new PackageManager(packageBaseFolder);
             Logger = new Logger();
             _availableJobs = new ConcurrentQueue<JobWrapper>();
@@ -137,10 +112,7 @@ namespace NetDist.Server
             var currentPackageFolder = _packageManager.GetPackagePath(_jobScriptFile.PackageName);
 
             // Preparations
-            var result = new JobScriptInitializeResult
-            {
-                PackageName = _jobScriptFile.PackageName
-            };
+            var result = new JobScriptInitializeResult();
 
             // Assign the path to the output assembly
             _jobAssemblyPath = loadedHandlerInitializeParams.JobAssemblyPath;
@@ -148,10 +120,6 @@ namespace NetDist.Server
             // Read the settings
             IHandlerCustomSettings customSettings;
             JobFileHandlerSettingsReader.LoadAssemblyAndReadSettings(_jobAssemblyPath, out _handlerSettings, out customSettings);
-
-            // Add new information
-            result.HandlerName = _handlerSettings.HandlerName;
-            result.JobName = _handlerSettings.JobName;
 
             // Read the package information object
             var packageInfo = _packageManager.GetInfo(_jobScriptFile.PackageName);
@@ -169,7 +137,7 @@ namespace NetDist.Server
             }
             catch (ReflectionTypeLoadException ex)
             {
-                result.SetError(AddJobScriptErrorReason.TypeException, ex.LoaderExceptions.First().Message);
+                result.SetError(AddJobScriptError.TypeException, ex.LoaderExceptions.First().Message);
                 return result;
             }
 
@@ -192,7 +160,7 @@ namespace NetDist.Server
             }
             if (typeToLoad == null)
             {
-                result.SetError(AddJobScriptErrorReason.JobScriptMissing, String.Format("Handler type for handler '{0}' not found", _handlerSettings.HandlerName));
+                result.SetError(AddJobScriptError.JobScriptMissing, String.Format("Handler type for handler '{0}' not found", _handlerSettings.HandlerName));
                 return result;
             }
             var handlerInstance = (IHandler)Activator.CreateInstance(typeToLoad);
@@ -209,21 +177,6 @@ namespace NetDist.Server
             // Assign the handler
             _handler = handlerInstance;
 
-            // Initialize cron scheduler
-            NextStartTime = null;
-            if (!String.IsNullOrWhiteSpace(_handlerSettings.Schedule))
-            {
-                try
-                {
-                    _cronSchedule = CrontabSchedule.Parse(_handlerSettings.Schedule);
-                    NextStartTime = _cronSchedule.GetNextOccurrence(DateTime.Now);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn("Failed to parse Crontab: '{0}' - Ex: {1}", _handlerSettings.Schedule, ex.Message);
-                }
-            }
-
             // Start the control thread
             _controlTaskCancelToken = new CancellationTokenSource();
             _controlTask = new Task(ControlThread, _controlTaskCancelToken.Token);
@@ -233,12 +186,6 @@ namespace NetDist.Server
                 Stop();
             }, TaskContinuationOptions.OnlyOnFaulted);
             _controlTask.Start();
-
-            // Autostart if wanted
-            if (_handlerSettings.AutoStart)
-            {
-                Start();
-            }
 
             // Fill and return the info object
             result.HandlerId = Id;
@@ -282,44 +229,23 @@ namespace NetDist.Server
         /// <summary>
         /// Get information about this handler
         /// </summary>
-        public HandlerInfo GetInfo()
+        public LoadedHandlerStats GetInfo()
         {
-            var hInfo = new HandlerInfo
+            var stats = new LoadedHandlerStats
             {
-                Id = Id,
-                PackageName = _jobScriptFile.PackageName,
-                HandlerName = _handlerSettings.HandlerName,
-                JobName = _handlerSettings.JobName,
                 JobsAvailable = _availableJobs.Count,
                 JobsPending = _pendingJobs.Count,
                 TotalJobsProcessed = Interlocked.Read(ref _totalProcessedJobs),
                 TotalJobsFailed = Interlocked.Read(ref _totalFailedJobs),
-                HandlerState = HandlerState,
-                LastStartTime = LastStartTime,
-                NextStartTime = NextStartTime
             };
             // Calculate the total job count
-            hInfo.TotalJobsAvailable = _handler.GetTotalJobCount();
-            if (hInfo.TotalJobsAvailable < 0)
+            stats.TotalJobsAvailable = _handler.GetTotalJobCount();
+            if (stats.TotalJobsAvailable < 0)
             {
                 // Set it to the current available jobs if it is unknown
-                hInfo.TotalJobsAvailable = hInfo.JobsAvailable;
+                stats.TotalJobsAvailable = stats.JobsAvailable;
             }
-            return hInfo;
-        }
-
-        /// <summary>
-        /// Get relevant information for the client for this handler
-        /// </summary>
-        public HandlerJobInfo GetJobInfo()
-        {
-            var hInfo = new HandlerJobInfo
-            {
-                HandlerName = FullName,
-                JobAssemblyName = Path.GetFileName(_jobAssemblyPath),
-                Depdendencies = new List<string>(_jobScriptFile.Dependencies)
-            };
-            return hInfo;
+            return stats;
         }
 
         /// <summary>
@@ -342,7 +268,6 @@ namespace NetDist.Server
                     // Notify the handler that it has started
                     _handler.OnStart();
                     HandlerState = HandlerState.Running;
-                    LastStartTime = DateTime.Now;
                     return true;
                 }
             }
@@ -536,21 +461,6 @@ namespace NetDist.Server
             // Initialize
             const int defaultSleep = 5000;
 
-            // Initialize idle time
-            TimeSpan idleTimeStart = TimeSpan.Zero;
-            TimeSpan idleTimeEnd = TimeSpan.Zero;
-            bool hasValidIdleTime = false;
-            if (!String.IsNullOrWhiteSpace(_handlerSettings.IdleTime) && _handlerSettings.IdleTime.Contains("-"))
-            {
-                var idleTimeParts = _handlerSettings.IdleTime.Split(new[] { "-" }, StringSplitOptions.RemoveEmptyEntries);
-                var validFrom = TimeSpan.TryParse(idleTimeParts[0], out idleTimeStart);
-                var validTo = TimeSpan.TryParse(idleTimeParts[1], out idleTimeEnd);
-                if (validFrom && validTo)
-                {
-                    hasValidIdleTime = true;
-                }
-            }
-
             // Control loop until the handler is being removed
             while (!_controlTaskCancelToken.IsCancellationRequested)
             {
@@ -564,64 +474,6 @@ namespace NetDist.Server
                 if (HandlerState == HandlerState.Paused)
                 {
                     _pauseWaitHandle.WaitOne();
-                }
-
-                // (Re)start the handler if possible and needed
-                if (_cronSchedule != null)
-                {
-                    if (HandlerState == HandlerState.Finished || HandlerState == HandlerState.Stopped)
-                    {
-                        // Check if it should start according to the schedule
-                        if (NextStartTime < DateTime.Now)
-                        {
-                            lock (_lockObject)
-                            {
-                                Start();
-                            }
-                            NextStartTime = _cronSchedule.GetNextOccurrence(DateTime.Now);
-                        }
-                        else
-                        {
-                            // Don't to anything
-                            Thread.Sleep(defaultSleep);
-                            continue;
-                        }
-                    }
-                    else
-                    {
-                        // Handler is running, calculate the next start date from the current time
-                        NextStartTime = _cronSchedule.GetNextOccurrence(DateTime.Now);
-                    }
-                }
-
-                // Check for idle
-                bool isInIdleTime = false;
-                if (hasValidIdleTime)
-                {
-                    // Set to idle if needed
-                    var now = DateTime.Now.TimeOfDay;
-                    if (idleTimeStart < idleTimeEnd)
-                    {
-                        if (now >= idleTimeStart && now <= idleTimeEnd) { isInIdleTime = true; }
-                    }
-                    else
-                    {
-                        if (now >= idleTimeStart || now <= idleTimeEnd) { isInIdleTime = true; }
-                    }
-                }
-
-                // Check if we're outside the idletime but the handler is still idle
-                if (!isInIdleTime && HandlerState == HandlerState.Idle)
-                {
-                    // Set it to running
-                    HandlerState = HandlerState.Running;
-                }
-
-                // We're inside the idle time but the handler is still running
-                if (isInIdleTime && HandlerState == HandlerState.Running)
-                {
-                    // Set it to idle
-                    HandlerState = HandlerState.Idle;
                 }
 
                 // Collect results

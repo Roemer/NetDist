@@ -96,16 +96,16 @@ namespace WpfServerAdmin.ViewModels
                     var fileContent = File.ReadAllText(selectedFile);
                     var jsInfo = new JobScriptInfo { JobScript = fileContent };
                     var result = ServerModel.Server.AddJobScript(jsInfo);
-                    if (result.HasError)
+                    if (result.Status == AddJobScriptStatus.Error)
                     {
-                        var msg = String.Format("Reason: {0}", result.ErrorReason);
+                        var msg = String.Format("Reason: {0}", result.ErrorCode);
                         msg += Environment.NewLine;
                         msg += result.ErrorMessage;
                         MessageBox.Show(msg, "Error");
                     }
                     else
                     {
-                        var msg = String.Format("{0}/{1}/{2}", result.PackageName, result.HandlerName, result.JobName);
+                        var msg = String.Format("{0}", result.HandlerId);
                         MessageBox.Show(msg, "Success");
                     }
                 }

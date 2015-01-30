@@ -1,21 +1,18 @@
-﻿using System;
-using NetDist.Core;
+﻿using NetDist.Core;
+using System;
 
 namespace NetDist.Server.XDomainObjects
 {
     [Serializable]
     public class JobScriptInitializeResult
     {
+        public Guid HandlerId { get; set; }
         public bool HasError { get; set; }
-        public AddJobScriptErrorReason ErrorReason { get; set; }
+        public AddJobScriptError ErrorReason { get; set; }
         public string CompileOutput { get; set; }
         public string ErrorMessage { get; set; }
-        public Guid HandlerId { get; set; }
-        public string PackageName { get; set; }
-        public string HandlerName { get; set; }
-        public string JobName { get; set; }
 
-        public void SetError(AddJobScriptErrorReason errorReason, string errorMessage)
+        public void SetError(AddJobScriptError errorReason, string errorMessage)
         {
             HasError = true;
             ErrorMessage = errorMessage;

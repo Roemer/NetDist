@@ -16,21 +16,6 @@ namespace NetDist.Server.XDomainObjects
         private readonly LoadedHandler _loadedHandler;
 
         /// <summary>
-        /// The id of the handler
-        /// </summary>
-        public Guid Id { get { return _loadedHandler.Id; } }
-
-        /// <summary>
-        /// Package name of the package of this handler
-        /// </summary>
-        public string PackageName { get { return _loadedHandler.PackageName; } }
-
-        /// <summary>
-        /// The full name of the handler
-        /// </summary>
-        public string FullName { get { return _loadedHandler.FullName; } }
-
-        /// <summary>
         /// Flag to indicate if the handler has available jobs
         /// </summary>
         public bool HasAvailableJobs { get { return _loadedHandler.HasAvailableJobs; } }
@@ -38,9 +23,9 @@ namespace NetDist.Server.XDomainObjects
         /// <summary>
         /// Constructor
         /// </summary>
-        public LoadedHandlerProxy(string packageBaseFolder)
+        public LoadedHandlerProxy(Guid id, string packageBaseFolder)
         {
-            _loadedHandler = new LoadedHandler(packageBaseFolder);
+            _loadedHandler = new LoadedHandler(id, packageBaseFolder);
         }
 
         /// <summary>
@@ -119,7 +104,7 @@ namespace NetDist.Server.XDomainObjects
         /// <summary>
         /// Gets information about this handler
         /// </summary>
-        public HandlerInfo GetInfo()
+        public LoadedHandlerStats GetInfo()
         {
             return _loadedHandler.GetInfo();
         }
@@ -130,14 +115,6 @@ namespace NetDist.Server.XDomainObjects
         public Job GetJob(Guid clientId)
         {
             return _loadedHandler.GetJob(clientId);
-        }
-
-        /// <summary>
-        /// Gets all relevant information a client needs to execute the job for this handler
-        /// </summary>
-        public HandlerJobInfo GetJobInfo()
-        {
-            return _loadedHandler.GetJobInfo();
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
-﻿namespace NetDist.Core
+﻿
+namespace NetDist.Core
 {
-    public enum AddJobScriptErrorReason
+    public enum AddJobScriptError
     {
         None,
         ParsingFailed,

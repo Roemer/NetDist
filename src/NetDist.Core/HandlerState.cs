@@ -27,5 +27,6 @@ namespace NetDist.Core
         /// Disabled, not started automatically
         /// </summary>
         Disabled,
+        Failed,
     }
 }
