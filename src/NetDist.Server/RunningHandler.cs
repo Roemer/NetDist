@@ -19,12 +19,12 @@ namespace NetDist.Server
     /// <summary>
     /// Represents a handler which is loaded. Contains the user-defined handler and eveything needed to control it
     /// </summary>
-    public class LoadedHandler
+    public class RunningHandler
     {
         /// <summary>
         /// Logger object
         /// </summary>
-        public Logger Logger { get; set; }
+        public Logger Logger { get; private set; }
 
         /// <summary>
         /// ID of the loaded handler
@@ -32,65 +32,37 @@ namespace NetDist.Server
         public Guid Id { get; private set; }
 
         /// <summary>
-        /// Current state of the handler
-        /// </summary>
-        public HandlerState HandlerState { get; private set; }
-
-        /// <summary>
         /// Flag to check if there are available jobs
         /// </summary>
         public bool HasAvailableJobs
         {
-            get { return HandlerState == HandlerState.Running && !_availableJobs.IsEmpty; }
+            get { return !_availableJobs.IsEmpty; }
         }
 
         /// <summary>
-        /// Instance of the effective handler
+        /// Event when the state of the running handler changed
         /// </summary>
+        public event EventHandler<RunningHandlerStateChangedEventArgs> StateChangedEvent;
+
         private IHandler _handler;
-
-        /// <summary>
-        /// Instance of handler settings
-        /// </summary>
         private HandlerSettings _handlerSettings;
-
-        /// <summary>
-        /// Queue for the available jobs
-        /// </summary>
         private ConcurrentQueue<JobWrapper> _availableJobs;
-
-        /// <summary>
-        /// List for jobs which are in progress
-        /// </summary>
         private Dictionary<Guid, JobWrapper> _pendingJobs;
-
-        /// <summary>
-        /// List for jobs which are finished and waiting to be collected
-        /// </summary>
         private ConcurrentQueue<JobWrapper> _finishedJobs;
-
         private long _totalProcessedJobs;
         private long _totalFailedJobs;
-
-        /// <summary>
-        /// Object used for stuff that should be thread-safe
-        /// </summary>
-        private readonly object _lockObject = new object();
-
-        private readonly PackageManager _packageManager;
-        private JobScriptFile _jobScriptFile;
-        private string _jobAssemblyPath;
+        private string _jobScriptHash;
         private Task _controlTask;
-        private CancellationTokenSource _controlTaskCancelToken = new CancellationTokenSource();
+        private CancellationTokenSource _controlTaskCancelToken;
+        private readonly object _lockObject = new object();
+        private readonly PackageManager _packageManager;
         private readonly AutoResetEvent _jobsEmptyWaitHandle = new AutoResetEvent(false);
         private readonly AutoResetEvent _resultAvailableWaitHandle = new AutoResetEvent(false);
-        private readonly AutoResetEvent _pauseWaitHandle = new AutoResetEvent(false);
-        private readonly AutoResetEvent _disabledWaitHandle = new AutoResetEvent(false);
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public LoadedHandler(Guid id, string packageBaseFolder)
+        public RunningHandler(Guid id, string packageBaseFolder)
         {
             // Initialization
             Id = id;
@@ -99,71 +71,77 @@ namespace NetDist.Server
             _availableJobs = new ConcurrentQueue<JobWrapper>();
             _pendingJobs = new Dictionary<Guid, JobWrapper>();
             _finishedJobs = new ConcurrentQueue<JobWrapper>();
-            HandlerState = HandlerState.Stopped;
         }
 
         /// <summary>
         /// Initializes the handler and everything it needs to run
         /// </summary>
-        public JobScriptInitializeResult Initialize(LoadedHandlerInitializeParams loadedHandlerInitializeParams)
+        public JobScriptInitializeResult InitializeAndStart(RunningHandlerInitializeParams runningHandlerInitializeParams)
         {
             // Initialization
-            _jobScriptFile = loadedHandlerInitializeParams.JobScriptFile;
-            var currentPackageFolder = _packageManager.GetPackagePath(_jobScriptFile.PackageName);
+            _jobScriptHash = runningHandlerInitializeParams.JobHash;
+            var packageName = runningHandlerInitializeParams.PackageName;
+            var currentPackageFolder = _packageManager.GetPackagePath(packageName);
 
             // Preparations
             var result = new JobScriptInitializeResult();
 
             // Assign the path to the output assembly
-            _jobAssemblyPath = loadedHandlerInitializeParams.JobAssemblyPath;
+            var jobAssemblyPath = runningHandlerInitializeParams.JobAssemblyPath;
 
             // Read the settings
             IHandlerCustomSettings customSettings;
-            JobFileHandlerSettingsReader.LoadAssemblyAndReadSettings(_jobAssemblyPath, out _handlerSettings, out customSettings);
+            JobFileHandlerSettingsReader.LoadAssemblyAndReadSettings(jobAssemblyPath, out _handlerSettings, out customSettings);
 
             // Read the package information object
-            var packageInfo = _packageManager.GetInfo(_jobScriptFile.PackageName);
+            var packageInfo = _packageManager.GetInfo(packageName);
 
-            // Initialize the handler
-            // TODO: Search in more than just the first assembly
-            var handlerAssemblyPath = Path.Combine(currentPackageFolder, packageInfo.HandlerAssemblies[0]);
-            var handlerAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(handlerAssemblyPath));
+            // Search for the correct handler type in the given assemblies
+            Type handlerType = null;
+            foreach (var handlerAssemblyName in packageInfo.HandlerAssemblies)
+            {
+                // Load the assembly
+                var handlerAssemblyPath = Path.Combine(currentPackageFolder, handlerAssemblyName);
+                var handlerAssembly = AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(handlerAssemblyPath));
 
-            // Try loading the types
-            Type[] types;
-            try
-            {
-                types = handlerAssembly.GetTypes();
-            }
-            catch (ReflectionTypeLoadException ex)
-            {
-                result.SetError(AddJobScriptError.TypeException, ex.LoaderExceptions.First().Message);
-                return result;
-            }
-
-            // Search for the correct handler
-            Type typeToLoad = null;
-            foreach (var type in types)
-            {
-                if (typeof(IHandler).IsAssignableFrom(type))
+                // Try loading the from the assembly
+                Type[] types;
+                try
                 {
-                    var att = type.GetCustomAttribute<HandlerNameAttribute>(true);
-                    if (att != null)
+                    types = handlerAssembly.GetTypes();
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    result.SetError(AddJobScriptError.TypeException, ex.LoaderExceptions.First().Message);
+                    return result;
+                }
+
+                // Search for the correct handler type
+                foreach (var type in types)
+                {
+                    if (typeof(IHandler).IsAssignableFrom(type))
                     {
-                        if (att.HandlerName == _handlerSettings.HandlerName)
+                        var att = type.GetCustomAttribute<HandlerNameAttribute>(true);
+                        if (att != null)
                         {
-                            typeToLoad = type;
-                            break;
+                            if (att.HandlerName == _handlerSettings.HandlerName)
+                            {
+                                handlerType = type;
+                                break;
+                            }
                         }
                     }
                 }
+                if (handlerType != null) { break; }
             }
-            if (typeToLoad == null)
+
+            if (handlerType == null)
             {
                 result.SetError(AddJobScriptError.JobScriptMissing, String.Format("Handler type for handler '{0}' not found", _handlerSettings.HandlerName));
                 return result;
             }
-            var handlerInstance = (IHandler)Activator.CreateInstance(typeToLoad);
+            // Initialize the handler
+            var handlerInstance = (IHandler)Activator.CreateInstance(handlerType);
             // Initialize the handler with the custom settings
             handlerInstance.InitializeCustomSettings(customSettings);
             // Attach to the logger
@@ -172,8 +150,6 @@ namespace NetDist.Server
             handlerInstance.Initialize();
             // Event when a job was added
             handlerInstance.EnqueueJobEvent += EnqueueJob;
-            // Initial state is stopped
-            HandlerState = HandlerState.Stopped;
             // Assign the handler
             _handler = handlerInstance;
 
@@ -182,10 +158,14 @@ namespace NetDist.Server
             _controlTask = new Task(ControlThread, _controlTaskCancelToken.Token);
             _controlTask.ContinueWith(t =>
             {
-                Logger.Fatal(t.Exception, "Exception in handler '{0}'", Id);
-                Stop();
+                Logger.Fatal(t.Exception, "Handler: '{0}' has exception", Id);
+                TearDown(true);
+                OnStateChangedEvent(new RunningHandlerStateChangedEventArgs(RunningHandlerState.Failed));
             }, TaskContinuationOptions.OnlyOnFaulted);
             _controlTask.Start();
+
+            // Notify the start event
+            _handler.OnStart();
 
             // Fill and return the info object
             result.HandlerId = Id;
@@ -195,35 +175,9 @@ namespace NetDist.Server
         /// <summary>
         /// Replaces the job script assembly with a new one
         /// </summary>
-        public bool ReplaceJobScript(JobScriptFile jobScriptFile, string newJobAssemblyPath)
+        public void ReplaceJobScriptHash(string newJobHash)
         {
-            // Don't replace it if it is the same as already registered
-            if (newJobAssemblyPath == _jobAssemblyPath)
-            {
-                return false;
-            }
-            _jobScriptFile = jobScriptFile;
-            _jobAssemblyPath = newJobAssemblyPath;
-            return true;
-        }
-
-        /// <summary>
-        /// Clear all resources
-        /// </summary>
-        public bool TearDown()
-        {
-            Disable();
-            if (_controlTask != null)
-            {
-                // Notify the control task to stop
-                _controlTaskCancelToken.Cancel();
-                // Wait until the task is finished (but not when faulted)
-                if (!_controlTask.IsFaulted)
-                {
-                    _controlTask.Wait();
-                }
-            }
-            return true;
+            _jobScriptHash = newJobHash;
         }
 
         /// <summary>
@@ -249,104 +203,32 @@ namespace NetDist.Server
         }
 
         /// <summary>
-        /// Starts the job handler so jobs are generated and processed
+        /// Stops and cleans up the handler
         /// </summary>
-        public bool Start()
+        public bool TearDown(bool notifyStop)
         {
-            lock (_lockObject)
+            // Notify the control task to stop
+            _controlTaskCancelToken.Cancel();
+            // Wait until the task is finished (but not when faulted)
+            if (!_controlTask.IsFaulted)
             {
-                if (HandlerState == HandlerState.Paused)
-                {
-                    // Continue processing
-                    HandlerState = HandlerState.Running;
-                    _pauseWaitHandle.Set();
-                    return true;
-                }
-                // Start if
-                if (HandlerState == HandlerState.Stopped || HandlerState == HandlerState.Finished)
-                {
-                    // Notify the handler that it has started
-                    _handler.OnStart();
-                    HandlerState = HandlerState.Running;
-                    return true;
-                }
+                _controlTask.Wait();
             }
-            return false;
-        }
-
-        /// <summary>
-        /// Stops the job handler
-        /// </summary>
-        public bool Stop()
-        {
-            lock (_lockObject)
+            // Clear the various queues/lists/stats
+            _availableJobs = new ConcurrentQueue<JobWrapper>();
+            lock (_pendingJobs.GetSyncRoot())
             {
-                if (HandlerState == HandlerState.Running || HandlerState == HandlerState.Paused)
-                {
-                    // Set the state to stopped
-                    HandlerState = HandlerState.Stopped;
-                    // Clear the various queues/lists/stats
-                    _availableJobs = new ConcurrentQueue<JobWrapper>();
-                    lock (_pendingJobs.GetSyncRoot())
-                    {
-                        _pendingJobs = new Dictionary<Guid, JobWrapper>();
-                    }
-                    _finishedJobs = new ConcurrentQueue<JobWrapper>();
-                    Interlocked.Exchange(ref _totalProcessedJobs, 0);
-                    Interlocked.Exchange(ref _totalFailedJobs, 0);
-                    // Signal the handler to stop
-                    _handler.OnStop();
-                    return true;
-                }
+                _pendingJobs = new Dictionary<Guid, JobWrapper>();
             }
-            return false;
-        }
-
-        /// <summary>
-        /// Set the handler state to paused
-        /// </summary>
-        public bool Pause()
-        {
-            lock (_lockObject)
+            _finishedJobs = new ConcurrentQueue<JobWrapper>();
+            Interlocked.Exchange(ref _totalProcessedJobs, 0);
+            Interlocked.Exchange(ref _totalFailedJobs, 0);
+            // Signal the handler to stop
+            if (notifyStop)
             {
-                if (HandlerState == HandlerState.Running || HandlerState == HandlerState.Idle)
-                {
-                    HandlerState = HandlerState.Paused;
-                    _pauseWaitHandle.Reset();
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        /// <summary>
-        /// Stop and disable processing
-        /// </summary>
-        public bool Disable()
-        {
-            lock (_lockObject)
-            {
-                Stop();
-                HandlerState = HandlerState.Disabled;
+                _handler.OnStop();
             }
             return true;
-        }
-
-        /// <summary>
-        /// Re-enable processing
-        /// </summary>
-        public bool Enable()
-        {
-            lock (_lockObject)
-            {
-                if (HandlerState == HandlerState.Disabled)
-                {
-                    HandlerState = HandlerState.Stopped;
-                    _disabledWaitHandle.Set();
-                    return true;
-                }
-            }
-            return false;
         }
 
         /// <summary>
@@ -354,12 +236,6 @@ namespace NetDist.Server
         /// </summary>
         public Job GetJob(Guid clientId)
         {
-            // Don't send out new jobs when not running
-            if (HandlerState != HandlerState.Running)
-            {
-                return null;
-            }
-
             JobWrapper assignedJob;
             var success = _availableJobs.TryDequeue(out assignedJob);
             if (success)
@@ -378,20 +254,13 @@ namespace NetDist.Server
                     // If not, set the waithandle to get new jobs
                     _jobsEmptyWaitHandle.Set();
                 }
-                return assignedJob.CreateJob(_jobScriptFile.Hash);
+                return assignedJob.CreateJob(_jobScriptHash);
             }
             return null;
         }
 
         public bool ReceivedResult(JobResult result)
         {
-            // Catch case where we receive results for an already stopped handler
-            if (HandlerState == HandlerState.Stopped)
-            {
-                Logger.Warn("Got job '{0}' result for stopped handler", result.JobId);
-                return false;
-            }
-
             lock (_pendingJobs.GetSyncRoot())
             {
                 // Get the job which is in progress
@@ -418,7 +287,7 @@ namespace NetDist.Server
                 }
 
                 var resultString = result.GetOutput();
-                Logger.Info("Got result for job '{0}': {1}", result.JobId, resultString);
+                Logger.Info("Handler: Got result for job '{0}': {1}", result.JobId, resultString);
                 Interlocked.Increment(ref _totalProcessedJobs);
 
                 // Remove job from in-progress list
@@ -454,7 +323,6 @@ namespace NetDist.Server
         /// - Refills the job-queue if needed
         /// - Checks for job timeouts and then resends the jobs
         /// - Collects and processes the results
-        /// - Controls various timings (idle-time, disabled, ...)
         /// </summary>
         private void ControlThread()
         {
@@ -464,18 +332,6 @@ namespace NetDist.Server
             // Control loop until the handler is being removed
             while (!_controlTaskCancelToken.IsCancellationRequested)
             {
-                // Block until re-enabled
-                if (HandlerState == HandlerState.Disabled)
-                {
-                    _disabledWaitHandle.WaitOne();
-                }
-
-                // Block until unpaused
-                if (HandlerState == HandlerState.Paused)
-                {
-                    _pauseWaitHandle.WaitOne();
-                }
-
                 // Collect results
                 JobWrapper finishedJob;
                 while (_finishedJobs.TryDequeue(out finishedJob))
@@ -521,17 +377,24 @@ namespace NetDist.Server
                 // Stop if the handler was marked as finished
                 if (_handler.IsFinished)
                 {
-                    Logger.Info("Handler '{0}' finished successfully", Id);
+                    Logger.Info("Handler: '{0}' finished successfully", Id);
                     lock (_lockObject)
                     {
                         _handler.OnFinished();
-                        HandlerState = HandlerState.Finished;
+                        OnStateChangedEvent(new RunningHandlerStateChangedEventArgs(RunningHandlerState.Finished));
+                        return;
                     }
                 }
 
                 // Sleep a little or until any of the various events was set
                 WaitHandle.WaitAny(new[] { _controlTaskCancelToken.Token.WaitHandle, _jobsEmptyWaitHandle, _resultAvailableWaitHandle }, defaultSleep);
             }
+        }
+
+        protected virtual void OnStateChangedEvent(RunningHandlerStateChangedEventArgs e)
+        {
+            var handler = StateChangedEvent;
+            if (handler != null) handler(this, e);
         }
     }
 }

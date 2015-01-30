@@ -1,6 +1,7 @@
 ﻿using NCrontab;
 using NetDist.Core;
 using NetDist.Jobs;
+using NetDist.Jobs.DataContracts;
 using NetDist.Logging;
 using NetDist.Server.XDomainObjects;
 using System;
@@ -26,42 +27,27 @@ namespace NetDist.Server
         /// <summary>
         /// Flag to indicate if this handler can deliver jobs
         /// </summary>
-        public bool CanDeliverJob { get { return HandlerProxy != null && _handlerState == HandlerState.Running && HandlerProxy.HasAvailableJobs; } }
-
-        /// <summary>
-        /// Time when the handler was last started
-        /// </summary>
-        private DateTime? LastStartTime { get; set; }
+        public bool CanDeliverJob { get { return _handlerProxy != null && _handlerState == HandlerState.Running && _handlerProxy.HasAvailableJobs; } }
 
         /// <summary>
         /// Time when the handler will start next time
         /// </summary>
-        public DateTime? NextStartTime { get; set; }
+        public DateTime? NextStartTime { get; private set; }
 
         /// <summary>
         /// Job script object used for this handler
         /// </summary>
-        public JobScriptFile JobScript { get; set; }
+        public JobScriptFile JobScript { get; private set; }
 
         /// <summary>
         /// Full path to the current job script assembly used by this handler
         /// </summary>
-        public string JobScriptAssembly { get; set; }
+        public string JobScriptAssembly { get; private set; }
 
         /// <summary>
         /// Handler settings object for this handler instance
         /// </summary>
         public HandlerSettings HandlerSettings { get; private set; }
-
-        /// <summary>
-        /// The app domain object where this handler is running
-        /// </summary>
-        public AppDomain AppDomain { get; set; }
-
-        /// <summary>
-        /// Proxy object to communicate with this handler
-        /// </summary>
-        public LoadedHandlerProxy HandlerProxy { get; set; }
 
         private readonly object _lockObject = new object();
         private readonly PackageManager _packageManager;
@@ -69,6 +55,9 @@ namespace NetDist.Server
         private HandlerState _handlerState;
         private CrontabSchedule _cronSchedule;
         private IdleInformation _idleInfo;
+        private AppDomain _appDomain;
+        private RunningHandlerProxy _handlerProxy;
+        private DateTime? _lastStartTime;
 
         /// <summary>
         /// Constructor
@@ -81,9 +70,28 @@ namespace NetDist.Server
             _handlerState = HandlerState.Stopped;
         }
 
-        public void UpdateSettings(HandlerSettings handlerSettings)
+        /// <summary>
+        /// Initializes the instance from all necessary information
+        /// </summary>
+        public bool InitializeFromJobScript(JobScriptFile jobScriptFile, string outputAssembly, HandlerSettings handlerSettings)
         {
+            // Check if any data changed at all
+            if (JobScript != null && JobScript.Hash != jobScriptFile.Hash)
+            {
+                return false;
+            }
+
+            // Set the new values
+            JobScript = jobScriptFile;
+            JobScriptAssembly = outputAssembly;
             HandlerSettings = handlerSettings;
+
+            // Notify the running handler of the new value
+            if (_handlerProxy != null)
+            {
+                _handlerProxy.ReplaceJobScriptHash(JobScript.Hash);
+            }
+
             // Initialize cron scheduler
             _cronSchedule = null;
             NextStartTime = null;
@@ -96,7 +104,7 @@ namespace NetDist.Server
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warn("Failed to parse Crontab: '{0}' - Ex: {1}", HandlerSettings.Schedule, ex.Message);
+                    _logger.Warn("Handler: Failed to parse Crontab: '{0}' - Ex: {1}", HandlerSettings.Schedule, ex.Message);
                 }
             }
             // Initialize idle time
@@ -113,15 +121,16 @@ namespace NetDist.Server
                     _idleInfo = new IdleInformation { Start = idleTimeStart, End = idleTimeEnd };
                 }
             }
+            return true;
         }
 
         public HandlerInfo GetInfo()
         {
             var info = new HandlerInfo();
-            if (HandlerProxy != null)
+            if (_handlerProxy != null)
             {
                 // Additional statistics about the running part of the handler
-                var stats = HandlerProxy.GetInfo();
+                var stats = _handlerProxy.GetInfo();
                 info.JobsAvailable = stats.JobsAvailable;
                 info.JobsPending = stats.JobsPending;
                 info.TotalJobsAvailable = stats.TotalJobsAvailable;
@@ -134,7 +143,7 @@ namespace NetDist.Server
             info.HandlerName = HandlerSettings.HandlerName;
             info.JobName = HandlerSettings.JobName;
             info.HandlerState = _handlerState;
-            info.LastStartTime = LastStartTime;
+            info.LastStartTime = _lastStartTime;
             info.NextStartTime = NextStartTime;
             return info;
         }
@@ -143,21 +152,20 @@ namespace NetDist.Server
         {
             lock (_lockObject)
             {
-                if (HandlerProxy == null)
+                if (_handlerProxy == null)
                 {
-                    AppDomain = CreateDomain();
-                    LoadedHandlerProxy proxy;
-                    var initResult = InitializeProxy(out proxy);
+                    _appDomain = CreateDomain();
+                    RunningHandlerProxy proxy;
+                    var initResult = InitializeAndStartRunningHandler(out proxy);
                     if (initResult.HasError)
                     {
-                        _logger.Error("Handler init failed: {0}: {1}", initResult.ErrorReason, initResult.ErrorMessage);
+                        _logger.Error("Handler: Init failed: {0}: {1}", initResult.ErrorReason, initResult.ErrorMessage);
                         SetFailed();
                         return false;
                     }
-                    HandlerProxy = proxy;
-                    LastStartTime = DateTime.Now;
+                    _handlerProxy = proxy;
+                    _lastStartTime = DateTime.Now;
                 }
-                HandlerProxy.Start();
                 _handlerState = HandlerState.Running;
             }
             return true;
@@ -167,19 +175,83 @@ namespace NetDist.Server
         {
             lock (_lockObject)
             {
-                if (HandlerProxy != null)
-                {
-                    HandlerProxy.Stop();
-                    HandlerProxy = null;
-                }
-                if (AppDomain != null)
-                {
-                    AppDomain.Unload(AppDomain);
-                    AppDomain = null;
-                }
                 _handlerState = HandlerState.Stopped;
+                CleanupProxy(true);
+                CleanupAppDomain();
             }
             return true;
+        }
+
+        public bool SetFinished()
+        {
+            lock (_lockObject)
+            {
+                _handlerState = HandlerState.Finished;
+                CleanupProxy(false);
+                CleanupAppDomain();
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Tells the handler to keep running but without generating additional jobs
+        /// </summary>
+        public bool Pause()
+        {
+            lock (_lockObject)
+            {
+                if (_handlerState == HandlerState.Running || _handlerState == HandlerState.Idle)
+                {
+                    _handlerState = HandlerState.Paused;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Stops the handler and does not start it again
+        /// </summary>
+        public bool Disable()
+        {
+            lock (_lockObject)
+            {
+                Stop();
+                _handlerState = HandlerState.Disabled;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Re-enables the handler so it could start again
+        /// </summary>
+        public bool Enable()
+        {
+            lock (_lockObject)
+            {
+                if (_handlerState == HandlerState.Disabled)
+                {
+                    _handlerState = HandlerState.Stopped;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public Job GetJob(Guid clientId)
+        {
+            return _handlerProxy.GetJob(clientId);
+        }
+
+        public bool ReceivedResult(JobResult result)
+        {
+            // Catch case where we receive results for an already stopped handler
+            if (_handlerState == HandlerState.Stopped)
+            {
+                _logger.Warn("Handler: Got job '{0}' result for stopped handler", result.JobId);
+                return false;
+            }
+            return _handlerProxy.ReceivedResult(result);
         }
 
         private void SetFailed()
@@ -203,23 +275,56 @@ namespace NetDist.Server
             return domain;
         }
 
-        private JobScriptInitializeResult InitializeProxy(out LoadedHandlerProxy handlerProxy)
+        private JobScriptInitializeResult InitializeAndStartRunningHandler(out RunningHandlerProxy handlerProxy)
         {
             // Create a proxy for the handler
-            handlerProxy = (LoadedHandlerProxy)AppDomain.CreateInstanceAndUnwrap(typeof(LoadedHandlerProxy).Assembly.FullName, typeof(LoadedHandlerProxy).FullName, false, BindingFlags.Default, null, new object[] { Id, _packageManager.PackageBaseFolder }, null, null);
+            handlerProxy = (RunningHandlerProxy)_appDomain.CreateInstanceAndUnwrap(typeof(RunningHandlerProxy).Assembly.FullName, typeof(RunningHandlerProxy).FullName, false, BindingFlags.Default, null, new object[] { Id, _packageManager.PackageBaseFolder }, null, null);
             // Create a interchangeable event sink to register cross-domain events to catch logging events
             var sink = new EventSink<LogEventArgs>();
             handlerProxy.RegisterLogEventSink(sink);
             sink.NotificationFired += (sender, args) => _logger.Log(args.LogLevel, args.Exception, args.Message);
+            // Register event sink to listen on state changes
+            var stateSink = new EventSink<RunningHandlerStateChangedEventArgs>();
+            handlerProxy.RegisterStateChangedEventSink(stateSink);
+            stateSink.NotificationFired += (sender, args) =>
+            {
+                if (args.State == RunningHandlerState.Failed)
+                {
+                    SetFailed();
+                }
+                else if (args.State == RunningHandlerState.Finished)
+                {
+                    SetFinished();
+                }
+            };
             // Initialize the handler
-            var initParams = new LoadedHandlerInitializeParams
+            var initParams = new RunningHandlerInitializeParams
             {
                 HandlerSettings = HandlerSettings,
-                JobScriptFile = JobScript,
+                JobHash = JobScript.Hash,
+                PackageName = JobScript.PackageName,
                 JobAssemblyPath = JobScriptAssembly
             };
-            var initResult = handlerProxy.Initialize(initParams);
+            var initResult = handlerProxy.InitializeAndStart(initParams);
             return initResult;
+        }
+
+        private void CleanupProxy(bool notifyStop)
+        {
+            if (_handlerProxy != null)
+            {
+                _handlerProxy.TearDown(notifyStop);
+                _handlerProxy = null;
+            }
+        }
+
+        private void CleanupAppDomain()
+        {
+            if (_appDomain != null)
+            {
+                AppDomain.Unload(_appDomain);
+                _appDomain = null;
+            }
         }
 
         /// <summary>
@@ -269,18 +374,21 @@ namespace NetDist.Server
                 }
             }
 
-            // Check if we're outside the idletime but the handler is still idle
-            if (!isInIdleTime && _handlerState == HandlerState.Idle)
+            lock (_lockObject)
             {
-                // Set it to running
-                _handlerState = HandlerState.Running;
-            }
+                // Check if we're outside the idletime but the handler is still idle
+                if (!isInIdleTime && _handlerState == HandlerState.Idle)
+                {
+                    // Set it to running
+                    _handlerState = HandlerState.Running;
+                }
 
-            // We're inside the idle time but the handler is still running
-            if (isInIdleTime && _handlerState == HandlerState.Running)
-            {
-                // Set it to idle
-                _handlerState = HandlerState.Idle;
+                // We're inside the idle time but the handler is still running
+                if (isInIdleTime && _handlerState == HandlerState.Running)
+                {
+                    // Set it to idle
+                    _handlerState = HandlerState.Idle;
+                }
             }
         }
 

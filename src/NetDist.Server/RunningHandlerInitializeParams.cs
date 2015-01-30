@@ -1,13 +1,13 @@
 ﻿using NetDist.Jobs;
-using NetDist.Server.XDomainObjects;
 using System;
 
 namespace NetDist.Server
 {
     [Serializable]
-    public class LoadedHandlerInitializeParams
+    public class RunningHandlerInitializeParams
     {
-        public JobScriptFile JobScriptFile { get; set; }
+        public string JobHash { get; set; }
+        public string PackageName { get; set; }
         public HandlerSettings HandlerSettings { get; set; }
         public string JobAssemblyPath { get; set; }
     }

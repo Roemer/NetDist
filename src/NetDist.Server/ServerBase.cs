@@ -83,7 +83,7 @@ namespace NetDist.Server
             var success = InternalStart();
             if (!success)
             {
-                Logger.Info("Server failed to start");
+                Logger.Info("Server: Failed to start");
             }
         }
 
@@ -95,7 +95,7 @@ namespace NetDist.Server
             var success = InternalStop();
             if (!success)
             {
-                Logger.Info("Server failed to stop");
+                Logger.Info("Server: Failed to stop");
             }
             _handlerManager.TearDown();
         }
@@ -146,7 +146,7 @@ namespace NetDist.Server
             _packageManager.Save(packageInfo);
             // Unpack the zip file
             ZipUtility.ZipExtractToDirectory(zipcontent, PackagesFolder, true);
-            Logger.Info("Registered package '{0}' with {1} handler file(s) and {2} dependent file(s)", packageInfo.PackageName, packageInfo.HandlerAssemblies.Count, packageInfo.Dependencies.Count);
+            Logger.Info("Server: Registered package '{0}' with {1} handler file(s) and {2} dependent file(s)", packageInfo.PackageName, packageInfo.HandlerAssemblies.Count, packageInfo.Dependencies.Count);
             return true;
         }
 
@@ -203,7 +203,7 @@ namespace NetDist.Server
         /// </summary>
         public Job GetJob(Guid clientId)
         {
-            Logger.Info("Client '{0}' requested a job", clientId);
+            Logger.Info("Client: '{0}' requested a job", _knownClients[clientId].ClientInfo.Name);
             var job = _handlerManager.GetJob(clientId);
             if (job != null)
             {
