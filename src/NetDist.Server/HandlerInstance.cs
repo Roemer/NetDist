@@ -282,7 +282,7 @@ namespace NetDist.Server
             // Create a interchangeable event sink to register cross-domain events to catch logging events
             var sink = new EventSink<LogEventArgs>();
             handlerProxy.RegisterLogEventSink(sink);
-            sink.NotificationFired += (sender, args) => _logger.Log(args.LogLevel, args.Exception, args.Message);
+            sink.NotificationFired += (sender, args) => _logger.Log(args.LogEntry.SetHandlerId(Id));
             // Register event sink to listen on state changes
             var stateSink = new EventSink<RunningHandlerStateChangedEventArgs>();
             handlerProxy.RegisterStateChangedEventSink(stateSink);

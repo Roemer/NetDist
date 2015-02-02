@@ -145,7 +145,7 @@ namespace NetDist.Server
             // Initialize the handler with the custom settings
             handlerInstance.InitializeCustomSettings(customSettings);
             // Attach to the logger
-            handlerInstance.Logger.LogEvent += (sender, args) => Logger.Log(args.LogLevel, args.Exception, args.Message);
+            handlerInstance.Logger.LogEvent += (sender, args) => Logger.Log(args.LogEntry.SetHandlerId(Id));
             // Call the virtual initialize method
             handlerInstance.Initialize();
             // Event when a job was added

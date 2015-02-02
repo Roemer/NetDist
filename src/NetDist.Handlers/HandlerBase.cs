@@ -23,6 +23,11 @@ namespace NetDist.Handlers
         public TSet Settings { get; private set; }
 
         /// <summary>
+        /// The logger object
+        /// </summary>
+        public Logger Logger { get; internal set; }
+
+        /// <summary>
         /// Flag to indicate if the handler is finished or not
         /// </summary>
         public bool IsFinished { get; protected set; }
@@ -73,11 +78,6 @@ namespace NetDist.Handlers
             // ReSharper disable once DelegateSubtraction
             remove { _enqueueJobEventHandler -= value; }
         }
-
-        /// <summary>
-        /// The logger object
-        /// </summary>
-        public Logger Logger { get; private set; }
 
         /// <summary>
         /// Constructor

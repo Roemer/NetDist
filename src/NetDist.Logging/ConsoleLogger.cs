@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Text;
 
 namespace NetDist.Logging
 {
@@ -8,39 +7,28 @@ namespace NetDist.Logging
         public ConsoleLogger(LogLevel maxLevel = LogLevel.Warn)
             : base(maxLevel) { }
 
-        protected override void Log(LogLevel logLevel, string message, Exception exception = null)
+        protected override void Log(LogEntry logEntry)
         {
-            if (exception != null)
+            var message = logEntry.Message;
+            if (logEntry.Exceptions.Count > 0)
             {
-                var exceptionString = ExceptionString(exception);
+                var exceptionString = logEntry.Exceptions[0].ToString();
                 message = String.Format("{0}\r\n    {1}", message, exceptionString);
             }
-
-            var content = String.Format("[{0:yyyy-MM-dd HH:mm:ss}] {1} {2}\r\n", DateTime.Now, logLevel.ToString().ToUpper(), message);
-            Console.WriteLine(content);
-        }
-
-        private string ExceptionString(Exception exception)
-        {
-            var output = new StringBuilder();
-            var currentException = exception;
-            if (currentException != null)
+            if (logEntry.HandlerId.HasValue)
             {
-                output.AppendFormat("\r\n    {0}", CleanExceptionMessage(currentException));
-                while (currentException.InnerException != null)
-                {
-                    currentException = currentException.InnerException;
-                    output.AppendFormat("\r\n    {0}", CleanExceptionMessage(currentException));
-                }
+                message = String.Format("Handler: {0} - {1}", logEntry.HandlerId.Value, message);
             }
-            return output.ToString();
-        }
-
-        private string CleanExceptionMessage(Exception exception)
-        {
-            var output = String.Format("[{0}] {1} => {2}", exception.GetType(), exception.Message, exception.StackTrace);
-            output = output.Replace(Environment.NewLine, " | ");
-            return output;
+            else if (logEntry.ClientId.HasValue)
+            {
+                message = String.Format("Client: {0} - {1}", logEntry.ClientId.Value, message);
+            }
+            else
+            {
+                message = String.Format("Server - {0}", message);
+            }
+            var content = String.Format("[{0:yyyy-MM-dd HH:mm:ss}] [{1}] {2}\r\n", logEntry.LogDate, logEntry.LogLevel, message);
+            Console.WriteLine(content);
         }
     }
 }

@@ -2,7 +2,6 @@
 using NetDist.Server.WebApi;
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Windows;
 using Wpf.Shared;
 
@@ -46,7 +45,27 @@ namespace WpfServer
                 Dispatcher.Invoke(new EventHandler<LogEventArgs>(LoggerOnLogEvent), sender, logEventArgs);
                 return;
             }
-            LogList.Items.Insert(0, logEventArgs.Message);
+            var logEntry = logEventArgs.LogEntry;
+            var message = logEntry.Message;
+            if (logEntry.Exceptions.Count > 0)
+            {
+                var exceptionString = logEntry.Exceptions[0].ToString();
+                message = String.Format("{0}\r\n    {1}", message, exceptionString);
+            }
+            if (logEntry.HandlerId.HasValue)
+            {
+                message = String.Format("Handler: {0} - {1}", logEntry.HandlerId.Value, message);
+            }
+            else if (logEntry.ClientId.HasValue)
+            {
+                message = String.Format("Client: {0} - {1}", logEntry.ClientId.Value, message);
+            }
+            else
+            {
+                message = String.Format("Server - {0}", message);
+            }
+            var content = String.Format("[{0:yyyy-MM-dd HH:mm:ss}] [{1}] {2}", logEntry.LogDate, logEntry.LogLevel, message);
+            LogList.Items.Insert(0, content);
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using System;
-
+﻿
 namespace NetDist.Logging
 {
     /// <summary>
@@ -14,13 +13,13 @@ namespace NetDist.Logging
             MaxLevel = maxLevel;
         }
 
-        protected abstract void Log(LogLevel logLevel, string message, Exception exception = null);
+        protected abstract void Log(LogEntry logEntry);
 
         public void Log(object sender, LogEventArgs eventArgs)
         {
-            if (eventArgs.LogLevel >= MaxLevel)
+            if (eventArgs.LogEntry.LogLevel >= MaxLevel)
             {
-                Log(eventArgs.LogLevel, eventArgs.Message, eventArgs.Exception);
+                Log(eventArgs.LogEntry);
             }
         }
     }

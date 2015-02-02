@@ -5,15 +5,11 @@ namespace NetDist.Logging
     [Serializable]
     public class LogEventArgs : EventArgs
     {
-        public LogLevel LogLevel { get; set; }
-        public string Message { get; set; }
-        public Exception Exception { get; set; }
+        public LogEntry LogEntry { get; set; }
 
-        public LogEventArgs(LogLevel logLevel, string message, Exception exception)
+        public LogEventArgs(LogEntry logEntry)
         {
-            LogLevel = logLevel;
-            Message = message;
-            Exception = exception;
+            LogEntry = logEntry;
         }
     }
 }

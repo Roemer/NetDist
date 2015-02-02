@@ -8,53 +8,89 @@ namespace NetDist.Logging
 
         public void Debug(string message, params object[] messageParams)
         {
-            Log(LogLevel.Debug, message, messageParams);
+            Debug(null, message, messageParams);
+        }
+        public void Debug(Action<LogEntry> fillAction, string message, params object[] messageParams)
+        {
+            var logEntry = new LogEntry(LogLevel.Debug).SetMessage(message, messageParams);
+            if (fillAction != null) { fillAction(logEntry); }
+            Log(logEntry);
         }
 
         public void Info(string message, params object[] messageParams)
         {
-            Log(LogLevel.Info, message, messageParams);
+            Info(null, message, messageParams);
+        }
+        public void Info(Action<LogEntry> fillAction, string message, params object[] messageParams)
+        {
+            var logEntry = new LogEntry(LogLevel.Info).SetMessage(message, messageParams);
+            if (fillAction != null) { fillAction(logEntry); }
+            Log(logEntry);
         }
 
         public void Warn(string message, params object[] messageParams)
         {
-            Warn(null, message, messageParams);
+            Warn(null, null, message, messageParams);
         }
-        public void Warn(Exception exception, string message = null, params object[] messageParams)
+        public void Warn(Action<LogEntry> fillAction, string message, params object[] messageParams)
         {
-            Log(LogLevel.Warn, exception, message, messageParams);
+            Warn(fillAction, null, message, messageParams);
+        }
+        public void Warn(Exception exception, string message, params object[] messageParams)
+        {
+            Warn(null, exception, message, messageParams);
+        }
+        public void Warn(Action<LogEntry> fillAction, Exception exception, string message = null, params object[] messageParams)
+        {
+            var logEntry = new LogEntry(LogLevel.Warn).SetMessage(message, messageParams).SetException(exception);
+            if (fillAction != null) { fillAction(logEntry); }
+            Log(logEntry);
         }
 
         public void Error(string message, params object[] messageParams)
         {
-            Error(null, message, messageParams);
+            Error(null, null, message, messageParams);
         }
-        public void Error(Exception exception, string message = null, params object[] messageParams)
+        public void Error(Action<LogEntry> fillAction, string message, params object[] messageParams)
         {
-            Log(LogLevel.Error, exception, message, messageParams);
+            Error(fillAction, null, message, messageParams);
+        }
+        public void Error(Exception exception, string message, params object[] messageParams)
+        {
+            Error(null, exception, message, messageParams);
+        }
+        public void Error(Action<LogEntry> fillAction, Exception exception, string message = null, params object[] messageParams)
+        {
+            var logEntry = new LogEntry(LogLevel.Error).SetMessage(message, messageParams).SetException(exception);
+            if (fillAction != null) { fillAction(logEntry); }
+            Log(logEntry);
         }
 
         public void Fatal(string message, params object[] messageParams)
         {
-            Error(null, message, messageParams);
+            Fatal(null, null, message, messageParams);
         }
-        public void Fatal(Exception exception, string message = null, params object[] messageParams)
+        public void Fatal(Action<LogEntry> fillAction, string message, params object[] messageParams)
         {
-            Log(LogLevel.Fatal, exception, message, messageParams);
+            Fatal(fillAction, null, message, messageParams);
+        }
+        public void Fatal(Exception exception, string message, params object[] messageParams)
+        {
+            Fatal(null, exception, message, messageParams);
+        }
+        public void Fatal(Action<LogEntry> fillAction, Exception exception, string message = null, params object[] messageParams)
+        {
+            var logEntry = new LogEntry(LogLevel.Fatal).SetMessage(message, messageParams).SetException(exception);
+            if (fillAction != null) { fillAction(logEntry); }
+            Log(logEntry);
         }
 
-        public void Log(LogLevel logLevel, string message, params object[] messageParams)
+        public void Log(LogEntry logEntry)
         {
-            Log(logLevel, null, message, messageParams);
-        }
-
-        public void Log(LogLevel logLevel, Exception exception, string message = null, params object[] messageParams)
-        {
-            var messageString = (messageParams == null || messageParams.Length == 0 || message == null) ? message : String.Format(message, messageParams);
             var handlers = LogEvent;
             if (handlers != null)
             {
-                handlers(null, new LogEventArgs(logLevel, messageString, exception));
+                handlers(null, new LogEventArgs(logEntry));
             }
         }
     }
