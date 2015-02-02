@@ -76,7 +76,7 @@ namespace NetDist.Server
         public bool InitializeFromJobScript(JobScriptFile jobScriptFile, string outputAssembly, HandlerSettings handlerSettings)
         {
             // Check if any data changed at all
-            if (JobScript != null && JobScript.Hash != jobScriptFile.Hash)
+            if (JobScript != null && JobScript.Hash == jobScriptFile.Hash)
             {
                 return false;
             }
