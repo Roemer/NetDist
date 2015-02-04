@@ -356,7 +356,7 @@ namespace NetDist.Server
                     handler.Value.CheckIdle();
                     handler.Value.ScheduledStartOrReschedule();
                 }
-                Thread.Sleep(10000);
+                WaitHandle.WaitAny(new[] { _schedulerTaskCancelToken.Token.WaitHandle }, 10000);
             }
         }
     }

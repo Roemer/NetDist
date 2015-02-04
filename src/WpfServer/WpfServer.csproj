@@ -59,6 +59,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ViewModels\LogEntryViewModel.cs" />
+    <Compile Include="ViewModels\ServerMainViewModel.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -93,6 +95,7 @@
     <None Include="app.manifest">
       <SubType>Designer</SubType>
     </None>
+    <Compile Include="Models\ServerMainModel.cs" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -103,6 +106,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NetDist.Core\NetDist.Core.csproj">
+      <Project>{af2925d1-e039-4d6b-ae81-2f5fe56faf4e}</Project>
+      <Name>NetDist.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NetDist.Logging\NetDist.Logging.csproj">
       <Project>{de600b9a-c488-40e1-8d0e-e0e6d64ffb90}</Project>
       <Name>NetDist.Logging</Name>
@@ -123,6 +130,7 @@
   <ItemGroup>
     <Resource Include="server.ico" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -33,19 +33,21 @@ namespace NetDist.Server
             for (int i = 0; i < compilerResults.Output.Count; i++)
             {
                 Output.Add(compilerResults.Output[i]);
-                sbOutput.AppendLine(compilerResults.Output[i]);
+                if (i > 0) { sbOutput.AppendLine(); }
+                sbOutput.Append(compilerResults.Output[i]);
             }
             OutputString = sbOutput.ToString();
 
+            Errors = new List<string>();
             if (compilerResults.Errors.HasErrors)
             {
                 ResultType = CompileResultType.Failed;
-                Errors = new List<string>();
                 var sbError = new StringBuilder();
                 for (int i = 0; i < compilerResults.Errors.Count; i++)
                 {
                     Errors.Add(compilerResults.Errors[i].ToString());
-                    sbError.AppendFormat("{0}: {1}", i, compilerResults.Errors[i]).AppendLine();
+                    if (i > 0) { sbError.AppendLine(); }
+                    sbError.AppendFormat("{0}: {1}", i, compilerResults.Errors[i]);
                 }
                 ErrorString = sbError.ToString();
             }

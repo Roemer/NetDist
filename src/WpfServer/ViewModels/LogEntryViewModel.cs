@@ -1,18 +1,24 @@
-﻿using System;
+﻿using NetDist.Core.Utilities;
+using NetDist.Logging;
+using System;
 
-namespace NetDist.Logging
+namespace WpfServer.ViewModels
 {
-    public class ConsoleLogger : LoggerBase
+    public class LogEntryViewModel : ObservableObject
     {
-        public ConsoleLogger(LogLevel maxLevel = LogLevel.Warn)
-            : base(maxLevel) { }
+        public DateTime Date { get; set; }
+        public LogLevel LogLevel { get; set; }
+        public string Message { get; set; }
 
-        protected override void Log(LogEntry logEntry)
+        public LogEntryViewModel(LogEntry logEntry)
         {
+            Date = logEntry.LogDate;
+            LogLevel = logEntry.LogLevel;
+
             var message = logEntry.Message;
             if (logEntry.Exceptions.Count > 0)
             {
-                message = String.Format("{0}\r\n    {1}", message, logEntry.Exceptions[0]);
+                message = String.Format("{0} - {1}", message, logEntry.Exceptions[0]);
             }
             if (logEntry.HandlerId.HasValue)
             {
@@ -26,8 +32,7 @@ namespace NetDist.Logging
             {
                 message = String.Format("Server - {0}", message);
             }
-            var content = String.Format("[{0:yyyy-MM-dd HH:mm:ss}] [{1}] {2}", logEntry.LogDate, logEntry.LogLevel, message);
-            Console.WriteLine(content);
+            Message = message;
         }
     }
 }

@@ -24,8 +24,7 @@ namespace NetDist.Logging
             var message = logEntry.Message;
             if (logEntry.Exceptions.Count > 0)
             {
-                var exceptionString = logEntry.Exceptions[0].ToString();
-                message = String.Format("{0}\r\n    {1}", message, exceptionString);
+                message = String.Format("{0}\r\n    {1}", message, logEntry.Exceptions[0]);
             }
             if (logEntry.HandlerId.HasValue)
             {
@@ -39,7 +38,7 @@ namespace NetDist.Logging
             {
                 message = String.Format("Server - {0}", message);
             }
-            var content = String.Format("[{0:yyyy-MM-dd HH:mm:ss}] [{1}] {2}\r\n", logEntry.LogDate, logEntry.LogLevel, message);
+            var content = String.Format("[{0:yyyy-MM-dd HH:mm:ss}] [{1}] {2}", logEntry.LogDate, logEntry.LogLevel, message);
 
             Directory.CreateDirectory(Path.GetDirectoryName(_basePath) ?? String.Empty);
             // Write the to the file
