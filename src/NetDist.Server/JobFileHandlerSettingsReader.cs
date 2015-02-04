@@ -100,6 +100,11 @@ namespace NetDist.Server
             {
                 return _customSettings;
             }
+
+            public override object InitializeLifetimeService()
+            {
+                return null;
+            }
         }
     }
 }

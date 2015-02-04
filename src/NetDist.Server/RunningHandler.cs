@@ -394,7 +394,7 @@ namespace NetDist.Server
         protected virtual void OnStateChangedEvent(RunningHandlerStateChangedEventArgs e)
         {
             var handler = StateChangedEvent;
-            if (handler != null) handler(this, e);
+            if (handler != null) handler(null, e);
         }
     }
 }

@@ -6,6 +6,7 @@ using NetDist.Logging;
 using NetDist.Server.XDomainObjects;
 using System;
 using System.Reflection;
+using System.Linq;
 
 namespace NetDist.Server
 {
@@ -121,6 +122,34 @@ namespace NetDist.Server
                     _idleInfo = new IdleInformation { Start = idleTimeStart, End = idleTimeEnd };
                 }
             }
+            return true;
+        }
+
+        public bool IsAllowedForClient(string clientName)
+        {
+            // 1. Priority: Explicitely allowed
+            if (HandlerSettings.ClientsAllowed.Count != 0)
+            {
+                // True if it is explicitely allowed
+                if (HandlerSettings.ClientsAllowed.Contains(clientName, StringComparer.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+                // False if not in the allowed list
+                return false;
+            }
+            // 2. Priority: Explicitely allowed
+            if (HandlerSettings.ClientsDenied.Count != 0)
+            {
+                // False if it is explicitely denied
+                if (HandlerSettings.ClientsDenied.Contains(clientName, StringComparer.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+                // True if not in the denied list
+                return true;
+            }
+            // 3. Priority: Neither allowed nor denied
             return true;
         }
 

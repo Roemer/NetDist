@@ -243,11 +243,16 @@ namespace NetDist.Server
             });
         }
 
-        public Job GetJob(Guid clientId)
+        public Job GetJob(ExtendedClientInfo clientInfo)
         {
             for (var i = 0; i < 10; i++)
             {
-                var handlersWithJobs = _loadedHandlers.Where(x => x.Value.CanDeliverJob).ToArray();
+                // Get possible handlers for the next job
+                var handlersWithJobs = _loadedHandlers.Where(x =>
+                    x.Value.CanDeliverJob &&
+                    x.Value.IsAllowedForClient(clientInfo.ClientInfo.Name)
+                ).ToArray();
+
                 if (handlersWithJobs.Length == 0)
                 {
                     // No handler with available jobs at all
@@ -256,18 +261,18 @@ namespace NetDist.Server
                 // Randomly choose a handler
                 var nextRandNumber = RandomGenerator.Instance.Next(handlersWithJobs.Length);
                 var randomHandler = handlersWithJobs[nextRandNumber];
-                var nextJob = randomHandler.Value.GetJob(clientId);
+                var nextJob = randomHandler.Value.GetJob(clientInfo.ClientInfo.Id);
                 if (nextJob == null)
                 {
                     // Can happen if the queue was empty between the "HasAvailableJobs" check and now
                     // just retry a few times
-                    Logger.Debug(entry => entry.SetClientId(clientId), "Job queue was suddenly empty, try again");
+                    Logger.Debug(entry => entry.SetClientId(clientInfo.ClientInfo.Id), "Job queue was suddenly empty, try again");
                     continue;
                 }
-                Logger.Info(entry => entry.SetClientId(clientId), "Got job '{0}' for handler '{1}'", nextJob.Id, randomHandler.Value.FullName);
+                Logger.Info(entry => entry.SetClientId(clientInfo.ClientInfo.Id), "Got job '{0}' for handler '{1}'", nextJob.Id, randomHandler.Value.FullName);
                 return nextJob;
             }
-            Logger.Warn(entry => entry.SetClientId(clientId), "Gave up getting a job");
+            Logger.Warn(entry => entry.SetClientId(clientInfo.ClientInfo.Id), "Gave up getting a job");
             return null;
         }
 

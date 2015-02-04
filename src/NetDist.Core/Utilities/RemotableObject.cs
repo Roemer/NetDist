@@ -10,5 +10,10 @@ namespace NetDist.Core.Utilities
         }
 
         protected abstract void InternalCallbackMethod(object sender, TArgs args);
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
     }
 }

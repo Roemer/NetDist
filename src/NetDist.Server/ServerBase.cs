@@ -203,8 +203,9 @@ namespace NetDist.Server
         /// </summary>
         public Job GetJob(Guid clientId)
         {
-            Logger.Info(entry => entry.SetClientId(clientId), "'{0}' requested a job", _knownClients[clientId].ClientInfo.Name);
-            var job = _handlerManager.GetJob(clientId);
+            var clientInfo = _knownClients[clientId];
+            Logger.Info(entry => entry.SetClientId(clientId), "'{0}' requested a job", clientInfo.ClientInfo.Name);
+            var job = _handlerManager.GetJob(clientInfo);
             if (job != null)
             {
                 // Update statistics

@@ -31,5 +31,10 @@ namespace NetDist.Client
             var result = jobInstance.Process(job, clientId);
             return result;
         }
+
+        public override object InitializeLifetimeService()
+        {
+            return null;
+        }
     }
 }
