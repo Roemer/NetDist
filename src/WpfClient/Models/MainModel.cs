@@ -43,6 +43,7 @@ namespace WpfClient.Models
         {
             _autoUpdater = new AutoUpdateFromFtp(_settings.FtpUrl, _settings.FtpUser, _settings.FtpPassword, terminateAction, "settings.json");
             Version = _autoUpdater.GetCurrentVersion();
+            Client.UpdateVersion(Version);
         }
 
         public void CheckAndUpdate()

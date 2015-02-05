@@ -14,11 +14,6 @@ namespace NetDist.Client
     public abstract class ClientBase : ObservableObject
     {
         /// <summary>
-        /// Info object about the client
-        /// </summary>
-        public ClientInfo ClientInfo { get; private set; }
-
-        /// <summary>
         /// Number of maximum parallel jobs to execute
         /// </summary>
         public int NumberOfParallelJobs
@@ -44,6 +39,10 @@ namespace NetDist.Client
         /// </summary>
         public event EventHandler<ClientJobEventArgs> JobRemovedEvent;
 
+        /// <summary>
+        /// Info object about the client
+        /// </summary>
+        private readonly ClientInfo _clientInfo;
         /// <summary>
         /// List of jobs currently in progress
         /// </summary>
@@ -72,28 +71,43 @@ namespace NetDist.Client
         /// <summary>
         /// Constructor
         /// </summary>
-        protected ClientBase()
+        protected ClientBase(IClientSettings settings)
         {
             // General initialization
             Jobs = new ConcurrentDictionary<Guid, ClientJob>();
 
             // Initialize basic information about the client
-            ClientInfo = new ClientInfo
+            _clientInfo = new ClientInfo
             {
-                Id = Guid.NewGuid(),
-                Name = Environment.MachineName.ToLower(),
+                Id = (settings.Id == Guid.Empty) ? Guid.NewGuid() : settings.Id,
+                Name = settings.Name,
                 StartDate = DateTime.Now,
                 Version = "unknown"
             };
-        }
 
-        protected void InitializeSettings(IClientSettings settings)
-        {
             NumberOfParallelJobs = settings.NumberOfParallelJobs;
             if (settings.AutoStart)
             {
                 StartProcessing();
             }
+        }
+
+        /// <summary>
+        /// Update all relevant information from a new settings object
+        /// </summary>
+        public void UpdateFromSettings(IClientSettings settings)
+        {
+            _clientInfo.Id = settings.Id;
+            _clientInfo.Name = settings.Name;
+            NumberOfParallelJobs = settings.NumberOfParallelJobs;
+        }
+
+        /// <summary>
+        /// Update the version number of the client
+        /// </summary>
+        public void UpdateVersion(string newVersion)
+        {
+            _clientInfo.Version = newVersion;
         }
 
         /// <summary>
@@ -103,10 +117,10 @@ namespace NetDist.Client
         {
             // RAM information
             var ci = new ComputerInfo();
-            ClientInfo.TotalMemory = ci.TotalPhysicalMemory;
-            ClientInfo.UsedMemory = ci.TotalPhysicalMemory - ci.AvailablePhysicalMemory;
+            _clientInfo.TotalMemory = ci.TotalPhysicalMemory;
+            _clientInfo.UsedMemory = ci.TotalPhysicalMemory - ci.AvailablePhysicalMemory;
             // CPU information
-            ClientInfo.CpuUsage = CpuUsageReader.GetValue();
+            _clientInfo.CpuUsage = CpuUsageReader.GetValue();
         }
 
         /// <summary>
@@ -127,6 +141,9 @@ namespace NetDist.Client
             _stoppedWaitHandle.Set();
         }
 
+        /// <summary>
+        /// Manually start a job
+        /// </summary>
         public bool ManuallyStartJob()
         {
             SendClientUpdateIfNeeded();
@@ -138,7 +155,7 @@ namespace NetDist.Client
         /// </summary>
         private bool GetAndStartJob()
         {
-            var nextJob = GetJob();
+            var nextJob = GetJob(_clientInfo.Id);
             if (nextJob != null)
             {
                 var clientJob = new ClientJob(nextJob);
@@ -162,12 +179,15 @@ namespace NetDist.Client
             if (handler != null) handler(this, e);
         }
 
+        /// <summary>
+        /// Sends client information to the server at a certain interval
+        /// </summary>
         private void SendClientUpdateIfNeeded()
         {
-            if (_nextStatusUpdate < DateTime.Now)
+            if (_nextStatusUpdate <= DateTime.Now)
             {
                 UpdateClientInfo();
-                SendInfo();
+                SendInfo(_clientInfo);
                 _nextStatusUpdate = DateTime.Now.AddMinutes(1);
             }
         }
@@ -242,7 +262,7 @@ namespace NetDist.Client
                         if (mainAssemblyContent == null)
                         {
                             // Could not find the assembly file
-                            var jobResult = new JobResult(job, ClientInfo.Id, new Exception("Job assembly not found"));
+                            var jobResult = new JobResult(job, _clientInfo.Id, new Exception("Job assembly not found"));
                             RemoveAndReturnJobResult(clientJob, jobResult);
                             return;
                         }
@@ -255,7 +275,7 @@ namespace NetDist.Client
                             if (dependencyContent == null)
                             {
                                 // Could not find the dependency
-                                var jobResult = new JobResult(job, ClientInfo.Id, new Exception(String.Format("Dependency '{0}' not found", file)));
+                                var jobResult = new JobResult(job, _clientInfo.Id, new Exception(String.Format("Dependency '{0}' not found", file)));
                                 RemoveAndReturnJobResult(clientJob, jobResult);
                                 return;
                             }
@@ -291,14 +311,14 @@ namespace NetDist.Client
                 var jobScriptProxy = (JobScriptProxy)domain.CreateInstanceAndUnwrap(typeof(JobScriptProxy).Assembly.FullName, typeof(JobScriptProxy).FullName);
                 var jobLibraryFullPath = Path.Combine(localHandlerFolder, jobLibraryName);
                 // Execute the logic and get the result
-                var jobResult = jobScriptProxy.RunJob(ClientInfo.Id, job, jobLibraryFullPath);
+                var jobResult = jobScriptProxy.RunJob(_clientInfo.Id, job, jobLibraryFullPath);
                 // Free the app domain
                 AppDomain.Unload(domain);
                 RemoveAndReturnJobResult(clientJob, jobResult);
             }
             catch (Exception ex)
             {
-                var jobResult = new JobResult(job, ClientInfo.Id, ex);
+                var jobResult = new JobResult(job, _clientInfo.Id, ex);
                 RemoveAndReturnJobResult(clientJob, jobResult);
             }
         }
@@ -335,7 +355,7 @@ namespace NetDist.Client
         /// <summary>
         /// Get the next free job to process from the server
         /// </summary>
-        public abstract Job GetJob();
+        public abstract Job GetJob(Guid clientId);
         /// <summary>
         /// Send a result from a processed job to the server
         /// </summary>
@@ -351,7 +371,7 @@ namespace NetDist.Client
         /// <summary>
         /// Sends information about the client
         /// </summary>
-        public abstract void SendInfo();
+        public abstract void SendInfo(ClientInfo clientInfo);
         #endregion
     }
 }

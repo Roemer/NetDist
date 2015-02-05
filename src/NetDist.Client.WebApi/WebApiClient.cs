@@ -12,9 +12,9 @@ namespace NetDist.Client.WebApi
         private readonly WebApiClientSettings _settings;
 
         public WebApiClient(WebApiClientSettings settings)
+            : base(settings)
         {
             _settings = settings;
-            InitializeSettings(settings);
         }
 
         private static void DummyFunctionToMakeSureReferencesGetCopiedProperly()
@@ -22,7 +22,7 @@ namespace NetDist.Client.WebApi
             System.Net.Http.Formatting.MediaTypeFormatter.GetDefaultValueForType(typeof(object));
         }
 
-        public override Job GetJob()
+        public override Job GetJob(Guid clientId)
         {
             using (var client = new HttpClient())
             {
@@ -31,7 +31,7 @@ namespace NetDist.Client.WebApi
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 // HTTP GET
-                var response = client.GetAsync(String.Concat("api/client/getjob", "/", ClientInfo.Id)).Result;
+                var response = client.GetAsync(String.Concat("api/client/getjob", "/", clientId)).Result;
                 if (response.IsSuccessStatusCode)
                 {
                     var content = response.Content.ReadAsStringAsync().Result;
@@ -97,7 +97,7 @@ namespace NetDist.Client.WebApi
             return null;
         }
 
-        public override void SendInfo()
+        public override void SendInfo(ClientInfo clientInfo)
         {
             using (var client = new HttpClient())
             {
@@ -106,7 +106,7 @@ namespace NetDist.Client.WebApi
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 // HTTP POST
-                var response = client.PostAsJsonAsync("api/client/info", ClientInfo).Result;
+                var response = client.PostAsJsonAsync("api/client/info", clientInfo).Result;
                 if (response.IsSuccessStatusCode)
                 {
                 }
