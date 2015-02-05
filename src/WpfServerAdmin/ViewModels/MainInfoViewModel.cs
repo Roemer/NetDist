@@ -114,8 +114,7 @@ namespace WpfServerAdmin.ViewModels
             UploadPackageCommand = new RelayCommand(o =>
             {
                 var dialogViewModel = new PackageUploadViewModel();
-                var dialog = new PackageUploadWindow();
-                dialog.DataContext = dialogViewModel;
+                var dialog = new PackageUploadWindow(dialogViewModel);
                 var dialogResult = dialog.ShowDialog();
                 if (dialogResult.HasValue && dialogResult.Value)
                 {

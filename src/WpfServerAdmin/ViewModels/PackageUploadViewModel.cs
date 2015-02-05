@@ -1,7 +1,7 @@
-﻿using System;
-using System.IO;
-using NetDist.Core.Utilities;
+﻿using NetDist.Core.Utilities;
+using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using Wpf.Shared;
@@ -35,16 +35,26 @@ namespace WpfServerAdmin.ViewModels
                 {
                     PackageName = Path.GetFileNameWithoutExtension(s[0]);
                 }
-                s.ToList().ForEach(x => HandlerAssemblies.Add(x));
+                s.ToList().ForEach(x => AddFile(x, HandlerAssemblies));
             }));
 
             AddDependency = new RelayCommand(o =>
             {
-                BrowserDialogs.BrowseForAnyFile(null, true, s => s.ToList().ForEach(x => Dependencies.Add(x)));
+                BrowserDialogs.BrowseForAnyFile(null, true, s => s.ToList().ForEach(x => AddFile(x, Dependencies)));
             });
 
             RemoveHandlerAssemblies = new TypedRelayCommand<int>(o => HandlerAssemblies.RemoveAt(o), o => o >= 0);
             RemoveDependency = new TypedRelayCommand<int>(o => Dependencies.RemoveAt(o), o => o >= 0);
+        }
+
+        public void AddFile(string value, ObservableCollection<string> destination)
+        {
+            var fileNameOnly = Path.GetFileName(value);
+            // Skip if already added
+            if (!destination.Any(x => x.EndsWith(fileNameOnly)))
+            {
+                destination.Add(value);
+            }
         }
     }
 }
