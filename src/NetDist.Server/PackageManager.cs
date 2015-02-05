@@ -1,5 +1,7 @@
 ﻿using NetDist.Core;
+using System;
 using System.IO;
+using System.Reflection;
 
 namespace NetDist.Server
 {
@@ -12,6 +14,10 @@ namespace NetDist.Server
 
         public PackageManager(string packagesFolder)
         {
+            if (!Path.IsPathRooted(packagesFolder))
+            {
+                packagesFolder = Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath), packagesFolder);
+            }
             PackageBaseFolder = packagesFolder;
         }
 

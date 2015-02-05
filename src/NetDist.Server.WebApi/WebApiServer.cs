@@ -4,13 +4,8 @@ using System;
 
 namespace NetDist.Server.WebApi
 {
-    public class WebApiServer : ServerBase
+    public class WebApiServer : ServerBase<WebApiServerSettings>
     {
-        /// <summary>
-        /// Settings object
-        /// </summary>
-        private readonly WebApiServerSettings _settings;
-
         /// <summary>
         /// Reference to the web-api server object
         /// </summary>
@@ -19,19 +14,14 @@ namespace NetDist.Server.WebApi
         /// <summary>
         /// Constructor
         /// </summary>
-        public WebApiServer(WebApiServerSettings settings, params EventHandler<LogEventArgs>[] defaultLogEvents)
+        public WebApiServer(WebApiServerSettings settings, params EventHandler<LogEventArgs>[] defaultLogHandlers)
+            : base(settings, defaultLogHandlers)
         {
-            foreach (var logEvent in defaultLogEvents)
-            {
-                Logger.LogEvent += logEvent;
-            }
-            _settings = settings;
-            InitializeSettings(settings);
         }
 
         protected override bool InternalStart()
         {
-            var baseUri = String.Format("{0}://{1}:{2}", "http", "*", _settings.Port);
+            var baseUri = String.Format("{0}://{1}:{2}", "http", "*", Settings.Port);
             Logger.Info("Starting OWIN at '{0}'", baseUri);
             _app = WebApp.Start(new StartOptions(baseUri), builder => new Startup(this).Configuration(builder));
 

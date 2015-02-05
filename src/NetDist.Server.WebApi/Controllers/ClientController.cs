@@ -12,7 +12,7 @@ namespace NetDist.Server.WebApi.Controllers
     [RoutePrefix("api/client")]
     public class ClientController : ControllerBase
     {
-        public ClientController(ServerBase server)
+        public ClientController(WebApiServer server)
             : base(server) { }
 
         [HttpGet]

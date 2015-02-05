@@ -3,6 +3,7 @@ namespace NetDist.Server
 {
     public interface IServerSettings
     {
-        bool AutoStart { get; set; }
+        string PackagesFolder { get; }
+        bool AutoStart { get; }
     }
 }

@@ -13,9 +13,9 @@ namespace NetDist.Server.WebApi
     /// </summary>
     public class Startup
     {
-        private readonly ServerBase _server;
+        private readonly WebApiServer _server;
 
-        public Startup(ServerBase server)
+        public Startup(WebApiServer server)
         {
             _server = server;
         }

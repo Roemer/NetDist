@@ -6,11 +6,13 @@
         xmlns:viewModels="clr-namespace:WpfServer.ViewModels"
         mc:Ignorable="d"
         Icon="server.ico"
-        Title="MainWindow" Height="340.858" Width="620.336" d:DataContext="{d:DesignInstance Type=viewModels:ServerMainViewModel, IsDesignTimeCreatable=False}">
+        Title="MainWindow" Height="340.858" Width="620.336" ResizeMode="CanResizeWithGrip"
+        d:DataContext="{d:DesignInstance Type=viewModels:ServerMainViewModel, IsDesignTimeCreatable=False}">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="35"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="24"/>
         </Grid.RowDefinitions>
         <Button Command="{Binding StartCommand}" Content="Start" HorizontalAlignment="Left" Margin="10,5,0,5" Width="75" Grid.Row="0" />
         <Button Command="{Binding StopCommand}" Content="Stop" HorizontalAlignment="Left" Margin="100,5,0,5" Width="75" Grid.Row="0" />
@@ -22,5 +24,10 @@
                 <DataGridTextColumn Header="Message" Binding="{Binding Message}" />
             </DataGrid.Columns>
         </DataGrid>
+        <StatusBar Grid.Row="2">
+            <StatusBarItem>
+                <TextBlock Text="Welcome"></TextBlock>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>

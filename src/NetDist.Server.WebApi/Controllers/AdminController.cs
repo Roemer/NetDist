@@ -8,7 +8,7 @@ namespace NetDist.Server.WebApi.Controllers
     [RoutePrefix("api/admin")]
     public class AdminController : ControllerBase
     {
-        public AdminController(ServerBase server)
+        public AdminController(WebApiServer server)
             : base(server) { }
 
         [HttpGet]

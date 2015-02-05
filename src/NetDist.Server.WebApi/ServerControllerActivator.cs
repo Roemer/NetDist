@@ -7,9 +7,9 @@ namespace NetDist.Server.WebApi
 {
     public class ServerControllerActivator : IHttpControllerActivator
     {
-        private readonly ServerBase _server;
+        private readonly WebApiServer _server;
 
-        public ServerControllerActivator(ServerBase server)
+        public ServerControllerActivator(WebApiServer server)
         {
             _server = server;
         }

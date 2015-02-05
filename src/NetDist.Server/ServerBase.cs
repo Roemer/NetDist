@@ -7,19 +7,23 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 
 namespace NetDist.Server
 {
     /// <summary>
     /// Abstract class for server implementations
     /// </summary>
-    public abstract class ServerBase
+    public abstract class ServerBase<TSet> where TSet : IServerSettings
     {
         /// <summary>
         /// Logger object
         /// </summary>
         public Logger Logger { get; private set; }
+
+        /// <summary>
+        /// Settings object
+        /// </summary>
+        protected TSet Settings { get; private set; }
 
         /// <summary>
         /// Dictionary which olds information about the known clients
@@ -36,40 +40,30 @@ namespace NetDist.Server
         /// </summary>
         protected abstract bool InternalStop();
 
-        /// <summary>
-        /// Path to the handlers folder
-        /// </summary>
-        protected string PackagesFolder { get { return Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath), "packages"); } }
-
-        /// <summary>
-        /// Settings object
-        /// </summary>
-        private IServerSettings _settings;
-
         private readonly PackageManager _packageManager;
         private readonly HandlerManager _handlerManager;
 
         /// <summary>
         /// Constructor
         /// </summary>
-        protected ServerBase()
+        protected ServerBase(TSet settings, params EventHandler<LogEventArgs>[] defaultLogHandlers)
         {
+            Settings = settings;
+            // Initialize the logger
             Logger = new Logger();
+            foreach (var logEvent in defaultLogHandlers)
+            {
+                Logger.LogEvent += logEvent;
+            }
+            // Initialize others
             _knownClients = new ConcurrentDictionary<Guid, ExtendedClientInfo>();
-            _packageManager = new PackageManager(PackagesFolder);
+            _packageManager = new PackageManager(Settings.PackagesFolder);
             _handlerManager = new HandlerManager(Logger, _packageManager);
             // Make sure the packages folder exists
-            Directory.CreateDirectory(PackagesFolder);
-        }
+            Directory.CreateDirectory(Settings.PackagesFolder);
 
-        /// <summary>
-        /// Initialize with the given settings
-        /// </summary>
-        protected void InitializeSettings(IServerSettings settings)
-        {
-            _settings = settings;
             // Autostart if wanted
-            if (_settings.AutoStart)
+            if (Settings.AutoStart)
             {
                 Start();
             }
@@ -130,7 +124,7 @@ namespace NetDist.Server
         public List<PackageInfo> GetRegisteredPackages()
         {
             var info = new List<PackageInfo>();
-            foreach (var file in new DirectoryInfo(PackagesFolder).EnumerateFiles())
+            foreach (var file in new DirectoryInfo(Settings.PackagesFolder).EnumerateFiles())
             {
                 info.Add(_packageManager.GetInfo(Path.GetFileNameWithoutExtension(file.FullName)));
             }
@@ -145,7 +139,7 @@ namespace NetDist.Server
             // Save package information
             _packageManager.Save(packageInfo);
             // Unpack the zip file
-            ZipUtility.ZipExtractToDirectory(zipcontent, PackagesFolder, true);
+            ZipUtility.ZipExtractToDirectory(zipcontent, Settings.PackagesFolder, true);
             Logger.Info("Registered package '{0}' with {1} handler file(s) and {2} dependent file(s)", packageInfo.PackageName, packageInfo.HandlerAssemblies.Count, packageInfo.Dependencies.Count);
             return true;
         }
@@ -204,7 +198,7 @@ namespace NetDist.Server
         public Job GetJob(Guid clientId)
         {
             var clientInfo = _knownClients[clientId];
-            Logger.Info(entry => entry.SetClientId(clientId), "'{0}' requested a job", clientInfo.ClientInfo.Name);
+            Logger.Debug(entry => entry.SetClientId(clientId), "'{0}' requested a job", clientInfo.ClientInfo.Name);
             var job = _handlerManager.GetJob(clientInfo);
             if (job != null)
             {
