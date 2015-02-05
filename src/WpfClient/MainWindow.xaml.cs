@@ -15,6 +15,7 @@ namespace WpfClient
             InitializeComponent();
 
             var model = new MainModel();
+            model.InitializeAutoUpdater(ShutDown);
             var viewModel = new MainViewModel(model);
             viewModel.SelectedItem = null;
             DataContext = viewModel;
@@ -34,6 +35,11 @@ namespace WpfClient
         }
 
         private void MenuItem_Exit_Click(object sender, RoutedEventArgs e)
+        {
+            ShutDown();
+        }
+
+        private void ShutDown()
         {
             Application.Current.Shutdown();
         }

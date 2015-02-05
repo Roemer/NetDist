@@ -1,6 +1,8 @@
 ﻿using NetDist.Client.WebApi;
 using NetDist.Core.Utilities;
+using System;
 using Wpf.Shared;
+using WpfClient.Core;
 
 namespace WpfClient.Models
 {
@@ -24,6 +26,8 @@ namespace WpfClient.Models
         public WebApiClient Client { get; private set; }
 
         private readonly PortableConfiguration _conf = new PortableConfiguration(new JsonNetSerializer());
+        private WpfClientSettings _settings;
+        private AutoUpdateFromFtp _autoUpdater;
 
         /// <summary>
         /// Constructor
@@ -31,8 +35,22 @@ namespace WpfClient.Models
         public MainModel()
         {
             NetworkAnalyzer = new NetworkTrafficAnalyzer();
-            var settings = _conf.Load<WebApiClientSettings>("ClientSettings");
-            Client = new WebApiClient(settings);
+            _settings = _conf.Load<WpfClientSettings>("ClientSettings");
+            Client = new WebApiClient(_settings);
+        }
+
+        public void InitializeAutoUpdater(Action terminateAction)
+        {
+            _autoUpdater = new AutoUpdateFromFtp(_settings.FtpUrl, _settings.FtpUser, _settings.FtpPassword, terminateAction, "settings.json");
+            Version = _autoUpdater.GetCurrentVersion();
+        }
+
+        public void CheckAndUpdate()
+        {
+            if (!_settings.IsDebug)
+            {
+                _autoUpdater.CheckAndUpdate();
+            }
         }
     }
 }

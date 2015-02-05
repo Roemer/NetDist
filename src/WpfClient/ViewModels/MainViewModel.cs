@@ -70,6 +70,7 @@ namespace WpfClient.ViewModels
 
         #region Commands
         public ICommand ShowSettingsCommand { get; private set; }
+        public ICommand CheckForUpdateCommand { get; private set; }
         public ICommand AddSingleJobCommand { get; private set; }
         public ICommand StartCommand { get; private set; }
         public ICommand StopCommand { get; private set; }
@@ -109,6 +110,7 @@ namespace WpfClient.ViewModels
                 const string settingsFile = "settings.json";
                 Process.Start("notepad.exe", settingsFile);
             });
+            CheckForUpdateCommand = new RelayCommand(o => _model.CheckAndUpdate());
             AddSingleJobCommand = new RelayCommand(o => model.Client.ManuallyStartJob());
             StartCommand = new RelayCommand(o => model.Client.StartProcessing());
             StopCommand = new RelayCommand(o => model.Client.StopProcessing());
