@@ -1,4 +1,5 @@
-﻿using NetDist.Core.Utilities;
+﻿using System.Linq;
+using NetDist.Core.Utilities;
 using NetDist.Logging;
 using System;
 using System.Collections.ObjectModel;
@@ -15,6 +16,14 @@ namespace WpfServer.ViewModels
         private readonly Dispatcher _dispatcher;
         private readonly ServerMainModel _model;
 
+        public ObservableCollection<LogLevel> LogLevels { get; set; }
+
+        public LogLevel SelectedMinLogLevel
+        {
+            get { return GetProperty<LogLevel>(); }
+            set { SetProperty(value); }
+        }
+
         public ObservableCollection<LogEntryViewModel> LogEntries { get; set; }
 
         public ICommand StartCommand { get; private set; }
@@ -26,6 +35,12 @@ namespace WpfServer.ViewModels
             _dispatcher = dispatcher;
             _model = model;
             LogEntries = new ObservableCollection<LogEntryViewModel>();
+            LogLevels = new ObservableCollection<LogLevel>();
+            foreach (LogLevel logLevel in Enum.GetValues(typeof(LogLevel)))
+            {
+                LogLevels.Add(logLevel);
+            }
+            SelectedMinLogLevel = LogLevel.Info;
 
             StartCommand = new RelayCommand(o => _model.Server.Start());
             StopCommand = new RelayCommand(o => _model.Server.Stop());
@@ -40,6 +55,12 @@ namespace WpfServer.ViewModels
 
         private void LogEventHandler(LogEntry logEntry)
         {
+            // Skip irrelvant ones
+            if (logEntry.LogLevel < SelectedMinLogLevel)
+            {
+                return;
+            }
+            // Check for dispatcher and invoke if needed
             if (!_dispatcher.CheckAccess())
             {
                 _dispatcher.Invoke(new Action<LogEntry>(LogEventHandler), logEntry);
