@@ -21,7 +21,7 @@
         </StackPanel>
         <DataGrid ItemsSource="{Binding LogEntries}" Grid.Row="1" AutoGenerateColumns="False" CanUserSortColumns="False">
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Date" Binding="{Binding Date}" SortDirection="Descending" />
+                <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat={}{0:dd\.MM\.yyyy HH\:mm\:ss}}" SortDirection="Descending" />
                 <DataGridTextColumn Header="Level" Binding="{Binding LogLevel}" />
                 <DataGridTextColumn Header="Message" Binding="{Binding Message}" />
             </DataGrid.Columns>
