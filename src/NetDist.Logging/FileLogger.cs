@@ -12,8 +12,8 @@ namespace NetDist.Logging
         private readonly string _basePath;
         private readonly string _filenameSuffix;
 
-        public FileLogger(string filenameSuffix, LogLevel maxLevel = LogLevel.Warn, string basePath = null)
-            : base(maxLevel)
+        public FileLogger(string filenameSuffix, LogLevel minLevel = LogLevel.Warn, string basePath = null)
+            : base(minLevel)
         {
             _basePath = String.IsNullOrWhiteSpace(basePath) ? Path.Combine(Directory.GetCurrentDirectory(), @"Log\") : basePath;
             _filenameSuffix = filenameSuffix;

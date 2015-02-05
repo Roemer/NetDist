@@ -4,8 +4,8 @@ namespace NetDist.Logging
 {
     public class ConsoleLogger : LoggerBase
     {
-        public ConsoleLogger(LogLevel maxLevel = LogLevel.Warn)
-            : base(maxLevel) { }
+        public ConsoleLogger(LogLevel minLevel = LogLevel.Warn)
+            : base(minLevel) { }
 
         protected override void Log(LogEntry logEntry)
         {
