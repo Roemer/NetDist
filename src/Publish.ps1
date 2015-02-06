@@ -25,6 +25,7 @@ $buildArgs = @{
 Start-Process @buildArgs
 # Creating zips
 Write-Output "Creating zips"
+$dstZipFolder = (get-item $releaseFolder).parent.parent.parent.FullName
 [Reflection.Assembly]::LoadWithPartialName("System.IO.Compression.FileSystem")
 foreach ($releaseFolder in $releaseFolders) {
     Write-Output "Zipping: $releaseFolder"
@@ -39,7 +40,6 @@ foreach ($releaseFolder in $releaseFolders) {
         Remove-Item -Recurse -Force $logPath
     }
     # Delete old zip
-    $dstZipFolder = (get-item $releaseFolder).parent.parent.parent.FullName
     $zipFileName = (get-item $releaseFolder).parent.parent.Name + ".zip"
     $dstZipFile = Join-Path $dstZipFolder $zipFileName
     if (Test-Path $dstZipFile) {
@@ -48,3 +48,5 @@ foreach ($releaseFolder in $releaseFolders) {
     # Create zip file
     [System.IO.Compression.ZipFile]::CreateFromDirectory($releaseFolder, $dstZipFile)
 }
+# Open the containing folder
+Start-Process $dstZipFolder
