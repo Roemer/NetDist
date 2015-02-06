@@ -4,7 +4,6 @@ using NetDist.Core.Utilities;
 using NetDist.Jobs.DataContracts;
 using NetDist.Logging;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 
@@ -26,11 +25,6 @@ namespace NetDist.Server
         protected TSet Settings { get; private set; }
 
         /// <summary>
-        /// Dictionary which olds information about the known clients
-        /// </summary>
-        private readonly ConcurrentDictionary<Guid, ExtendedClientInfo> _knownClients;
-
-        /// <summary>
         /// Abstract method to start the server
         /// </summary>
         protected abstract bool InternalStart();
@@ -42,6 +36,7 @@ namespace NetDist.Server
 
         private readonly PackageManager _packageManager;
         private readonly HandlerManager _handlerManager;
+        private readonly ClientManager _clientManager;
 
         /// <summary>
         /// Constructor
@@ -56,9 +51,9 @@ namespace NetDist.Server
                 Logger.LogEvent += logEvent;
             }
             // Initialize others
-            _knownClients = new ConcurrentDictionary<Guid, ExtendedClientInfo>();
             _packageManager = new PackageManager(Settings.PackagesFolder);
             _handlerManager = new HandlerManager(Logger, _packageManager);
+            _clientManager = new ClientManager();
             // Make sure the packages folder exists
             Directory.CreateDirectory(Settings.PackagesFolder);
 
@@ -92,6 +87,7 @@ namespace NetDist.Server
                 Logger.Error("Failed to stop");
             }
             _handlerManager.TearDown();
+            _clientManager.Clear();
         }
 
         /// <summary>
@@ -106,15 +102,11 @@ namespace NetDist.Server
             info.UsedMemory = ci.TotalPhysicalMemory - ci.AvailablePhysicalMemory;
             // CPU information
             info.CpuUsage = CpuUsageReader.GetValue();
-            // Handler information
+            // Handler statistics
             var handlerStats = _handlerManager.GetStatistics();
             info.Handlers.AddRange(handlerStats);
-            // Client information
-            foreach (var kvp in _knownClients)
-            {
-                var clientInfo = kvp.Value;
-                info.Clients.Add(clientInfo);
-            }
+            // Client statistics
+            info.Clients.AddRange(_clientManager.GetStatistics());
             return info;
         }
 
@@ -197,13 +189,13 @@ namespace NetDist.Server
         /// </summary>
         public Job GetJob(Guid clientId)
         {
-            var clientInfo = _knownClients[clientId];
+            var clientInfo = _clientManager.GetOrCreate(clientId);
             Logger.Debug(entry => entry.SetClientId(clientId), "'{0}' requested a job", clientInfo.ClientInfo.Name);
             var job = _handlerManager.GetJob(clientInfo);
             if (job != null)
             {
                 // Update statistics
-                _knownClients[clientId].JobsInProgress++;
+                clientInfo.JobsInProgress++;
             }
             return job;
         }
@@ -237,14 +229,15 @@ namespace NetDist.Server
         {
             var success = _handlerManager.ProcessResult(result);
             // Update statistics
-            _knownClients[result.ClientId].JobsInProgress--;
+            var clientInfo = _clientManager.GetOrCreate(result.ClientId);
+            clientInfo.JobsInProgress--;
             if (success)
             {
-                _knownClients[result.ClientId].TotalJobsProcessed++;
+                clientInfo.TotalJobsProcessed++;
             }
             else
             {
-                _knownClients[result.ClientId].TotalJobsFailed++;
+                clientInfo.TotalJobsFailed++;
             }
         }
 
@@ -253,16 +246,9 @@ namespace NetDist.Server
         /// </summary>
         public void ReceivedClientInfo(ClientInfo info)
         {
-            _knownClients.AddOrUpdate(info.Id, guid => new ExtendedClientInfo
-            {
-                ClientInfo = info,
-                LastCommunicationDate = DateTime.Now
-            }, (guid, wrapper) =>
-            {
-                wrapper.ClientInfo = info;
-                wrapper.LastCommunicationDate = DateTime.Now;
-                return wrapper;
-            });
+            var clientInfo = _clientManager.GetOrCreate(info.Id);
+            clientInfo.LastCommunicationDate = DateTime.Now;
+            clientInfo.ClientInfo = info;
         }
     }
 }

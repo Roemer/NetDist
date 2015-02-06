@@ -24,80 +24,41 @@ namespace NetDist.Client.WebApi
 
         public override Job GetJob(Guid clientId)
         {
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(_settings.ServerUri);
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                // HTTP GET
-                var response = client.GetAsync(String.Concat("api/client/getjob", "/", clientId)).Result;
-                if (response.IsSuccessStatusCode)
-                {
-                    var content = response.Content.ReadAsStringAsync().Result;
-                    var job = JsonConvert.DeserializeObject<Job>(content);
-                    return job;
-                }
-            }
-            return null;
+            var response = PerformWebClientAction(client => client.GetAsync(String.Concat("api/client/getjob", "/", clientId)).Result);
+            if (response == null) { return null; }
+            var content = response.ReadAsStringAsync().Result;
+            var job = JsonConvert.DeserializeObject<Job>(content);
+            return job;
         }
 
-        public override void SendResult(JobResult result)
+        public override void SendResult(JobResult jobResult)
         {
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(_settings.ServerUri);
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                // HTTP POST
-                var response = client.PostAsJsonAsync("api/client/result", result).Result;
-                if (response.IsSuccessStatusCode)
-                {
-                }
-            }
+            var response = PerformWebClientAction(client => client.PostAsJsonAsync("api/client/result", jobResult).Result);
         }
 
         public override HandlerJobInfo GetHandlerJobInfo(Guid handlerId)
         {
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(_settings.ServerUri);
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                // HTTP GET
-                var response = client.GetAsync(String.Concat("api/client/gethandlerjobinfo", "/", handlerId)).Result;
-                if (response.IsSuccessStatusCode)
-                {
-                    var content = response.Content.ReadAsStringAsync().Result;
-                    var handlerClientInfo = JsonConvert.DeserializeObject<HandlerJobInfo>(content);
-                    return handlerClientInfo;
-                }
-            }
-            return null;
+            var response = PerformWebClientAction(client => client.GetAsync(String.Concat("api/client/gethandlerjobinfo", "/", handlerId)).Result);
+            if (response == null) { return null; }
+            var content = response.ReadAsStringAsync().Result;
+            var handlerClientInfo = JsonConvert.DeserializeObject<HandlerJobInfo>(content);
+            return handlerClientInfo;
         }
 
         public override byte[] GetFile(Guid handlerId, string fileName)
         {
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(_settings.ServerUri);
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                // HTTP GET
-                var response = client.GetAsync(String.Concat("api/client/getfile", "/", handlerId, "/", fileName)).Result;
-                if (response.IsSuccessStatusCode)
-                {
-                    var content = response.Content.ReadAsByteArrayAsync().Result;
-                    return content;
-                }
-            }
-            return null;
+            var response = PerformWebClientAction(client => client.GetAsync(String.Concat("api/client/getfile", "/", handlerId, "/", fileName)).Result);
+            if (response == null) { return null; }
+            var content = response.ReadAsByteArrayAsync().Result;
+            return content;
         }
 
         public override void SendInfo(ClientInfo clientInfo)
+        {
+            var response = PerformWebClientAction(client => client.PostAsJsonAsync("api/client/info", clientInfo).Result);
+        }
+
+        private HttpContent PerformWebClientAction(Func<HttpClient, HttpResponseMessage> action)
         {
             using (var client = new HttpClient())
             {
@@ -105,10 +66,22 @@ namespace NetDist.Client.WebApi
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                // HTTP POST
-                var response = client.PostAsJsonAsync("api/client/info", clientInfo).Result;
-                if (response.IsSuccessStatusCode)
+                try
                 {
+                    var response = action(client);
+                    IsServerReachable = true;
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine(response.IsSuccessStatusCode);
+                        return null;
+                    }
+                    return response.Content;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                    IsServerReachable = false;
+                    return null;
                 }
             }
         }

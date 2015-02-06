@@ -15,8 +15,11 @@ namespace WpfClient.ViewModels
     {
         private readonly MainModel _model;
         private PropertyChangedProxy<ClientBase, ClientStatusType> _statusPropertyChangedProxy;
+        private PropertyChangedProxy<ClientBase, bool> _connectionPropertyChangedProxy;
 
         public ClientStatusType Status { get { return _model.Client.Status; } }
+
+        public bool IsConnected { get { return _model.Client.IsServerReachable; } }
 
         public string Version { get { return _model.Version; } }
 
@@ -99,6 +102,8 @@ namespace WpfClient.ViewModels
                 OnPropertyChanged(() => IsStarted);
                 OnPropertyChanged(() => IsStopped);
             });
+
+            _connectionPropertyChangedProxy = new PropertyChangedProxy<ClientBase, bool>(model.Client, m => m.IsServerReachable, b => OnPropertyChanged(() => IsConnected));
 
             // Initialize the network adapters
             NetworkAdapters = new ObservableCollection<string>(_model.NetworkAnalyzer.GetNetworkAdapters());

@@ -31,6 +31,15 @@ namespace NetDist.Client
         }
 
         /// <summary>
+        /// Flag to indicate if the server is reachable
+        /// </summary>
+        public bool IsServerReachable
+        {
+            get { return GetProperty<bool>(); }
+            set { SetProperty(value); }
+        }
+
+        /// <summary>
         /// Event to be notified when a job was added
         /// </summary>
         public event EventHandler<ClientJobEventArgs> JobAddedEvent;

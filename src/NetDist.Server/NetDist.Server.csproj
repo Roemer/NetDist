@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClientManager.cs" />
     <Compile Include="HandlerInstance.cs" />
     <Compile Include="HandlerManager.cs" />
     <Compile Include="Helpers.cs" />

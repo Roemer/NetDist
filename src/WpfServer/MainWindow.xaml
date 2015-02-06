@@ -6,7 +6,7 @@
         xmlns:viewModels="clr-namespace:WpfServer.ViewModels"
         mc:Ignorable="d"
         Icon="server.ico"
-        Title="MainWindow" Height="340.858" Width="620.336" ResizeMode="CanResizeWithGrip"
+        Title="NetDist Wpf Server" Height="340.858" Width="620.336" ResizeMode="CanResizeWithGrip"
         d:DataContext="{d:DesignInstance Type=viewModels:ServerMainViewModel, IsDesignTimeCreatable=False}">
     <Grid>
         <Grid.RowDefinitions>
@@ -19,7 +19,7 @@
             <Button Margin="5" Command="{Binding StopCommand}" Content="Stop" Width="75" />
             <Button Margin="5" Command="{Binding SettingsCommand}" Content="Settings" Width="75" />
         </StackPanel>
-        <DataGrid ItemsSource="{Binding LogEntries}" Grid.Row="1" AutoGenerateColumns="False" CanUserSortColumns="False">
+        <DataGrid Margin="4" ItemsSource="{Binding LogEntries}" Grid.Row="1" AutoGenerateColumns="False" CanUserSortColumns="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Date" Binding="{Binding Date, StringFormat={}{0:dd\.MM\.yyyy HH\:mm\:ss}}" SortDirection="Descending" />
                 <DataGridTextColumn Header="Level" Binding="{Binding LogLevel}" />

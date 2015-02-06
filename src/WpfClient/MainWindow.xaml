@@ -40,7 +40,27 @@
                 <Button Command="{Binding AddSingleJobCommand}" Content="Get Single Job" />
             </ToolBar>
         </ToolBarTray>
-        <StatusBar DockPanel.Dock="Bottom">
+        <StatusBar Height="27" DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <DockPanel>
+                    <TextBlock VerticalAlignment="Center">Connection</TextBlock>
+                    <Image>
+                        <Image.Style>
+                            <Style TargetType="{x:Type Image}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="False">
+                                        <Setter Property="Source" Value="Resources/button_red.png"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
+                                        <Setter Property="Source" Value="Resources/button_green.png"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Image.Style>
+                    </Image>
+                </DockPanel>
+            </StatusBarItem>
+            <Separator />
             <StatusBarItem>
                 <TextBlock Text="{Binding Status, StringFormat=Status: {0}}"></TextBlock>
             </StatusBarItem>
