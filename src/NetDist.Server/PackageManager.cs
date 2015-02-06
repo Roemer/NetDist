@@ -16,7 +16,7 @@ namespace NetDist.Server
         {
             if (!Path.IsPathRooted(packagesFolder))
             {
-                packagesFolder = Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().CodeBase).LocalPath), packagesFolder);
+                packagesFolder = Path.Combine(Environment.CurrentDirectory, packagesFolder);
             }
             PackageBaseFolder = packagesFolder;
         }

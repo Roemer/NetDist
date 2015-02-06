@@ -30,7 +30,7 @@ namespace NetDist.Server
                 GenerateInMemory = false,
                 OutputAssembly = fullAssemblyPath,
                 IncludeDebugInformation = true,
-                CompilerOptions = String.Format("/lib:\"{0}\"", currentPackageFolder)
+                CompilerOptions = String.Format("/lib:\"{0}\",\"Libs\"", currentPackageFolder)
             };
             // Add libraries
             foreach (var library in jobScriptFile.CompilerLibraries)

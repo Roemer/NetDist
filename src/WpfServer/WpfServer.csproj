@@ -136,7 +136,13 @@
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>
-  <Target Name="AfterBuild">
-  </Target>
   -->
+  <Target Name="AfterBuild">
+    <ItemGroup>
+      <FilesToMove Include="$(OutDir)*.dll" />
+      <FilesToMove Include="$(OutDir)*.pdb" />
+      <FilesToMove Include="$(OutDir)*.xml" />
+    </ItemGroup>
+    <Move SourceFiles="@(FilesToMove)" DestinationFolder="$(OutDir)Libs" />
+  </Target>
 </Project>
