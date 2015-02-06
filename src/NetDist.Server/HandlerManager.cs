@@ -269,7 +269,7 @@ namespace NetDist.Server
                     Logger.Debug(entry => entry.SetClientId(clientInfo.ClientInfo.Id), "Job queue was suddenly empty, try again");
                     continue;
                 }
-                Logger.Info(entry => entry.SetClientId(clientInfo.ClientInfo.Id), "Got job '{0}' for handler '{1}'", nextJob.Id, randomHandler.Value.FullName);
+                Logger.Debug(entry => entry.SetClientId(clientInfo.ClientInfo.Id), "Got job '{0}' for handler '{1}'", nextJob.Id, randomHandler.Value.FullName);
                 return nextJob;
             }
             Logger.Warn(entry => entry.SetClientId(clientInfo.ClientInfo.Id), "Gave up getting a job");

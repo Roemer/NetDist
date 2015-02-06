@@ -115,6 +115,11 @@ namespace NetDist.Handlers
             var output = JobObjectSerializer.Deserialize<TOut>(jobResultString);
             ProcessResult((TIn)jobInput, output);
             Interlocked.Decrement(ref _jobCount);
+            // Finish if no more jobs are pending
+            if (Interlocked.Read(ref _jobCount) == 0)
+            {
+                IsFinished = true;
+            }
         }
 
         /// <summary>
