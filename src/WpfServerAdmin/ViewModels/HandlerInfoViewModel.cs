@@ -35,7 +35,7 @@ namespace WpfServerAdmin.ViewModels
             _handlerInfo = handlerInfo;
             Name = String.Format("{0}/{1}/{2}", _handlerInfo.PackageName, _handlerInfo.HandlerName, _handlerInfo.JobName);
             StartCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.Start, _handlerInfo.Id))
-                , o => HandlerState == HandlerState.Stopped || HandlerState == HandlerState.Paused || HandlerState == HandlerState.Idle);
+                , o => HandlerState == HandlerState.Stopped || HandlerState == HandlerState.Paused || HandlerState == HandlerState.Idle || HandlerState == HandlerState.Finished);
             StopCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.Stop, _handlerInfo.Id))
                 , o => HandlerState == HandlerState.Running);
             PauseCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.Pause, _handlerInfo.Id))
