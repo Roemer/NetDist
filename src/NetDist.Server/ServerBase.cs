@@ -77,7 +77,7 @@ namespace NetDist.Server
             var success = InternalStart();
             if (!success)
             {
-                Logger.Info("Failed to start");
+                Logger.Error("Failed to start");
             }
         }
 
@@ -89,7 +89,7 @@ namespace NetDist.Server
             var success = InternalStop();
             if (!success)
             {
-                Logger.Info("Failed to stop");
+                Logger.Error("Failed to stop");
             }
             _handlerManager.TearDown();
         }

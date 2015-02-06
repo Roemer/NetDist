@@ -17,12 +17,16 @@ namespace WpfServerAdmin.Views
 
             DataContext = _dialogViewModel;
 
+            // Intialize drop
             HandlerAssembliesList.AllowDrop = true;
-            HandlerAssembliesList.DragEnter += HandlerAssembliesList_DragEnter;
+            HandlerAssembliesList.DragEnter += FileList_DragEnter;
             HandlerAssembliesList.Drop += HandlerAssembliesList_Drop;
+            DependencyList.AllowDrop = true;
+            DependencyList.DragEnter += FileList_DragEnter;
+            DependencyList.Drop += DependencyList_Drop;
         }
 
-        private void HandlerAssembliesList_DragEnter(object sender, DragEventArgs e)
+        private void FileList_DragEnter(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
                 e.Effects = DragDropEffects.All;
@@ -37,7 +41,19 @@ namespace WpfServerAdmin.Views
                 var files = (string[])e.Data.GetData(DataFormats.FileDrop);
                 foreach (var file in files)
                 {
-                    _dialogViewModel.AddFile(file, _dialogViewModel.HandlerAssemblies);
+                    _dialogViewModel.AddHandlerAssemblyFile(file);
+                }
+            }
+        }
+
+        private void DependencyList_Drop(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                foreach (var file in files)
+                {
+                    _dialogViewModel.AddDependencyFile(file);
                 }
             }
         }

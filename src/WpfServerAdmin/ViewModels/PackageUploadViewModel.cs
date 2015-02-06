@@ -35,22 +35,33 @@ namespace WpfServerAdmin.ViewModels
                 {
                     PackageName = Path.GetFileNameWithoutExtension(s[0]);
                 }
-                s.ToList().ForEach(x => AddFile(x, HandlerAssemblies));
+                s.ToList().ForEach(x => AddHandlerAssemblyFile(x));
             }));
 
             AddDependency = new RelayCommand(o =>
             {
-                BrowserDialogs.BrowseForAnyFile(null, true, s => s.ToList().ForEach(x => AddFile(x, Dependencies)));
+                BrowserDialogs.BrowseForAnyFile(null, true, s => s.ToList().ForEach(x => AddDependencyFile(x)));
             });
 
             RemoveHandlerAssemblies = new TypedRelayCommand<int>(o => HandlerAssemblies.RemoveAt(o), o => o >= 0);
             RemoveDependency = new TypedRelayCommand<int>(o => Dependencies.RemoveAt(o), o => o >= 0);
         }
 
-        public void AddFile(string value, ObservableCollection<string> destination)
+        public void AddHandlerAssemblyFile(string value)
+        {
+            AddFileToList(value, HandlerAssemblies);
+        }
+
+        public void AddDependencyFile(string value)
+        {
+            AddFileToList(value, Dependencies);
+        }
+
+        private void AddFileToList(string value, ObservableCollection<string> destination)
         {
             var fileNameOnly = Path.GetFileName(value);
-            // Skip if already added
+            if (fileNameOnly == null) { return; }
+            // Only add if not already added
             if (!destination.Any(x => x.EndsWith(fileNameOnly)))
             {
                 destination.Add(value);

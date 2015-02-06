@@ -287,7 +287,7 @@ namespace NetDist.Server
                 }
 
                 var resultString = result.GetOutput();
-                Logger.Info("Handler: Got result for job '{0}': {1}", result.JobId, resultString);
+                Logger.Debug("Handler: Got result for job '{0}': {1}", result.JobId, resultString);
                 Interlocked.Increment(ref _totalProcessedJobs);
 
                 // Remove job from in-progress list
