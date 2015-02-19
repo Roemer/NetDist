@@ -25,7 +25,7 @@ namespace SimpleCalculator.Handlers
             }
         }
 
-        public override void ProcessResult(CalculatorJobInput jobInput, CalculatorJobOutput jobResult)
+        public override void ProcessResult(CalculatorJobInput jobInput, CalculatorJobOutput jobResult, object additionalData)
         {
             Logger.Info("Result: {0}", jobResult.Result * (Settings.NegateResult ? -1 : 1));
         }

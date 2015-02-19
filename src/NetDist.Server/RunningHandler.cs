@@ -337,7 +337,7 @@ namespace NetDist.Server
                 while (_finishedJobs.TryDequeue(out finishedJob))
                 {
                     Logger.Debug("Collecting finished job '{0}' with result '{1}'", finishedJob.Id, finishedJob.ResultString);
-                    _handler.ProcessResult(finishedJob.JobInput, finishedJob.ResultString);
+                    _handler.ProcessResult(finishedJob.JobInput, finishedJob.ResultString, finishedJob.AdditionalData);
                 }
 
                 // Check for jobs with a timeout

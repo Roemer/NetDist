@@ -110,10 +110,10 @@ namespace NetDist.Handlers
         /// Converts the result to the generic result object and calls the abstract method
         /// to process the data
         /// </summary>
-        public void ProcessResult(IJobInput jobInput, string jobResultString)
+        public void ProcessResult(IJobInput jobInput, string jobResultString, object additionalData)
         {
             var output = JobObjectSerializer.Deserialize<TOut>(jobResultString);
-            ProcessResult((TIn)jobInput, output);
+            ProcessResult((TIn)jobInput, output, additionalData);
             Interlocked.Decrement(ref _jobCount);
             // Finish if no more jobs are pending
             if (Interlocked.Read(ref _jobCount) == 0)
@@ -125,7 +125,7 @@ namespace NetDist.Handlers
         /// <summary>
         /// Method to process the result of a finished job
         /// </summary>
-        public abstract void ProcessResult(TIn jobInput, TOut jobResult);
+        public abstract void ProcessResult(TIn jobInput, TOut jobResult, object additionalData);
 
         public virtual void OnStart() { }
         public virtual void OnStop() { }
