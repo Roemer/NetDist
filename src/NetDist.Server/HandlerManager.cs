@@ -250,7 +250,7 @@ namespace NetDist.Server
                 // Get possible handlers for the next job
                 var handlersWithJobs = _loadedHandlers.Where(x =>
                     x.Value.CanDeliverJob &&
-                    x.Value.IsAllowedForClient(clientInfo.ClientInfo.Name)
+                    x.Value.IsAllowedForClient(clientInfo.ClientInfo)
                 ).ToArray();
 
                 if (handlersWithJobs.Length == 0)
