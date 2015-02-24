@@ -6,7 +6,7 @@ using NetDist.Logging;
 using NetDist.Server.XDomainObjects;
 using System;
 using System.Reflection;
-using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace NetDist.Server
 {
@@ -125,26 +125,54 @@ namespace NetDist.Server
             return true;
         }
 
-        public bool IsAllowedForClient(string clientName)
+        public bool IsAllowedForClient(ClientInfo clientInfo)
         {
             // 1. Priority: Explicitely allowed
             if (HandlerSettings.ClientsAllowed.Count != 0)
             {
                 // True if it is explicitely allowed
-                if (HandlerSettings.ClientsAllowed.Contains(clientName, StringComparer.OrdinalIgnoreCase))
+                foreach (var clientSelector in HandlerSettings.ClientsAllowed)
                 {
-                    return true;
+                    if (clientSelector.Id != null && clientSelector.Id != Guid.Empty)
+                    {
+                        if (clientInfo.Id == clientSelector.Id)
+                        {
+                            return true;
+                        }
+                    }
+                    if (!String.IsNullOrWhiteSpace(clientSelector.Name))
+                    {
+                        var regex = new Regex(String.Format("^{0}$", clientSelector.Name), RegexOptions.IgnoreCase);
+                        if (regex.IsMatch(clientInfo.Name))
+                        {
+                            return true;
+                        }
+                    }
                 }
                 // False if not in the allowed list
                 return false;
             }
-            // 2. Priority: Explicitely allowed
+            // 2. Priority: Explicitely denied
             if (HandlerSettings.ClientsDenied.Count != 0)
             {
                 // False if it is explicitely denied
-                if (HandlerSettings.ClientsDenied.Contains(clientName, StringComparer.OrdinalIgnoreCase))
+                foreach (var clientSelector in HandlerSettings.ClientsDenied)
                 {
-                    return false;
+                    if (clientSelector.Id != null && clientSelector.Id != Guid.Empty)
+                    {
+                        if (clientInfo.Id == clientSelector.Id)
+                        {
+                            return false;
+                        }
+                    }
+                    if (!String.IsNullOrWhiteSpace(clientSelector.Name))
+                    {
+                        var regex = new Regex(String.Format("^{0}$", clientSelector.Name), RegexOptions.IgnoreCase);
+                        if (regex.IsMatch(clientInfo.Name))
+                        {
+                            return false;
+                        }
+                    }
                 }
                 // True if not in the denied list
                 return true;

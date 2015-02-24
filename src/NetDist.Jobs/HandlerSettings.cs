@@ -40,21 +40,35 @@ namespace NetDist.Jobs
         public string IdleTime { get; set; }
 
         /// <summary>
-        /// Names of the clients which are allowed to process this job
+        /// Selectors of clients which are allowed to process this job
         /// Takes precedence if ClientsDenied is also set
         /// </summary>
-        public List<string> ClientsAllowed { get; set; }
+        public List<ClientSelector> ClientsAllowed { get; set; }
 
         /// <summary>
-        /// Names of the clients which are not allowed to process this job
+        /// Selectors of clients which are not allowed to process this job
         /// Ignored if ClientsAllowed is also set
         /// </summary>
-        public List<string> ClientsDenied { get; set; }
+        public List<ClientSelector> ClientsDenied { get; set; }
 
         public HandlerSettings()
         {
-            ClientsAllowed = new List<string>();
-            ClientsDenied = new List<string>();
+            ClientsAllowed = new List<ClientSelector>();
+            ClientsDenied = new List<ClientSelector>();
+        }
+
+        [Serializable]
+        public class ClientSelector
+        {
+            /// <summary>
+            /// Regular expression to select the name of a client
+            /// </summary>
+            public string Name { get; set; }
+
+            /// <summary>
+            /// ID of the client
+            /// </summary>
+            public Guid? Id { get; set; }
         }
     }
 }
