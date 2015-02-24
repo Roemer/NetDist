@@ -48,7 +48,7 @@ namespace NetDist.Handlers
         /// <summary>
         /// Process a result
         /// </summary>
-        void ProcessResult(IJobInput jobInput, string jobResultString);
+        void ProcessResult(IJobInput jobInput, string jobResultString, object additionalData);
 
         /// <summary>
         /// Method which is called when the handler is started

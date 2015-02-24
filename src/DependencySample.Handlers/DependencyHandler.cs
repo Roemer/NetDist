@@ -22,7 +22,7 @@ namespace DependencySample.Handlers
             EnqueueJob(new DependencyJobInput { Text = nextText });
         }
 
-        public override void ProcessResult(DependencyJobInput jobInput, DependencyJobOutput jobResult)
+        public override void ProcessResult(DependencyJobInput jobInput, DependencyJobOutput jobResult, object additionalData)
         {
             Logger.Info("{0} -> {1}", jobInput.Text, jobResult.Text);
         }
