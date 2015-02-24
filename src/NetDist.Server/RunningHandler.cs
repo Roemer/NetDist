@@ -162,6 +162,11 @@ namespace NetDist.Server
                 TearDown(true);
                 OnStateChangedEvent(new RunningHandlerStateChangedEventArgs(RunningHandlerState.Failed));
             }, TaskContinuationOptions.OnlyOnFaulted);
+            _controlTask.ContinueWith(t =>
+            {
+                TearDown(false);
+                OnStateChangedEvent(new RunningHandlerStateChangedEventArgs(RunningHandlerState.Finished));
+            }, TaskContinuationOptions.OnlyOnRanToCompletion);
             _controlTask.Start();
 
             // Notify the start event
@@ -381,7 +386,6 @@ namespace NetDist.Server
                     lock (_lockObject)
                     {
                         _handler.OnFinished();
-                        OnStateChangedEvent(new RunningHandlerStateChangedEventArgs(RunningHandlerState.Finished));
                         return;
                     }
                 }
