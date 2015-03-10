@@ -5,6 +5,7 @@ using NetDist.Core.Utilities;
 using NetDist.Jobs.DataContracts;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -130,6 +131,22 @@ namespace NetDist.Client
             _clientInfo.UsedMemory = ci.TotalPhysicalMemory - ci.AvailablePhysicalMemory;
             // CPU information
             _clientInfo.CpuUsage = CpuUsageReader.GetValue();
+            // Disk information
+            _clientInfo.DiskInformations = new List<DiskInformation>();
+            foreach (var drive in DriveInfo.GetDrives())
+            {
+                if (drive.IsReady && drive.DriveType == DriveType.Fixed)
+                {
+                    var diskInformation = new DiskInformation
+                    {
+                        Name = drive.Name,
+                        Label = drive.VolumeLabel,
+                        TotalDiskSpace = (ulong)drive.TotalSize,
+                        FreeDiskSpace = (ulong)drive.TotalFreeSpace,
+                    };
+                    _clientInfo.DiskInformations.Add(diskInformation);
+                }
+            }
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 ﻿using NetDist.Core;
+using NetDist.Core.Extensions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -23,6 +24,11 @@ namespace NetDist.Server
             _knownClients.Clear();
         }
 
+        public bool Remove(Guid id)
+        {
+            return _knownClients.TryRemove(id);
+        }
+
         public IEnumerable<ExtendedClientInfo> GetStatistics()
         {
             return _knownClients.Select(kvp => kvp.Value);
@@ -37,7 +43,7 @@ namespace NetDist.Server
         {
             return new ExtendedClientInfo
             {
-                ClientInfo = new ClientInfo { Id = clientId },
+                ClientInfo = new ClientInfo { Id = clientId, Name = "Loading..." },
                 LastCommunicationDate = DateTime.Now
             };
         }

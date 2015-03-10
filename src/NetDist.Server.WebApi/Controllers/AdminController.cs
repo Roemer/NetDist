@@ -1,7 +1,7 @@
-﻿using System;
+﻿using NetDist.Core;
+using System;
 using System.Net.Http;
 using System.Web.Http;
-using NetDist.Core;
 
 namespace NetDist.Server.WebApi.Controllers
 {
@@ -73,6 +73,14 @@ namespace NetDist.Server.WebApi.Controllers
         public IHttpActionResult EnableJobScript(Guid id)
         {
             var success = Server.EnableJobScript(id);
+            return success ? (IHttpActionResult)Ok() : BadRequest();
+        }
+
+        [HttpGet]
+        [Route("removeclient/{id}")]
+        public IHttpActionResult RemoveClient(Guid id)
+        {
+            var success = Server.RemoveClient(id);
             return success ? (IHttpActionResult)Ok() : BadRequest();
         }
 

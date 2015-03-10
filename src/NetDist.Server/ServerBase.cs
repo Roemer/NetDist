@@ -184,6 +184,11 @@ namespace NetDist.Server
             return _handlerManager.Enable(handlerId);
         }
 
+        public bool RemoveClient(Guid clientId)
+        {
+            return _clientManager.Remove(clientId);
+        }
+
         /// <summary>
         /// Get a job from the current pending jobs in the handlers
         /// </summary>

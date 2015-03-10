@@ -23,7 +23,14 @@ namespace NetDist.Server.WebApi
         {
             var baseUri = String.Format("{0}://{1}:{2}", "http", "*", Settings.Port);
             Logger.Info("Starting OWIN at '{0}'", baseUri);
-            _app = WebApp.Start(new StartOptions(baseUri), builder => new Startup(this).Configuration(builder));
+            try
+            {
+                _app = WebApp.Start(new StartOptions(baseUri), builder => new Startup(this).Configuration(builder));
+            }
+            catch (Exception exception)
+            {
+                Logger.Error(exception, "Failed to start OWIN at '{0}'", baseUri);
+            }
 
             return true;
         }
