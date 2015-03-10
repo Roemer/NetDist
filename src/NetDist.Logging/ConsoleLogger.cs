@@ -12,7 +12,11 @@ namespace NetDist.Logging
             var message = logEntry.Message;
             if (logEntry.Exceptions.Count > 0)
             {
-                message = String.Format("{0}\r\n    {1}", message, logEntry.Exceptions[0]);
+                message = String.Format("{0}\r\n  {1}\r\n{2}", message, logEntry.Exceptions[0].ExceptionMessage, logEntry.Exceptions[0].ExceptionStackTrace);
+                if (logEntry.Exceptions.Count > 1)
+                {
+                    message = String.Format("{0}\r\n  {1}\r\n{2}", message, logEntry.Exceptions[1].ExceptionMessage, logEntry.Exceptions[1].ExceptionStackTrace);
+                }
             }
             if (logEntry.HandlerId.HasValue)
             {

@@ -56,7 +56,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Core\ClientEventArgs.cs" />
     <Compile Include="Core\HandlerEventArgs.cs" />
+    <Compile Include="Core\ClientEventType.cs" />
     <Compile Include="Core\HandlerEventType.cs" />
     <Compile Include="Models\ServerModel.cs" />
     <Compile Include="SampleDataContext.cs" />

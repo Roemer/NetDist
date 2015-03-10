@@ -7,6 +7,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using Wpf.Shared;
@@ -66,6 +67,12 @@ namespace WpfServerAdmin.ViewModels
             get { return SizeSuffix.AddSizeSuffix(UsedMemory); }
         }
 
+        public int ActiveClientsCount
+        {
+            get { return GetProperty<int>(); }
+            set { SetProperty(value); }
+        }
+
         public ObservableCollection<HandlerInfoViewModel> Handlers { get; set; }
         public ObservableCollection<ClientInfoViewModel> Clients { get; set; }
         public ObservableCollection<PackageInfoViewModel> Packages { get; set; }
@@ -79,6 +86,7 @@ namespace WpfServerAdmin.ViewModels
             Handlers = new ObservableCollection<HandlerInfoViewModel>();
             Handlers.CollectionChanged += Handlers_CollectionChanged;
             Clients = new ObservableCollection<ClientInfoViewModel>();
+            Clients.CollectionChanged += Clients_CollectionChanged;
             Packages = new ObservableCollection<PackageInfoViewModel>();
 
             ShowSettingsCommand = new RelayCommand(o =>
@@ -179,6 +187,25 @@ namespace WpfServerAdmin.ViewModels
             }
         }
 
+        private void Clients_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.Action == NotifyCollectionChangedAction.Add || e.Action == NotifyCollectionChangedAction.Replace)
+            {
+                foreach (ClientInfoViewModel item in e.NewItems)
+                {
+                    item.ClientEvent += (o, args) =>
+                    {
+                        switch (args.EventType)
+                        {
+                            case ClientEventType.Delete:
+                                ServerModel.Server.RemoveClient(args.ClientId);
+                                break;
+                        }
+                    };
+                }
+            }
+        }
+
         public void Update(ServerInfo info)
         {
             TotalMemory = info.TotalMemory;
@@ -194,20 +221,9 @@ namespace WpfServerAdmin.ViewModels
             Clients.Clear();
             foreach (var client in info.Clients)
             {
-                Clients.Add(new ClientInfoViewModel
-                {
-                    Id = client.ClientInfo.Id,
-                    Version = client.ClientInfo.Version,
-                    Name = client.ClientInfo.Name,
-                    Cpu = client.ClientInfo.CpuUsage,
-                    TotalMemory = client.ClientInfo.TotalMemory,
-                    UsedMemory = client.ClientInfo.UsedMemory,
-                    JobsInProgress = client.JobsInProgress,
-                    TotalJobsFailed = client.TotalJobsFailed,
-                    TotalJobsProcessed = client.TotalJobsProcessed,
-                    LastUpdate = client.LastCommunicationDate
-                });
+                Clients.Add(new ClientInfoViewModel(client));
             }
+            ActiveClientsCount = Clients.Count(i => !i.IsOffline);
         }
     }
 }

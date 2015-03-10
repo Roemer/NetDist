@@ -18,7 +18,7 @@ namespace WpfServer.ViewModels
             var message = logEntry.Message;
             if (logEntry.Exceptions.Count > 0)
             {
-                message = String.Format("{0} - {1}", message, logEntry.Exceptions[0]);
+                message = String.Format("{0}\r\n  {1}\r\n  {2}", message, logEntry.Exceptions[0].ExceptionMessage, "View log files for further information!");
             }
             if (logEntry.HandlerId.HasValue)
             {

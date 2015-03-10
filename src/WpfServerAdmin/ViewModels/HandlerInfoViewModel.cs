@@ -19,6 +19,14 @@ namespace WpfServerAdmin.ViewModels
         public DateTime? LastStartTime { get { return _handlerInfo.LastStartTime; } }
         public DateTime? NextStartTime { get { return _handlerInfo.NextStartTime; } }
 
+        #region Calculated properties
+        public bool IsFailed { get { return HandlerState == HandlerState.Failed; } }
+        public bool IsStopped { get { return HandlerState == HandlerState.Stopped; } }
+        public bool IsDisabled { get { return HandlerState == HandlerState.Disabled || HandlerState == HandlerState.Paused; } }
+        public bool IsReady { get { return HandlerState == HandlerState.Finished || HandlerState == HandlerState.Idle; } }
+        public bool IsRunning { get { return HandlerState == HandlerState.Running; } }
+        #endregion
+
         public ICommand StartCommand { get; private set; }
         public ICommand StopCommand { get; private set; }
         public ICommand PauseCommand { get; private set; }

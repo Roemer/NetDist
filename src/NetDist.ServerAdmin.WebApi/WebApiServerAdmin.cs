@@ -105,19 +105,7 @@ namespace NetDist.ServerAdmin.WebApi
 
         public override void RemoveJobScript(Guid handlerId)
         {
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(_settings.ServerUri);
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-                // HTTP GET
-                var response = client.GetAsync(String.Concat("api/admin/removejobscript", "/", handlerId)).Result;
-                if (response.IsSuccessStatusCode)
-                {
-                    var content = response.Content.ReadAsStringAsync().Result;
-                }
-            }
+            CallJobScriptAction(handlerId, "removejobscript");
         }
 
         public override void StartJobScript(Guid handlerId)
@@ -160,6 +148,30 @@ namespace NetDist.ServerAdmin.WebApi
                     var content = response.Content.ReadAsStringAsync().Result;
                 }
             }
+            GetStatistics();
+        }
+
+        public override void RemoveClient(Guid clientId)
+        {
+            CallClientAction(clientId, "removeclient");
+        }
+
+        private void CallClientAction(Guid clientId, string method)
+        {
+            using (var client = new HttpClient())
+            {
+                client.BaseAddress = new Uri(_settings.ServerUri);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                // HTTP GET
+                var response = client.GetAsync(String.Concat("api/admin/", method, "/", clientId)).Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = response.Content.ReadAsStringAsync().Result;
+                }
+            }
+            GetStatistics();
         }
     }
 }

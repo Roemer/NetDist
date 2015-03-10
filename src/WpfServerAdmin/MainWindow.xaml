@@ -8,7 +8,7 @@
         xmlns:viewModels="clr-namespace:WpfServerAdmin.ViewModels"
         d:DataContext="{x:Static wpfServerAdmin:SampleDataContext.MainInfoViewModel}"
         Icon="admin.ico"
-        Title="NetDist Wpf Server Administrator" Height="373" Width="806.745" ResizeMode="CanResizeWithGrip">
+        Title="NetDist Wpf Server Administrator" Height="373" Width="1120.745" ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <BitmapImage x:Key="CpuImageSource" UriSource="Resources/cpu.png" />
         <BitmapImage x:Key="RamImageSource" UriSource="Resources/ram.png" />
@@ -42,7 +42,7 @@
                         <DockPanel>
                             <TextBlock VerticalAlignment="Center">Memory Usage:</TextBlock>
                             <Grid Margin="4,0,0,0" Width="150" Height="20">
-                                <ProgressBar Maximum="{Binding TotalMemory}" Value="{Binding UsedMemory}" />
+                                <ProgressBar Maximum="{Binding TotalMemory, Mode=OneWay}" Value="{Binding UsedMemory, Mode=OneWay}" />
                                 <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center">
                                     <TextBlock.Text>
                                         <MultiBinding StringFormat="{}{0:N0} / {1:N0}">
@@ -55,8 +55,8 @@
                         </DockPanel>
                     </DockPanel.ToolTip>
                     <Image Source="{StaticResource RamImageSource}" />
-                    <ProgressBar Margin="4,0" Orientation="Vertical" Width="10" Maximum="{Binding TotalMemory}" Value="{Binding UsedMemory}" />
-                    <TextBlock VerticalAlignment="Center" Text="{Binding Path=MemoryPercentage, StringFormat={}{0:0.00}%}" />
+                    <ProgressBar Margin="4,0" Orientation="Vertical" Width="10" Maximum="{Binding TotalMemory, Mode=OneWay}" Value="{Binding UsedMemory, Mode=OneWay}" />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Path=MemoryPercentage, StringFormat={}{0:0.00}%, Mode=OneWay}" />
                 </DockPanel>
             </StatusBarItem>
             <StatusBarItem DockPanel.Dock="Right">
@@ -64,12 +64,12 @@
                     <DockPanel.ToolTip>
                         <DockPanel>
                             <TextBlock VerticalAlignment="Center">Cpu Usage:</TextBlock>
-                            <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="{Binding Path=Cpu, StringFormat={}{0:0.00}%}" />
+                            <TextBlock Margin="4,0,0,0" VerticalAlignment="Center" Text="{Binding Path=Cpu, StringFormat={}{0:0.00}%, Mode=OneWay}" />
                         </DockPanel>
                     </DockPanel.ToolTip>
                     <Image Source="{StaticResource CpuImageSource}" />
-                    <ProgressBar Margin="4,0" Orientation="Vertical" Width="10" Maximum="100" Value="{Binding Cpu}" />
-                    <TextBlock VerticalAlignment="Center" Text="{Binding Path=Cpu, StringFormat={}{0:0.00}%}" />
+                    <ProgressBar Margin="4,0" Orientation="Vertical" Width="10" Maximum="100" Value="{Binding Cpu, Mode=OneWay}" />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Path=Cpu, StringFormat={}{0:0.00}%, Mode=OneWay}" />
                 </DockPanel>
             </StatusBarItem>
             <StatusBarItem>
@@ -99,8 +99,27 @@
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Name" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
                                 <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                        <Label Content="{Binding Path=Name}" />
+                                    <DataTemplate  DataType="viewModels:HandlerInfoViewModel">
+                                        <Grid Name="gridContent" Background="{Binding Path=IsStopped, Mode=OneWay}">
+                                            <Label Content="{Binding Path=Name}" />
+                                        </Grid>
+                                        <DataTemplate.Triggers >
+                                            <DataTrigger Binding="{Binding Path=IsFailed, Mode=OneWay}" Value="True">
+                                                <Setter Property="Background" TargetName="gridContent" Value="LightCoral"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Path=IsStopped, Mode=OneWay}" Value="True">
+                                                <Setter Property="Background" TargetName="gridContent" Value="SandyBrown"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Path=IsDisabled, Mode=OneWay}" Value="True">
+                                                <Setter Property="Background" TargetName="gridContent" Value="LightGray"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Path=IsReady, Mode=OneWay}" Value="True">
+                                                <Setter Property="Background" TargetName="gridContent" Value="White"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Path=IsRunning, Mode=OneWay}" Value="True">
+                                                <Setter Property="Background" TargetName="gridContent" Value="LightGreen"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -136,6 +155,20 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:HandlerInfoViewModel">
                                         <Label Content="{Binding TotalJobsFailed}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="LastStart" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Label Content="{Binding LastStartTime}" ContentStringFormat="dd.MM HH:mm" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="NextStart" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
+                                        <Label Content="{Binding NextStartTime}" ContentStringFormat="dd.MM HH:mm" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -178,57 +211,47 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="LastStart" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                        <Label Content="{Binding LastStartTime}" ContentStringFormat="HH:mm:ss" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="NextStart" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate DataType="viewModels:HandlerInfoViewModel">
-                                        <Label Content="{Binding NextStartTime}" ContentStringFormat="HH:mm:ss" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </TabItem>
-                <TabItem Header="{Binding Path=Clients.Count}" HeaderStringFormat="{}Clients ({0})">
+                <TabItem Header="{Binding Path=ActiveClientsCount}" HeaderStringFormat="{}Clients ({0})">
                     <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Path=Clients}" CanUserAddRows="False" HeadersVisibility="Column">
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Name" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="Name" Width="SizeToCells" MinWidth="75" IsReadOnly="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:ClientInfoViewModel">
-                                        <Label Content="{Binding Path=Name}" />
+                                        <Grid Name="gridContent" Background="{Binding Path=IsCritical, Mode=OneWay}">
+                                            <Label Content="{Binding Path=Name, Mode=OneWay}" />
+                                        </Grid>
+                                        <DataTemplate.Triggers >
+                                            <DataTrigger Binding="{Binding Path=IsCritical, Mode=OneWay}" Value="True">
+                                                <Setter Property="Background" TargetName="gridContent" Value="SandyBrown"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Path=IsOffline, Mode=OneWay}" Value="True">
+                                                <Setter Property="Background" TargetName="gridContent" Value="LightCoral"/>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
                             <DataGridTemplateColumn Header="Version" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:ClientInfoViewModel">
-                                        <Label Content="{Binding Path=Version}" />
+                                        <Label Content="{Binding Path=Version, Mode=OneWay}" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Cpu" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="LastUpdate" Width="SizeToCells" MinWidth="75" IsReadOnly="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:ClientInfoViewModel">
-                                        <Grid>
-                                            <ProgressBar Orientation="Vertical" Value="{Binding Path=Cpu}" Minimum="0" Maximum="100"></ProgressBar>
-                                            <Label Content="{Binding Path=Cpu}" ContentStringFormat="{}{0:00.00}%" />
-                                        </Grid>
+                                        <Label Content="{Binding LastUpdate}" ContentStringFormat="dd.MM HH:mm" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Mem" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="LastStart" Width="SizeToCells" MinWidth="75" IsReadOnly="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:ClientInfoViewModel">
-                                        <Grid>
-                                            <ProgressBar Orientation="Vertical" Value="{Binding Path=MemoryPercentage, Mode=OneWay}" Minimum="0" Maximum="100"></ProgressBar>
-                                            <Label Content="{Binding Path=MemoryPercentage}" ContentStringFormat="{}{0:00.00}%" />
-                                        </Grid>
+                                        <Label Content="{Binding StartDate}" ContentStringFormat="dd.MM HH:mm" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
@@ -253,10 +276,79 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="LastUpdate" Width="SizeToCells" MinWidth="60" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="Cpu" Width="SizeToCells" MinWidth="40" IsReadOnly="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:ClientInfoViewModel">
-                                        <Label Content="{Binding LastUpdate}" ContentStringFormat="HH:mm:ss" />
+                                        <Grid>
+                                            <ProgressBar Orientation="Vertical" Value="{Binding Path=Cpu, Mode=OneWay}"></ProgressBar>
+                                            <Label Content="{Binding Path=Cpu}" ContentStringFormat="{}{0:0}%" HorizontalContentAlignment="Right" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Mem" Width="SizeToCells" MinWidth="40" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:ClientInfoViewModel">
+                                        <Grid>
+                                            <ProgressBar Orientation="Vertical" Value="{Binding Path=MemoryPercentage, Mode=OneWay}"></ProgressBar>
+                                            <Label Content="{Binding Path=MemoryPercentage}" ContentStringFormat="{}{0:0}%" HorizontalContentAlignment="Right" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Disk" Width="SizeToCells" MinWidth="40" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:ClientInfoViewModel">
+                                        <Grid>
+                                            <ProgressBar Orientation="Vertical" Value="{Binding Path=FreeDiskSpacePercentage, Mode=OneWay}"></ProgressBar>
+                                            <Label Content="{Binding Path=FreeDiskSpacePercentage}" ContentStringFormat="{}{0:0}%" HorizontalContentAlignment="Right" />
+                                            <Grid.ToolTip>
+                                                <DockPanel>
+                                                    <DataGrid Margin="0,4,0,0" AutoGenerateColumns="False" ItemsSource="{Binding Path=DiskInformations}" CanUserAddRows="False" HeadersVisibility="Column">
+                                                        <DataGrid.Columns>
+                                                            <DataGridTemplateColumn Header="Name" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                                                                <DataGridTemplateColumn.CellTemplate>
+                                                                    <DataTemplate DataType="viewModels:DiskInformationViewModel">
+                                                                        <Label Content="{Binding DisplayName}" />
+                                                                    </DataTemplate>
+                                                                </DataGridTemplateColumn.CellTemplate>
+                                                            </DataGridTemplateColumn>
+                                                            <DataGridTemplateColumn Header="Free" Width="SizeToCells" MinWidth="40" IsReadOnly="True">
+                                                                <DataGridTemplateColumn.CellTemplate>
+                                                                    <DataTemplate DataType="viewModels:DiskInformationViewModel">
+                                                                        <Grid>
+                                                                            <ProgressBar Orientation="Vertical" Value="{Binding Path=FreeDiskSpacePercentage, Mode=OneWay}" Minimum="0" Maximum="100"></ProgressBar>
+                                                                            <Label Content="{Binding Path=FreeDiskSpacePercentage}" ContentStringFormat="{}{0:0}%" HorizontalContentAlignment="Right" />
+                                                                        </Grid>
+                                                                    </DataTemplate>
+                                                                </DataGridTemplateColumn.CellTemplate>
+                                                            </DataGridTemplateColumn>
+                                                            <DataGridTemplateColumn Header="Avail." Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                                                                <DataGridTemplateColumn.CellTemplate>
+                                                                    <DataTemplate DataType="viewModels:DiskInformationViewModel">
+                                                                        <Grid>
+                                                                            <Label Content="{Binding Path=FormattedFreeDiskSpace}" />
+                                                                        </Grid>
+                                                                    </DataTemplate>
+                                                                </DataGridTemplateColumn.CellTemplate>
+                                                            </DataGridTemplateColumn>
+                                                        </DataGrid.Columns>
+                                                    </DataGrid>
+                                                </DockPanel>
+                                            </Grid.ToolTip>
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Actions">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:ClientInfoViewModel">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Command="{Binding DeleteCommand}" ToolTipService.ShowOnDisabled="True">
+                                                <Button.ToolTip>Hide</Button.ToolTip>
+                                                <Image Width="20" Source="Resources/remove.png" Style="{StaticResource ImageDisabledTriggerStyle}" />
+                                            </Button>
+                                        </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
