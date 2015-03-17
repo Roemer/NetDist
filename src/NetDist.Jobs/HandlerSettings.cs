@@ -17,8 +17,8 @@ namespace NetDist.Jobs
         public string JobName { get; set; }
 
         /// <summary>
-        /// Timeout (in seconds) when a job was assigned to a client until it is reassigned to another client
-        /// Use 0 to deactivate the timeout
+        /// Timeout (in seconds) when a job was assigned to a client until it is reassigned to another client.
+        /// Use 0 to deactivate the timeout.
         /// </summary>
         public int JobTimeout { get; set; }
 
@@ -31,6 +31,12 @@ namespace NetDist.Jobs
         /// CronTab schedule string for the handler
         /// </summary>
         public string Schedule { get; set; }
+
+        /// <summary>
+        /// Maximum amount of sequenced results with errors.
+        /// Use 0 to deactivate this check.
+        /// </summary>
+        public decimal MaxSequencedErrors { get; set; }
 
         /// <summary>
         /// String to define a range when the handler should not send jobs
@@ -55,6 +61,8 @@ namespace NetDist.Jobs
         {
             ClientsAllowed = new List<ClientSelector>();
             ClientsDenied = new List<ClientSelector>();
+            // Set default values
+            MaxSequencedErrors = 5;
         }
 
         [Serializable]

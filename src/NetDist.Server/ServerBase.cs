@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualBasic.Devices;
+﻿using System.Linq;
+using Microsoft.VisualBasic.Devices;
 using NetDist.Core;
 using NetDist.Core.Utilities;
 using NetDist.Jobs.DataContracts;
@@ -69,10 +70,18 @@ namespace NetDist.Server
         /// </summary>
         public void Start()
         {
-            var success = InternalStart();
-            if (!success)
+            try
             {
-                Logger.Error("Failed to start");
+                var success = InternalStart();
+                if (!success)
+                {
+                    Logger.Error("Failed to start");
+                }
+                _handlerManager.StartSchedulerTask();
+            }
+            catch (Exception exception)
+            {
+                Logger.Error(exception, "Failed to start");
             }
         }
 
@@ -81,13 +90,20 @@ namespace NetDist.Server
         /// </summary>
         public void Stop()
         {
-            var success = InternalStop();
-            if (!success)
+            try
             {
-                Logger.Error("Failed to stop");
+                var success = InternalStop();
+                if (!success)
+                {
+                    Logger.Error("Failed to stop");
+                }
+                _handlerManager.TearDown();
+                _clientManager.Clear();
             }
-            _handlerManager.TearDown();
-            _clientManager.Clear();
+            catch (Exception exception)
+            {
+                Logger.Error(exception, "Failed to stop");
+            }
         }
 
         /// <summary>
@@ -106,7 +122,7 @@ namespace NetDist.Server
             var handlerStats = _handlerManager.GetStatistics();
             info.Handlers.AddRange(handlerStats);
             // Client statistics
-            info.Clients.AddRange(_clientManager.GetStatistics());
+            info.Clients.AddRange(_clientManager.GetStatistics().OrderBy(i => i.ClientInfo.Name));
             return info;
         }
 

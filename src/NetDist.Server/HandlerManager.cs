@@ -21,8 +21,8 @@ namespace NetDist.Server
         private readonly Dictionary<Guid, HandlerInstance> _loadedHandlers;
         private Logger Logger { get; set; }
         private readonly PackageManager _packageManager;
-        private readonly Task _schedulerTask;
-        private readonly CancellationTokenSource _schedulerTaskCancelToken;
+        private Task _schedulerTask;
+        private CancellationTokenSource _schedulerTaskCancelToken;
 
         /// <summary>
         /// Constructor
@@ -34,9 +34,7 @@ namespace NetDist.Server
             _loadedHandlers = new Dictionary<Guid, HandlerInstance>();
 
             // Initialize the task to regularly check if a handler should be restarted or postpone the next start
-            _schedulerTaskCancelToken = new CancellationTokenSource();
-            _schedulerTask = new Task(SchedulerThread, _schedulerTaskCancelToken.Token);
-            _schedulerTask.Start();
+            StartSchedulerTask();
         }
 
         /// <summary>
@@ -60,6 +58,16 @@ namespace NetDist.Server
                 retList.Add(loadedHandler.GetInfo());
             }
             return retList;
+        }
+
+        public void StartSchedulerTask()
+        {
+            if (_schedulerTask == null || _schedulerTask.IsCompleted)
+            {
+                _schedulerTaskCancelToken = new CancellationTokenSource();
+                _schedulerTask = new Task(SchedulerThread, _schedulerTaskCancelToken.Token);
+                _schedulerTask.Start();
+            }
         }
 
         public void TearDown()
