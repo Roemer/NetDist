@@ -16,6 +16,7 @@ namespace WpfServerAdmin.ViewModels
         public long TotalJobsProcessed { get { return _handlerInfo.TotalJobsProcessed; } }
         public long TotalJobsFailed { get { return _handlerInfo.TotalJobsFailed; } }
         public HandlerState HandlerState { get { return _handlerInfo.HandlerState; } }
+        public string HandlerMessage { get { return _handlerInfo.HandlerMessage; } }
         public DateTime? LastStartTime { get { return _handlerInfo.LastStartTime; } }
         public DateTime? NextStartTime { get { return _handlerInfo.NextStartTime; } }
 

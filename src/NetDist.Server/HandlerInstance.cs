@@ -54,6 +54,7 @@ namespace NetDist.Server
         private readonly PackageManager _packageManager;
         private readonly Logger _logger;
         private HandlerState _handlerState;
+        private string _handlerMessage;
         private CrontabSchedule _cronSchedule;
         private IdleInformation _idleInfo;
         private AppDomain _appDomain;
@@ -200,6 +201,7 @@ namespace NetDist.Server
             info.HandlerName = HandlerSettings.HandlerName;
             info.JobName = HandlerSettings.JobName;
             info.HandlerState = _handlerState;
+            info.HandlerMessage = _handlerMessage;
             info.LastStartTime = _lastStartTime;
             info.NextStartTime = NextStartTime;
             return info;
@@ -209,6 +211,11 @@ namespace NetDist.Server
         {
             lock (_lockObject)
             {
+                // Do not start if handler is in failed state
+                if (_handlerState == HandlerState.Failed)
+                {
+                    return false;
+                }
                 if (_handlerProxy == null)
                 {
                     _appDomain = CreateDomain();
@@ -222,6 +229,7 @@ namespace NetDist.Server
                     }
                     _handlerProxy = proxy;
                     _lastStartTime = DateTime.Now;
+                    _handlerMessage = String.Empty;
                 }
                 _handlerState = HandlerState.Running;
             }
@@ -308,12 +316,19 @@ namespace NetDist.Server
                 _logger.Warn("Handler: Got job '{0}' result for stopped handler", result.JobId);
                 return false;
             }
-            return _handlerProxy.ReceivedResult(result);
+            var success = _handlerProxy.ReceivedResult(result);
+            if (!success && HandlerSettings.MaxSequencedErrors > 0 && _handlerProxy.GetInfo().SequencedJobsFailed > HandlerSettings.MaxSequencedErrors)
+            {
+                _handlerMessage = "Too many sequenced errors";
+                SetFailed();
+            }
+            return success;
         }
 
         private void SetFailed()
         {
             Stop();
+            NextStartTime = null;
             _handlerState = HandlerState.Failed;
         }
 
@@ -379,7 +394,14 @@ namespace NetDist.Server
         {
             if (_appDomain != null)
             {
-                AppDomain.Unload(_appDomain);
+                try
+                {
+                    AppDomain.Unload(_appDomain);
+                }
+                catch (AppDomainUnloadedException)
+                {
+                    _logger.Debug("AppDomain for handler '{0}' already unloaded.", Id);
+                }
                 _appDomain = null;
             }
         }
@@ -389,6 +411,11 @@ namespace NetDist.Server
         /// </summary>
         public void ScheduledStartOrReschedule()
         {
+            // Do not start again if handler was failed
+            if (_handlerState == HandlerState.Failed)
+            {
+                return;
+            }
             // Only perform this if there is a cron scheduler
             if (_cronSchedule != null)
             {

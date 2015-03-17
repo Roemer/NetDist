@@ -10,5 +10,6 @@ namespace NetDist.Core
         public int JobsPending { get; set; }
         public long TotalJobsProcessed { get; set; }
         public long TotalJobsFailed { get; set; }
+        public long SequencedJobsFailed { get; set; }
     }
 }

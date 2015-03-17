@@ -51,6 +51,7 @@ namespace NetDist.Server
         private ConcurrentQueue<JobWrapper> _finishedJobs;
         private long _totalProcessedJobs;
         private long _totalFailedJobs;
+        private long _sequencedFailedJobs;
         private string _jobScriptHash;
         private Task _controlTask;
         private CancellationTokenSource _controlTaskCancelToken;
@@ -196,6 +197,7 @@ namespace NetDist.Server
                 JobsPending = _pendingJobs.Count,
                 TotalJobsProcessed = Interlocked.Read(ref _totalProcessedJobs),
                 TotalJobsFailed = Interlocked.Read(ref _totalFailedJobs),
+                SequencedJobsFailed = Interlocked.Read(ref _sequencedFailedJobs),
             };
             // Calculate the total job count
             stats.TotalJobsAvailable = _handler.GetTotalJobCount();
@@ -228,6 +230,7 @@ namespace NetDist.Server
             _finishedJobs = new ConcurrentQueue<JobWrapper>();
             Interlocked.Exchange(ref _totalProcessedJobs, 0);
             Interlocked.Exchange(ref _totalFailedJobs, 0);
+            Interlocked.Exchange(ref _sequencedFailedJobs, 0);
             // Signal the handler to stop
             if (notifyStop)
             {
@@ -282,6 +285,7 @@ namespace NetDist.Server
                 {
                     Logger.Error("Got failed result for job '{0}': {1}", result.JobId, result.Error.ToString());
                     Interlocked.Increment(ref _totalFailedJobs);
+                    Interlocked.Increment(ref _sequencedFailedJobs);
                     // If so, remove it from the in-progress list
                     _pendingJobs.Remove(result.JobId);
                     // Reset the assigned values
@@ -294,6 +298,7 @@ namespace NetDist.Server
                 var resultString = result.GetOutput();
                 Logger.Debug("Handler: Got result for job '{0}': {1}", result.JobId, resultString);
                 Interlocked.Increment(ref _totalProcessedJobs);
+                Interlocked.Exchange(ref _sequencedFailedJobs, 0);
 
                 // Remove job from in-progress list
                 _pendingJobs.Remove(result.JobId);
