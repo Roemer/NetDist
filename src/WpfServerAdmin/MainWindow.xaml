@@ -3,12 +3,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         mc:Ignorable="d"
         xmlns:wpfServerAdmin="clr-namespace:WpfServerAdmin"
+        xmlns:controls="clr-namespace:WpfServerAdmin.Controls"
         xmlns:viewModels="clr-namespace:WpfServerAdmin.ViewModels"
         d:DataContext="{x:Static wpfServerAdmin:SampleDataContext.MainInfoViewModel}"
         Icon="admin.ico"
-        Title="NetDist Wpf Server Administrator" Height="373" Width="1120.745" ResizeMode="CanResizeWithGrip">
+        Title="NetDist Wpf Server Administrator" Height="594" Width="1241.745" ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <BitmapImage x:Key="CpuImageSource" UriSource="Resources/cpu.png" />
         <BitmapImage x:Key="RamImageSource" UriSource="Resources/ram.png" />
@@ -19,6 +21,16 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <CollectionViewSource x:Key="HandlerList" Source="{Binding Handlers}">
+            <CollectionViewSource.SortDescriptions>
+                <scm:SortDescription PropertyName="Name"/>
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
+        <CollectionViewSource x:Key="ClientList" Source="{Binding Clients}">
+            <CollectionViewSource.SortDescriptions>
+                <scm:SortDescription PropertyName="Name"/>
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
     </Window.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top">
@@ -73,31 +85,15 @@
                 </DockPanel>
             </StatusBarItem>
             <StatusBarItem>
-                <DockPanel>
-                    <TextBlock VerticalAlignment="Center">Connection</TextBlock>
-                    <Image>
-                        <Image.Style>
-                            <Style TargetType="{x:Type Image}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsConnected}" Value="False">
-                                        <Setter Property="Source" Value="Resources/button_red.png"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsConnected}" Value="True">
-                                        <Setter Property="Source" Value="Resources/button_green.png"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Image.Style>
-                    </Image>
-                </DockPanel>
+                <ProgressBar controls:ProgressBarSmooth.SmoothValue="{Binding RefreshProgress, Mode=OneWay}" Height="17" Width="150" Maximum="100" />
             </StatusBarItem>
         </StatusBar>
         <Grid>
             <TabControl>
                 <TabItem Header="{Binding Path=Handlers.Count}" HeaderStringFormat="{}Handlers ({0})">
-                    <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Path=Handlers}" CanUserAddRows="False" HeadersVisibility="Column">
+                    <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Source={StaticResource HandlerList}}" CanUserAddRows="False" HeadersVisibility="Column" CanUserDeleteRows="False">
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Name" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="Name" Width="SizeToCells" MinWidth="50" IsReadOnly="True" SortMemberPath="Name" CanUserSort="True" SortDirection="Ascending">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate  DataType="viewModels:HandlerInfoViewModel">
                                         <Grid Name="gridContent" Background="{Binding Path=IsStopped, Mode=OneWay}">
@@ -158,24 +154,28 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="LastStart" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="LastStart" Width="SizeToCells" MinWidth="50" IsReadOnly="True" SortMemberPath="LastStart" CanUserSort="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:HandlerInfoViewModel">
                                         <Label Content="{Binding LastStartTime}" ContentStringFormat="dd.MM HH:mm" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="NextStart" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="NextStart" Width="SizeToCells" MinWidth="50" IsReadOnly="True" SortMemberPath="NextStart" CanUserSort="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:HandlerInfoViewModel">
                                         <Label Content="{Binding NextStartTime}" ContentStringFormat="dd.MM HH:mm" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Actions">
+                            <DataGridTemplateColumn Width="SizeToCells" MinWidth="159">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:HandlerInfoViewModel">
                                         <StackPanel Orientation="Horizontal">
+                                            <Button Command="{Binding ShowLogCommand}" ToolTipService.ShowOnDisabled="True">
+                                                <Button.ToolTip>Log</Button.ToolTip>
+                                                <Image Width="20" Source="Resources/download.png" Style="{StaticResource ImageDisabledTriggerStyle}" />
+                                            </Button>
                                             <Button Command="{Binding StartCommand}" ToolTipService.ShowOnDisabled="True">
                                                 <Button.ToolTip>Start</Button.ToolTip>
                                                 <Image Width="20" Source="Resources/start.png" Style="{StaticResource ImageDisabledTriggerStyle}" />
@@ -211,7 +211,7 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Message" Width="SizeToCells" MinWidth="50" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="Message" Width="*" MinWidth="50" IsReadOnly="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:HandlerInfoViewModel">
                                         <Label Content="{Binding HandlerMessage}" />
@@ -222,9 +222,9 @@
                     </DataGrid>
                 </TabItem>
                 <TabItem Header="{Binding Path=ActiveClientsCount}" HeaderStringFormat="{}Clients ({0})">
-                    <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Path=Clients}" CanUserAddRows="False" HeadersVisibility="Column">
+                    <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Source={StaticResource ClientList}}" CanUserAddRows="False" HeadersVisibility="Column">
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Name" Width="SizeToCells" MinWidth="75" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="Name" Width="SizeToCells" MinWidth="75" IsReadOnly="True" SortMemberPath="Name" CanUserSort="True" SortDirection="Ascending">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:ClientInfoViewModel">
                                         <Grid Name="gridContent" Background="{Binding Path=IsCritical, Mode=OneWay}">
@@ -248,14 +248,14 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="LastUpdate" Width="SizeToCells" MinWidth="75" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="LastUpdate" Width="SizeToCells" MinWidth="75" IsReadOnly="True" SortMemberPath="LastUpdate" CanUserSort="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:ClientInfoViewModel">
                                         <Label Content="{Binding LastUpdate}" ContentStringFormat="dd.MM HH:mm" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="LastStart" Width="SizeToCells" MinWidth="75" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="LastStart" Width="SizeToCells" MinWidth="75" IsReadOnly="True" SortMemberPath="LastStart" CanUserSort="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:ClientInfoViewModel">
                                         <Label Content="{Binding StartDate}" ContentStringFormat="dd.MM HH:mm" />
@@ -307,8 +307,8 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:ClientInfoViewModel">
                                         <Grid>
-                                            <ProgressBar Orientation="Vertical" Value="{Binding Path=FreeDiskSpacePercentage, Mode=OneWay}"></ProgressBar>
-                                            <Label Content="{Binding Path=FreeDiskSpacePercentage}" ContentStringFormat="{}{0:0}%" HorizontalContentAlignment="Right" />
+                                            <ProgressBar Orientation="Vertical" Value="{Binding Path=UsedDiskSpacePercentage, Mode=OneWay}"></ProgressBar>
+                                            <Label Content="{Binding Path=UsedDiskSpacePercentage}" ContentStringFormat="{}{0:0}%" HorizontalContentAlignment="Right" />
                                             <Grid.ToolTip>
                                                 <DockPanel>
                                                     <DataGrid Margin="0,4,0,0" AutoGenerateColumns="False" ItemsSource="{Binding Path=DiskInformations}" CanUserAddRows="False" HeadersVisibility="Column">
@@ -320,12 +320,12 @@
                                                                     </DataTemplate>
                                                                 </DataGridTemplateColumn.CellTemplate>
                                                             </DataGridTemplateColumn>
-                                                            <DataGridTemplateColumn Header="Free" Width="SizeToCells" MinWidth="40" IsReadOnly="True">
+                                                            <DataGridTemplateColumn Header="Used" Width="SizeToCells" MinWidth="40" IsReadOnly="True">
                                                                 <DataGridTemplateColumn.CellTemplate>
                                                                     <DataTemplate DataType="viewModels:DiskInformationViewModel">
                                                                         <Grid>
-                                                                            <ProgressBar Orientation="Vertical" Value="{Binding Path=FreeDiskSpacePercentage, Mode=OneWay}" Minimum="0" Maximum="100"></ProgressBar>
-                                                                            <Label Content="{Binding Path=FreeDiskSpacePercentage}" ContentStringFormat="{}{0:0}%" HorizontalContentAlignment="Right" />
+                                                                            <ProgressBar Orientation="Vertical" Value="{Binding Path=UsedDiskSpacePercentage, Mode=OneWay}" Minimum="0" Maximum="100"></ProgressBar>
+                                                                            <Label Content="{Binding Path=UsedDiskSpacePercentage}" ContentStringFormat="{}{0:0}%" HorizontalContentAlignment="Right" />
                                                                         </Grid>
                                                                     </DataTemplate>
                                                                 </DataGridTemplateColumn.CellTemplate>
@@ -347,7 +347,7 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Actions">
+                            <DataGridTemplateColumn Width="SizeToCells" MinWidth="29">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate DataType="viewModels:ClientInfoViewModel">
                                         <StackPanel Orientation="Horizontal">
@@ -356,6 +356,13 @@
                                                 <Image Width="20" Source="Resources/remove.png" Style="{StaticResource ImageDisabledTriggerStyle}" />
                                             </Button>
                                         </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Message" Width="*" MinWidth="60" IsReadOnly="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate DataType="viewModels:ClientInfoViewModel">
+                                        <Label Content="" />
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>

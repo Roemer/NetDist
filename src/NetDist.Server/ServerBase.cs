@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using Microsoft.VisualBasic.Devices;
+﻿using Microsoft.VisualBasic.Devices;
 using NetDist.Core;
 using NetDist.Core.Utilities;
 using NetDist.Jobs.DataContracts;
@@ -7,6 +6,7 @@ using NetDist.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace NetDist.Server
 {
@@ -124,6 +124,14 @@ namespace NetDist.Server
             // Client statistics
             info.Clients.AddRange(_clientManager.GetStatistics().OrderBy(i => i.ClientInfo.Name));
             return info;
+        }
+
+        /// <summary>
+        /// Get the log for one job.
+        /// </summary>
+        public LogInfo GetJobLog(Guid handlerId)
+        {
+            return _handlerManager.GetJobLog(handlerId);
         }
 
         /// <summary>

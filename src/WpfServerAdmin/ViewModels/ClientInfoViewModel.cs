@@ -28,14 +28,14 @@ namespace WpfServerAdmin.ViewModels
 
         #region Calculated properties
         public bool IsOffline { get { return LastUpdate.AddMinutes(5) < DateTime.Now; } }
-        public bool IsCritical { get { return FreeDiskSpacePercentage < 10; } }
+        public bool IsCritical { get { return UsedDiskSpacePercentage > 90; } }
         public float MemoryPercentage { get { return UsedMemory / (float)TotalMemory * 100; } }
-        public float FreeDiskSpacePercentage
+        public float UsedDiskSpacePercentage
         {
             get
             {
                 var lowestFreeDiskSpace = _client.ClientInfo.DiskInformations.OrderBy(i => i.FreeDiskSpace).First();
-                return 100.0f / lowestFreeDiskSpace.TotalDiskSpace * lowestFreeDiskSpace.FreeDiskSpace;
+                return 100.0f / lowestFreeDiskSpace.TotalDiskSpace * (lowestFreeDiskSpace.TotalDiskSpace - lowestFreeDiskSpace.FreeDiskSpace);
             }
         }
 
@@ -63,7 +63,7 @@ namespace WpfServerAdmin.ViewModels
         private readonly DiskInformation _diskInformation;
 
         #region Calculated properties
-        public float FreeDiskSpacePercentage { get { return 100.0f / _diskInformation.TotalDiskSpace * _diskInformation.FreeDiskSpace; } }
+        public float UsedDiskSpacePercentage { get { return 100.0f / _diskInformation.TotalDiskSpace * (_diskInformation.TotalDiskSpace - _diskInformation.FreeDiskSpace); } }
         public string FormattedFreeDiskSpace { get { return SizeSuffix.AddSizeSuffix(_diskInformation.FreeDiskSpace); } }
         public string DisplayName { get { return String.Format("{0} ({1})", _diskInformation.Label, _diskInformation.Name); } }
         #endregion

@@ -15,6 +15,9 @@ namespace WpfServerAdmin
     {
         private readonly MainInfoViewModel _model;
         private bool _isExiting;
+        private DateTime _lastRefresh = DateTime.MinValue;
+
+        private const int RefreshInterval = 5000;
 
         public MainWindow()
         {
@@ -34,8 +37,21 @@ namespace WpfServerAdmin
             {
                 while (!_isExiting)
                 {
-                    GetStatistics();
-                    Thread.Sleep(5000);
+                    var passedSeconds = (DateTime.Now - _lastRefresh).TotalMilliseconds;
+                    if (passedSeconds > RefreshInterval)
+                    {
+                        GetStatistics();
+                        _model.RefreshProgress = 0.0;
+                        Thread.Sleep(100);
+                        _lastRefresh = DateTime.Now;
+                        _model.RefreshProgress = 100;
+                    }
+                    else
+                    {
+                        var progress = 100.0 / RefreshInterval * (RefreshInterval - passedSeconds);
+                        _model.RefreshProgress = progress > 2 ? progress : 0;
+                        Thread.Sleep(100);
+                    }
                 }
             });
         }

@@ -21,6 +21,12 @@ namespace WpfServerAdmin.ViewModels
     {
         public ServerModel ServerModel { get; set; }
 
+        public double RefreshProgress
+        {
+            get { return GetProperty<double>(); }
+            set { SetProperty(value); }
+        }
+
         public ulong TotalMemory
         {
             get { return GetProperty<ulong>(); }
@@ -180,6 +186,12 @@ namespace WpfServerAdmin.ViewModels
                                 break;
                             case HandlerEventType.Delete:
                                 ServerModel.Server.RemoveJobScript(args.HandlerId);
+                                break;
+                            case HandlerEventType.ShowLog:
+                                var dialogViewModel = new ListPopupWindowViewModel();
+                                dialogViewModel.LogInfo = ServerModel.Server.GetJobLog(args.HandlerId).LogEntries.Select(x => new LogEntryViewModel(x)).ToList();
+                                var dialog = new ListPopupWindow(dialogViewModel);
+                                dialog.ShowDialog();
                                 break;
                         }
                     };
