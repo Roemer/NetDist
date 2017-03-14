@@ -10,6 +10,7 @@ namespace NetDist.ServerAdmin
         public abstract void AddPackage(PackageInfo packageInfo, byte[] packageZip);
 
         public abstract AddJobScriptResult AddJobScript(JobScriptInfo jobScriptInfo);
+        public abstract LogInfo GetJobLog(Guid handlerId);
         public abstract void RemoveJobScript(Guid handlerId);
         public abstract void StartJobScript(Guid handlerId);
         public abstract void StopJobScript(Guid handlerId);

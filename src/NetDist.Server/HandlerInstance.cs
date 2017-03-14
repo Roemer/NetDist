@@ -5,6 +5,8 @@ using NetDist.Jobs.DataContracts;
 using NetDist.Logging;
 using NetDist.Server.XDomainObjects;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -28,7 +30,7 @@ namespace NetDist.Server
         /// <summary>
         /// Flag to indicate if this handler can deliver jobs
         /// </summary>
-        public bool CanDeliverJob { get { return _handlerProxy != null && _handlerState == HandlerState.Running && _handlerProxy.HasAvailableJobs; } }
+        public bool CanDeliverJob { get { return _handlerProxy != null && _handlerState == HandlerState.Running && _handlerProxy.HasAvailableJobs && (HandlerSettings.MaxParallelJobs == 0 || _handlerProxy.GetInfo().JobsPending < HandlerSettings.MaxParallelJobs); } }
 
         /// <summary>
         /// Time when the handler will start next time
@@ -60,6 +62,7 @@ namespace NetDist.Server
         private AppDomain _appDomain;
         private RunningHandlerProxy _handlerProxy;
         private DateTime? _lastStartTime;
+        private readonly Queue<LogInfoEntry> _log = new Queue<LogInfoEntry>();
 
         /// <summary>
         /// Constructor
@@ -67,9 +70,38 @@ namespace NetDist.Server
         public HandlerInstance(Logger logger, PackageManager packageManager)
         {
             _logger = logger;
+            _logger.LogEvent += LoggerOnLogEvent;
+
             _packageManager = packageManager;
             Id = Guid.NewGuid();
             _handlerState = HandlerState.Stopped;
+        }
+
+        private void LoggerOnLogEvent(object sender, LogEventArgs logEventArgs)
+        {
+            var logEntry = logEventArgs.LogEntry;
+
+            // Skip debug log messages
+            if (logEntry.HandlerId != Id || logEntry.LogLevel < LogLevel.Info)
+            {
+                return;
+            }
+
+            var message = logEntry.Message;
+            if (logEntry.Exceptions.Count > 0)
+            {
+                message = String.Format("{0}\r\n  {1}\r\n{2}", message, logEntry.Exceptions[0].ExceptionMessage, logEntry.Exceptions[0].ExceptionStackTrace);
+                if (logEntry.Exceptions.Count > 1)
+                {
+                    message = String.Format("{0}\r\n  {1}\r\n{2}", message, logEntry.Exceptions[1].ExceptionMessage, logEntry.Exceptions[1].ExceptionStackTrace);
+                }
+            }
+
+            _log.Enqueue(new LogInfoEntry { Level = logEntry.LogLevel.ToString(), Timestamp = logEntry.LogDate, Message = message });
+            if (_log.Count > 100)
+            {
+                _log.Dequeue();
+            }
         }
 
         /// <summary>
@@ -205,6 +237,12 @@ namespace NetDist.Server
             info.LastStartTime = _lastStartTime;
             info.NextStartTime = NextStartTime;
             return info;
+        }
+
+        public LogInfo GetJobLog()
+        {
+            var result = new LogInfo { LogEntries = _log.OrderByDescending(i => i.Timestamp).ToList() };
+            return result;
         }
 
         public bool Start()

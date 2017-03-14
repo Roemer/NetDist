@@ -19,6 +19,14 @@ namespace NetDist.Server.WebApi.Controllers
             return Ok(statistics);
         }
 
+        [HttpGet]
+        [Route("joblog/{id}")]
+        public IHttpActionResult GetJobLog(Guid id)
+        {
+            var log = Server.GetJobLog(id);
+            return Ok(log);
+        }
+
         [HttpPost]
         [Route("addjobscript")]
         public IHttpActionResult AddJobScript()

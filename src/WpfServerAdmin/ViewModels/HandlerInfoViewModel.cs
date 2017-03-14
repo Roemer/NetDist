@@ -28,6 +28,7 @@ namespace WpfServerAdmin.ViewModels
         public bool IsRunning { get { return HandlerState == HandlerState.Running; } }
         #endregion
 
+        public ICommand ShowLogCommand { get; private set; }
         public ICommand StartCommand { get; private set; }
         public ICommand StopCommand { get; private set; }
         public ICommand PauseCommand { get; private set; }
@@ -54,6 +55,7 @@ namespace WpfServerAdmin.ViewModels
             EnableCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.Enable, _handlerInfo.Id))
                 , o => HandlerState == HandlerState.Disabled);
             DeleteCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.Delete, _handlerInfo.Id)));
+            ShowLogCommand = new RelayCommand(param => OnHandlerEvent(new HandlerEventArgs(HandlerEventType.ShowLog, _handlerInfo.Id)));
         }
 
         protected virtual void OnHandlerEvent(HandlerEventArgs e)

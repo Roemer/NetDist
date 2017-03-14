@@ -24,6 +24,8 @@ namespace SimpleCalculator.Jobs
             handlerSettings.HandlerName = "Calculator";
             handlerSettings.JobName = "Calculator - Sub";
             handlerSettings.AutoStart = true;
+            handlerSettings.Schedule = "* * * * *";
+            handlerSettings.MaxParallelJobs = 2;
         }
 
         public override void FillCustomSettings(CalculatorHandlerSettings customSettings)

@@ -113,6 +113,27 @@ namespace NetDist.ServerAdmin.WebApi
             CallJobScriptAction(handlerId, "startjobscript");
         }
 
+        public override LogInfo GetJobLog(Guid handlerId)
+        {
+            using (var client = new HttpClient())
+            {
+                client.Timeout = new TimeSpan(0, 0, 2);
+                client.BaseAddress = new Uri(_settings.ServerUri);
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                // HTTP GET
+                var response = client.GetAsync("api/admin/joblog/" + handlerId).Result;
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = response.Content.ReadAsStringAsync().Result;
+                    var log = JsonConvert.DeserializeObject<LogInfo>(content);
+                    return log;
+                }
+            }
+            return null;
+        }
+
         public override void StopJobScript(Guid handlerId)
         {
             CallJobScriptAction(handlerId, "stopjobscript");

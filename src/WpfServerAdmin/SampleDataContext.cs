@@ -11,9 +11,24 @@ namespace WpfServerAdmin
     {
         public static MainInfoViewModel MainInfoViewModel { get; private set; }
         public static PackageUploadViewModel PackageUploadViewModel { get; private set; }
+        public static ListPopupWindowViewModel ListPopupWindowViewModel { get; private set; }
 
         static SampleDataContext()
         {
+            ListPopupWindowViewModel = new ListPopupWindowViewModel();
+            ListPopupWindowViewModel.LogInfo.Add(new LogEntryViewModel(new LogInfoEntry
+            {
+                Timestamp = DateTime.Now,
+                Level = "Test",
+                Message = "Message 1"
+            }));
+            ListPopupWindowViewModel.LogInfo.Add(new LogEntryViewModel(new LogInfoEntry
+            {
+                Timestamp = DateTime.Now,
+                Level = "Test",
+                Message = "Message 2"
+            }));
+
             MainInfoViewModel = new MainInfoViewModel
             {
                 TotalMemory = 123456789,

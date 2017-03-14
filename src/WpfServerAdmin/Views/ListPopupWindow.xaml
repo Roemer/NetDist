@@ -1,0 +1,53 @@
+﻿<Window x:Class="WpfServerAdmin.Views.ListPopupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        xmlns:wpfServerAdmin="clr-namespace:WpfServerAdmin"
+        xmlns:viewModels="clr-namespace:WpfServerAdmin.ViewModels"
+        d:DataContext="{x:Static wpfServerAdmin:SampleDataContext.ListPopupWindowViewModel}"
+        Title="NetDist Wpf Server Administrator" Height="627.79" Width="873.211">
+    <Window.Resources>
+        <CollectionViewSource x:Key="LogEntries" Source="{Binding LogInfo}">
+            <CollectionViewSource.SortDescriptions>
+                <!--<scm:SortDescription PropertyName="Name"/>-->
+            </CollectionViewSource.SortDescriptions>
+        </CollectionViewSource>
+    </Window.Resources>
+    <Grid>
+
+        <DataGrid Margin="0,0,10,10" ItemsSource="{Binding Source={StaticResource LogEntries}}" HeadersVisibility="Column" CanUserAddRows="False" CanUserDeleteRows="False" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Timestamp" Width="SizeToCells" SortMemberPath="LogEntry" MinWidth="50" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate DataType="viewModels:LogEntryViewModel">
+                            <Grid x:Name="gridContent">
+                                <Label Content="{Binding Timestamp}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Level" Width="SizeToCells" SortMemberPath="LogEntry" MinWidth="50" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate DataType="viewModels:LogEntryViewModel">
+                            <Grid x:Name="gridContent">
+                                <Label Content="{Binding LogLevel}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Message" Width="SizeToCells" SortMemberPath="LogEntry" MinWidth="200" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate DataType="viewModels:LogEntryViewModel">
+                            <Grid x:Name="gridContent">
+                                <Label Content="{Binding Message}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </Grid>
+</Window>

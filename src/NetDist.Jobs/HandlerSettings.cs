@@ -39,6 +39,12 @@ namespace NetDist.Jobs
         public decimal MaxSequencedErrors { get; set; }
 
         /// <summary>
+        /// Maximum amount of parallel jobs running.
+        /// Use 0 to deactivate this check.
+        /// </summary>
+        public decimal MaxParallelJobs { get; set; }
+
+        /// <summary>
         /// String to define a range when the handler should not send jobs
         /// Example:
         /// 22:00 - 06:00
@@ -61,8 +67,10 @@ namespace NetDist.Jobs
         {
             ClientsAllowed = new List<ClientSelector>();
             ClientsDenied = new List<ClientSelector>();
-            // Set default values
+            // Allow only 5 sequenced errors by default
             MaxSequencedErrors = 5;
+            // Allow infinite parallel jobs by default
+            MaxParallelJobs = 0;
         }
 
         [Serializable]

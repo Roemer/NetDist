@@ -188,3 +188,6 @@ GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
 /src/packages
+src/WpfClient.zip
+src/WpfServerAdmin.zip
+src/WpfServer.zip

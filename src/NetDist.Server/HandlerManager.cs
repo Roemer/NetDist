@@ -251,6 +251,16 @@ namespace NetDist.Server
             });
         }
 
+        public LogInfo GetJobLog(Guid handlerId)
+        {
+            var handler = GetHandler(handlerId);
+            if (handler != null)
+            {
+                return handler.GetJobLog();
+            }
+            return null;
+        }
+
         public Job GetJob(ExtendedClientInfo clientInfo)
         {
             for (var i = 0; i < 10; i++)
