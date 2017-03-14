@@ -366,12 +366,8 @@ namespace NetDist.Server
         private void SetFailed()
         {
             Stop();
-            // TODO DF activate
-            //lock (_lockObject)
-            {
-                NextStartTime = null;
-                _handlerState = HandlerState.Failed;
-            }
+            NextStartTime = null;
+            _handlerState = HandlerState.Failed;
         }
 
         private AppDomain CreateDomain()
