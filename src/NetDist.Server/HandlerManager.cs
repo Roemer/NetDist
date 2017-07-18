@@ -21,6 +21,7 @@ namespace NetDist.Server
         private readonly Dictionary<Guid, HandlerInstance> _loadedHandlers;
         private Logger Logger { get; set; }
         private readonly PackageManager _packageManager;
+        private readonly JobScriptPersistenceManager _jobScriptPersistenceManager;
         private Task _schedulerTask;
         private CancellationTokenSource _schedulerTaskCancelToken;
 
@@ -32,6 +33,7 @@ namespace NetDist.Server
             Logger = logger;
             _packageManager = packageManager;
             _loadedHandlers = new Dictionary<Guid, HandlerInstance>();
+            _jobScriptPersistenceManager = new JobScriptPersistenceManager(Logger);
 
             // Initialize the task to regularly check if a handler should be restarted or postpone the next start
             StartSchedulerTask();
@@ -153,6 +155,16 @@ namespace NetDist.Server
                 // Initialize/update the values
                 var replaced = handlerInstance.InitializeFromJobScript(jobScriptFile, compileResult.OutputAssembly, handlerSettings);
 
+                if (jobScriptInfo.IsDisabled)
+                {
+                    handlerInstance.Disable();
+                }
+
+                if (!jobScriptInfo.AddedScriptFromSaved && replaced)
+                {
+                    _jobScriptPersistenceManager.SaveJobScript(handlerSettings.JobName, jobScriptInfo);
+                }
+
                 if (foundExisting)
                 {
                     if (replaced)
@@ -170,7 +182,7 @@ namespace NetDist.Server
             }
 
             // Autostart if wanted
-            if (handlerInstance.HandlerSettings.AutoStart)
+            if (!jobScriptInfo.IsDisabled && handlerInstance.HandlerSettings.AutoStart)
             {
                 Start(handlerInstance.Id);
             }
@@ -200,6 +212,7 @@ namespace NetDist.Server
             {
                 var handlerName = removedItem.FullName;
                 removedItem.Stop();
+                _jobScriptPersistenceManager.DeleteJobScript(removedItem.HandlerSettings.JobName);
                 Logger.Info(entry => entry.SetHandlerId(handlerId), "Removed", handlerName);
                 return true;
             }
@@ -238,6 +251,7 @@ namespace NetDist.Server
             return ExecuteOnHandler(handlerId, handler =>
             {
                 Logger.Info(entry => entry.SetHandlerId(handlerId), "Disabling '{0}'", handler.FullName);
+                _jobScriptPersistenceManager.DisableJobScript(handler.HandlerSettings.JobName);
                 return handler.Disable();
             });
         }
@@ -247,6 +261,7 @@ namespace NetDist.Server
             return ExecuteOnHandler(handlerId, handler =>
             {
                 Logger.Info(entry => entry.SetHandlerId(handlerId), "Enabling '{0}'", handler.FullName);
+                _jobScriptPersistenceManager.EnableJobScript(handler.HandlerSettings.JobName);
                 return handler.Enable();
             });
         }
@@ -329,6 +344,11 @@ namespace NetDist.Server
             // Forward the result to the handler (also failed ones)
             var success = handler.ReceivedResult(result);
             return success;
+        }
+
+        public List<JobScriptInfo> GetSavedJobScripts()
+        {
+            return _jobScriptPersistenceManager.GetSavedJobScripts();
         }
 
         /// <summary>

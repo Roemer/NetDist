@@ -48,7 +48,7 @@ namespace Wpf.Shared
                 // Add
                 items.Add(CreateItem(section, settings));
             }
-            SafeInternal(items, fileName);
+            SaveInternal(items, fileName);
         }
 
         public T Load<T>(string section, string fileName = DefaultFilename, bool createIfNotExists = true) where T : new()
@@ -66,7 +66,7 @@ namespace Wpf.Shared
             {
                 // Add new item
                 items.Add(CreateItem(section, settings));
-                SafeInternal(items, fileName);
+                SaveInternal(items, fileName);
             }
             return settings;
         }
@@ -92,7 +92,7 @@ namespace Wpf.Shared
             return fileName + ".json";
         }
 
-        private void SafeInternal(IEnumerable<ConfigurationItem> items, string fileName)
+        private void SaveInternal(IEnumerable<ConfigurationItem> items, string fileName)
         {
             var sb = new StringBuilder();
             foreach (var item in items)

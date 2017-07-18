@@ -52,6 +52,7 @@
     <Compile Include="JobScriptCompiler.cs" />
     <Compile Include="JobScriptCompileResult.cs" />
     <Compile Include="JobScriptFileParser.cs" />
+    <Compile Include="JobScriptPersistenceManager.cs" />
     <Compile Include="JobWrapper.cs" />
     <Compile Include="RunningHandler.cs" />
     <Compile Include="RunningHandlerInitializeParams.cs" />
