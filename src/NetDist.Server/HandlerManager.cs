@@ -21,10 +21,10 @@ namespace NetDist.Server
         private readonly Dictionary<Guid, HandlerInstance> _loadedHandlers;
         private Logger Logger { get; set; }
         private readonly PackageManager _packageManager;
-		private readonly JobScriptPersistenceManager _jobScriptPersistenceManager;
+        private readonly JobScriptPersistenceManager _jobScriptPersistenceManager;
         private Task _schedulerTask;
         private CancellationTokenSource _schedulerTaskCancelToken;
-		
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -32,8 +32,8 @@ namespace NetDist.Server
         {
             Logger = logger;
             _packageManager = packageManager;
-			_loadedHandlers = new Dictionary<Guid, HandlerInstance>();
-			_jobScriptPersistenceManager = new JobScriptPersistenceManager(Logger);
+            _loadedHandlers = new Dictionary<Guid, HandlerInstance>();
+            _jobScriptPersistenceManager = new JobScriptPersistenceManager(Logger);
 
             // Initialize the task to regularly check if a handler should be restarted or postpone the next start
             StartSchedulerTask();
@@ -93,7 +93,7 @@ namespace NetDist.Server
         /// </summary>
         public AddJobScriptResult Add(JobScriptInfo jobScriptInfo)
         {
-			// Prepare the info object
+            // Prepare the info object
             var addResult = new AddJobScriptResult();
 
             // Parse the content
@@ -130,7 +130,7 @@ namespace NetDist.Server
                 return addResult;
             }
 
-	        // Search for an already existing handler
+            // Search for an already existing handler
             var currentFullName = Helpers.BuildFullName(jobScriptFile.PackageName, handlerSettings.HandlerName, handlerSettings.JobName);
             HandlerInstance handlerInstance = null;
             lock (_loadedHandlers.GetSyncRoot())
@@ -150,20 +150,20 @@ namespace NetDist.Server
                 {
                     // No handler instance found, create a new one
                     handlerInstance = new HandlerInstance(Logger, _packageManager);
-	                _loadedHandlers.Add(handlerInstance.Id, handlerInstance);
+                    _loadedHandlers.Add(handlerInstance.Id, handlerInstance);
                 }
                 // Initialize/update the values
                 var replaced = handlerInstance.InitializeFromJobScript(jobScriptFile, compileResult.OutputAssembly, handlerSettings);
 
-				if (jobScriptInfo.IsDisabled)
-				{
-					handlerInstance.Disable();
-				}
+                if (jobScriptInfo.IsDisabled)
+                {
+                    handlerInstance.Disable();
+                }
 
-				if (!jobScriptInfo.AddedScriptFromSaved && replaced)
-				{
-					_jobScriptPersistenceManager.SaveJobScript(handlerSettings.JobName, jobScriptInfo);
-				}
+                if (!jobScriptInfo.AddedScriptFromSaved && replaced)
+                {
+                    _jobScriptPersistenceManager.SaveJobScript(handlerSettings.JobName, jobScriptInfo);
+                }
 
                 if (foundExisting)
                 {
@@ -180,9 +180,9 @@ namespace NetDist.Server
                     return addResult;
                 }
             }
-			
+
             // Autostart if wanted
-			if (!jobScriptInfo.IsDisabled && handlerInstance.HandlerSettings.AutoStart)
+            if (!jobScriptInfo.IsDisabled && handlerInstance.HandlerSettings.AutoStart)
             {
                 Start(handlerInstance.Id);
             }
@@ -212,7 +212,7 @@ namespace NetDist.Server
             {
                 var handlerName = removedItem.FullName;
                 removedItem.Stop();
-				_jobScriptPersistenceManager.DeleteJobScript(removedItem.HandlerSettings.JobName);
+                _jobScriptPersistenceManager.DeleteJobScript(removedItem.HandlerSettings.JobName);
                 Logger.Info(entry => entry.SetHandlerId(handlerId), "Removed", handlerName);
                 return true;
             }
@@ -251,7 +251,7 @@ namespace NetDist.Server
             return ExecuteOnHandler(handlerId, handler =>
             {
                 Logger.Info(entry => entry.SetHandlerId(handlerId), "Disabling '{0}'", handler.FullName);
-				_jobScriptPersistenceManager.DisableJobScript(handler.HandlerSettings.JobName);
+                _jobScriptPersistenceManager.DisableJobScript(handler.HandlerSettings.JobName);
                 return handler.Disable();
             });
         }
@@ -261,7 +261,7 @@ namespace NetDist.Server
             return ExecuteOnHandler(handlerId, handler =>
             {
                 Logger.Info(entry => entry.SetHandlerId(handlerId), "Enabling '{0}'", handler.FullName);
-				_jobScriptPersistenceManager.EnableJobScript(handler.HandlerSettings.JobName);
+                _jobScriptPersistenceManager.EnableJobScript(handler.HandlerSettings.JobName);
                 return handler.Enable();
             });
         }
@@ -346,10 +346,10 @@ namespace NetDist.Server
             return success;
         }
 
-	    public List<JobScriptInfo> GetSavedJobScripts()
-	    {
-		    return _jobScriptPersistenceManager.GetSavedJobScripts();
-	    }
+        public List<JobScriptInfo> GetSavedJobScripts()
+        {
+            return _jobScriptPersistenceManager.GetSavedJobScripts();
+        }
 
         /// <summary>
         /// Helper method to execute an action on a handler (if it exists)

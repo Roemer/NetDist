@@ -38,7 +38,7 @@ namespace NetDist.Server
         private readonly PackageManager _packageManager;
         protected readonly HandlerManager _handlerManager;
         private readonly ClientManager _clientManager;
-		
+        
         /// <summary>
         /// Constructor
         /// </summary>

@@ -7,8 +7,8 @@ namespace NetDist.Core
     {
         public string JobScript { get; set; }
 
-		public bool IsDisabled { get; set; }
+        public bool IsDisabled { get; set; }
 
-		public bool AddedScriptFromSaved { get; set; }
+        public bool AddedScriptFromSaved { get; set; }
     }
 }
