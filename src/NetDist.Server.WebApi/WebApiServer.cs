@@ -17,6 +17,7 @@ namespace NetDist.Server.WebApi
         public WebApiServer(WebApiServerSettings settings, params EventHandler<LogEventArgs>[] defaultLogHandlers)
             : base(settings, defaultLogHandlers)
         {
+	        AddSavedJobScripts();
         }
 
         protected override bool InternalStart()
@@ -44,5 +45,13 @@ namespace NetDist.Server.WebApi
             }
             return true;
         }
+
+	    private void AddSavedJobScripts()
+	    {
+			foreach (var jobScriptInfo in _handlerManager.GetSavedJobScripts())
+			{
+				AddJobScript(jobScriptInfo);
+			}
+	    }
     }
 }
