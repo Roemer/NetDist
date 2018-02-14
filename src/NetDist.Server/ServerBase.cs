@@ -36,9 +36,9 @@ namespace NetDist.Server
         protected abstract bool InternalStop();
 
         private readonly PackageManager _packageManager;
-        private readonly HandlerManager _handlerManager;
+        protected readonly HandlerManager _handlerManager;
         private readonly ClientManager _clientManager;
-
+        
         /// <summary>
         /// Constructor
         /// </summary>

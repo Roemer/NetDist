@@ -8,10 +8,10 @@ function GetMsBuildPath() {
 $releaseFolders = @(".\WpfClient\bin\Release", ".\WpfServer\bin\Release", ".\WpfServerAdmin\bin\Release")
 foreach ($releaseFolder in $releaseFolders) {
     Write-Output "Clearing: $releaseFolder"
-	# Delete the folder
-	if (Test-Path $releaseFolder) {
-		Remove-Item -Recurse -Force $releaseFolder -ea SilentlyContinue
-	}
+    # Delete the folder
+    if (Test-Path $releaseFolder) {
+        Remove-Item -Recurse -Force $releaseFolder -ea SilentlyContinue
+    }
 }
 # Compile as release build
 Write-Output "Building solution"
