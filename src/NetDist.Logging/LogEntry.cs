@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace NetDist.Logging
 {
@@ -39,7 +40,9 @@ namespace NetDist.Logging
         public DateTime LogDate { get; set; }
         public LogLevel LogLevel { get; set; }
         public Guid? HandlerId { get; set; }
+        public string HandlerName { get; set; }
         public Guid? ClientId { get; set; }
+        public string ClientName { get; set; }
         public string Message { get; set; }
         public string Remarks { get; set; }
         public List<LogEntryException> Exceptions { get; set; }
@@ -51,15 +54,17 @@ namespace NetDist.Logging
             Exceptions = new List<LogEntryException>();
         }
 
-        public LogEntry SetHandlerId(Guid? handlerId)
+        public LogEntry SetHandlerInfo(Guid? handlerId, string handlerName)
         {
             HandlerId = handlerId;
+            HandlerName = handlerName;
             return this;
         }
 
-        public LogEntry SetClientId(Guid? clientId)
+        public LogEntry SetClientInfo(Guid? clientId, string clientName = null)
         {
             ClientId = clientId;
+            ClientName = clientName;
             return this;
         }
 
@@ -105,6 +110,37 @@ namespace NetDist.Logging
         {
             Exceptions.Add(new LogEntryException(exceptionType, exceptionMessage, exceptionStackTrace));
             return this;
+        }
+
+        public string GetMessageWithAdditionalInformation()
+        {
+            return String.Concat(Message, " ", GetAdditionalInformation()).Trim();
+        }
+
+        public string GetAdditionalInformation()
+        {
+            var stringBuilder = new StringBuilder();
+            if (ClientId.HasValue || !String.IsNullOrWhiteSpace(ClientName))
+            {
+                stringBuilder.AppendLine();
+                stringBuilder.AppendFormat("  Client '{0}'", ClientId);
+                if (!String.IsNullOrWhiteSpace(ClientName))
+                {
+                    stringBuilder.AppendFormat(" => '{0}'", ClientName);
+                }
+                stringBuilder.Append(".");
+            }
+            if (HandlerId.HasValue || !String.IsNullOrWhiteSpace(HandlerName))
+            {
+                stringBuilder.AppendLine();
+                stringBuilder.AppendFormat("  Handler '{0}'", HandlerId);
+                if (!String.IsNullOrWhiteSpace(HandlerName))
+                {
+                    stringBuilder.AppendFormat(" => '{0}'", HandlerName);
+                }
+                stringBuilder.Append(".");
+            }
+            return stringBuilder.ToString();
         }
     }
 }

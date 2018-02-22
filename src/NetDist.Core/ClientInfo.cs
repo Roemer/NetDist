@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace NetDist.Core
 {
+    [Serializable]
     public class ClientInfo
     {
         public Guid Id { get; set; }
@@ -20,6 +21,7 @@ namespace NetDist.Core
         }
     }
 
+    [Serializable]
     public class DiskInformation
     {
         public string Name { get; set; }

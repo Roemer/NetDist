@@ -100,7 +100,7 @@ namespace NetDist.Server
             var jobScriptFile = JobScriptFileParser.Parse(jobScriptInfo.JobScript);
             if (jobScriptFile.ParsingFailed)
             {
-                Logger.Error("Failed to parse job script: {0}", jobScriptFile.ErrorMessage);
+                Logger.Error("Failed to parse job script '{0}' => {1}.", jobScriptFile.PackageName, jobScriptFile.ErrorMessage);
                 addResult.SetError(AddJobScriptError.ParsingFailed, jobScriptFile.ErrorMessage);
                 return addResult;
             }
@@ -110,14 +110,14 @@ namespace NetDist.Server
             // Check for compilation error
             if (compileResult.ResultType == CompileResultType.Failed)
             {
-                Logger.Error("Failed to compile job script: {0}", compileResult.ErrorString);
+                Logger.Error("Failed to compile job script '{0}' => {1}.", jobScriptFile.PackageName, compileResult.ErrorString);
                 addResult.SetError(AddJobScriptError.CompilationFailed, compileResult.ErrorString);
                 return addResult;
             }
             // Check if it already was compiled
             if (compileResult.ResultType == CompileResultType.AlreadyCompiled)
             {
-                Logger.Info("Job script already exists");
+                Logger.Info("Job script '{0}' was already compiled.", jobScriptFile.PackageName);
             }
 
             // Get the settings from the job file
@@ -125,8 +125,8 @@ namespace NetDist.Server
             var readScuccess = JobFileHandlerSettingsReader.ReadSettingsInOwnDomain(compileResult.OutputAssembly, out handlerSettings);
             if (!readScuccess)
             {
-                Logger.Error("Initializer type not found");
-                addResult.SetError(AddJobScriptError.HandlerInitializerMissing, "Handler initializer type not found");
+                Logger.Error("Initializer type not found for hob script '{0}'.", jobScriptFile.PackageName);
+                addResult.SetError(AddJobScriptError.HandlerInitializerMissing, "Handler initializer type not found.");
                 return addResult;
             }
 
@@ -170,12 +170,12 @@ namespace NetDist.Server
                     if (replaced)
                     {
                         addResult.SetOk(handlerInstance.Id, AddJobScriptStatus.JobScriptReplaced);
-                        Logger.Info(entry => entry.SetHandlerId(handlerInstance.Id), "Updated jobscript");
+                        Logger.Info(entry => entry.SetHandlerInfo(handlerInstance.Id, handlerInstance.FullName), "Handler updated.");
                     }
                     else
                     {
                         addResult.SetOk(handlerInstance.Id, AddJobScriptStatus.NoUpdateNeeded);
-                        Logger.Info(entry => entry.SetHandlerId(handlerInstance.Id), "No jobscript update needed");
+                        Logger.Info(entry => entry.SetHandlerInfo(handlerInstance.Id, handlerInstance.FullName), "Handler did not require to be updated.");
                     }
                     return addResult;
                 }
@@ -189,7 +189,7 @@ namespace NetDist.Server
 
             // Fill the info object from the result
             addResult.SetOk(handlerInstance.Id, AddJobScriptStatus.Ok);
-            Logger.Info(entry => entry.SetHandlerId(handlerInstance.Id), "Added", handlerInstance.Id);
+            Logger.Info(entry => entry.SetHandlerInfo(handlerInstance.Id, handlerInstance.FullName), "Handler added.", handlerInstance.Id);
             return addResult;
         }
 
@@ -210,10 +210,9 @@ namespace NetDist.Server
             }
             if (removedItem != null)
             {
-                var handlerName = removedItem.FullName;
                 removedItem.Stop();
                 _jobScriptPersistenceManager.DeleteJobScript(removedItem.HandlerSettings.JobName);
-                Logger.Info(entry => entry.SetHandlerId(handlerId), "Removed", handlerName);
+                Logger.Info(entry => entry.SetHandlerInfo(handlerId, removedItem.FullName), "Handler removed.");
                 return true;
             }
             return false;
@@ -223,7 +222,7 @@ namespace NetDist.Server
         {
             return ExecuteOnHandler(handlerId, handler =>
             {
-                Logger.Info(entry => entry.SetHandlerId(handlerId), "Starting '{0}'", handler.FullName);
+                Logger.Info(entry => entry.SetHandlerInfo(handlerId, handler.FullName), "Starting handler.");
                 return handler.Start();
             });
         }
@@ -232,7 +231,7 @@ namespace NetDist.Server
         {
             return ExecuteOnHandler(handlerId, handler =>
             {
-                Logger.Info(entry => entry.SetHandlerId(handlerId), "Stopping '{0}'", handler.FullName);
+                Logger.Info(entry => entry.SetHandlerInfo(handlerId, handler.FullName), "Stopping handler.");
                 return handler.Stop();
             });
         }
@@ -241,7 +240,7 @@ namespace NetDist.Server
         {
             return ExecuteOnHandler(handlerId, handler =>
             {
-                Logger.Info(entry => entry.SetHandlerId(handlerId), "Pausing '{0}'", handler.FullName);
+                Logger.Info(entry => entry.SetHandlerInfo(handlerId, handler.FullName), "Pausing handler.'");
                 return handler.Pause();
             });
         }
@@ -250,7 +249,7 @@ namespace NetDist.Server
         {
             return ExecuteOnHandler(handlerId, handler =>
             {
-                Logger.Info(entry => entry.SetHandlerId(handlerId), "Disabling '{0}'", handler.FullName);
+                Logger.Info(entry => entry.SetHandlerInfo(handlerId, handler.FullName), "Disabling handler.");
                 _jobScriptPersistenceManager.DisableJobScript(handler.HandlerSettings.JobName);
                 return handler.Disable();
             });
@@ -260,7 +259,7 @@ namespace NetDist.Server
         {
             return ExecuteOnHandler(handlerId, handler =>
             {
-                Logger.Info(entry => entry.SetHandlerId(handlerId), "Enabling '{0}'", handler.FullName);
+                Logger.Info(entry => entry.SetHandlerInfo(handlerId, handler.FullName), "Enabling handler.");
                 _jobScriptPersistenceManager.EnableJobScript(handler.HandlerSettings.JobName);
                 return handler.Enable();
             });
@@ -299,13 +298,13 @@ namespace NetDist.Server
                 {
                     // Can happen if the queue was empty between the "HasAvailableJobs" check and now
                     // just retry a few times
-                    Logger.Debug(entry => entry.SetClientId(clientInfo.ClientInfo.Id), "Job queue was suddenly empty, try again");
+                    Logger.Debug(entry => entry.SetClientInfo(clientInfo.ClientInfo.Id, clientInfo.ClientInfo.Name), "Job queue was suddenly empty. Try again.");
                     continue;
                 }
-                Logger.Debug(entry => entry.SetClientId(clientInfo.ClientInfo.Id), "Got job '{0}' for handler '{1}'", nextJob.Id, randomHandler.Value.FullName);
+                Logger.Debug(entry => entry.SetClientInfo(clientInfo.ClientInfo.Id, clientInfo.ClientInfo.Name).SetHandlerInfo(randomHandler.Value.Id, randomHandler.Value.FullName), "Got job '{0}'.", nextJob.Id);
                 return nextJob;
             }
-            Logger.Warn(entry => entry.SetClientId(clientInfo.ClientInfo.Id), "Gave up getting a job");
+            Logger.Warn(entry => entry.SetClientInfo(clientInfo.ClientInfo.Id, clientInfo.ClientInfo.Name), "Gave up getting a job.");
             return null;
         }
 
@@ -328,21 +327,21 @@ namespace NetDist.Server
             return null;
         }
 
-        public bool ProcessResult(JobResult result)
+        public bool ProcessResult(JobResult result, ExtendedClientInfo clientInfo)
         {
             if (result == null)
             {
-                Logger.Error("Received invalid result");
+                Logger.Error("Received empty job result");
                 return false;
             }
             var handler = GetHandler(result.HandlerId);
             if (handler == null)
             {
-                Logger.Error(entry => entry.SetHandlerId(result.HandlerId), "Got result for unknown handler");
+                Logger.Error(entry => entry.SetHandlerInfo(result.HandlerId, String.Empty).SetClientInfo(clientInfo.ClientInfo.Id, clientInfo.ClientInfo.Name), "Got job result for unknown handler.");
                 return false;
             }
             // Forward the result to the handler (also failed ones)
-            var success = handler.ReceivedResult(result);
+            var success = handler.ReceivedResult(result, clientInfo);
             return success;
         }
 
@@ -368,7 +367,7 @@ namespace NetDist.Server
                 }
             }
             // Handler not found
-            Logger.Warn(entry => entry.SetHandlerId(handlerId), "Handler not found to execute action", handlerId);
+            Logger.Warn(entry => entry.SetHandlerInfo(handlerId, String.Empty), "Handler not found to execute action.");
             return false;
         }
 
