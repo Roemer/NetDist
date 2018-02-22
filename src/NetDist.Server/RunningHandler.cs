@@ -32,6 +32,11 @@ namespace NetDist.Server
         public Guid Id { get; private set; }
 
         /// <summary>
+        /// Name of the loaded handler
+        /// </summary>
+        public string FullName { get; private set; }
+
+        /// <summary>
         /// Flag to check if there are available jobs
         /// </summary>
         public bool HasAvailableJobs
@@ -96,6 +101,7 @@ namespace NetDist.Server
 
             // Read the package information object
             var packageInfo = _packageManager.GetInfo(packageName);
+            FullName = Helpers.BuildFullName(packageInfo.PackageName, _handlerSettings.HandlerName, _handlerSettings.JobName);
 
             // Search for the correct handler type in the given assemblies
             Type handlerType = null;
@@ -143,12 +149,30 @@ namespace NetDist.Server
             }
             // Initialize the handler
             var handlerInstance = (IHandler)Activator.CreateInstance(handlerType);
-            // Initialize the handler with the custom settings
-            handlerInstance.InitializeCustomSettings(customSettings);
             // Attach to the logger
-            handlerInstance.Logger.LogEvent += (sender, args) => Logger.Log(args.LogEntry.SetHandlerId(Id));
-            // Call the virtual initialize method
-            handlerInstance.Initialize();
+            handlerInstance.Logger.LogEvent += (sender, args) => Logger.Log(args.LogEntry.SetHandlerInfo(Id, FullName));
+            try
+            {
+                // Initialize the handler with the custom settings
+                handlerInstance.InitializeCustomSettings(customSettings);
+            }
+            catch (Exception exception)
+            {
+                Logger.Fatal(exception, "Error while calling InitializeCustomSettings().");
+                result.SetError(AddJobScriptError.InitializationFalied, "Error while calling InitializeCustomSettings().");
+                return result;
+            }
+            try
+            {
+                // Call the virtual initialize method
+                handlerInstance.Initialize();
+            }
+            catch (Exception exception)
+            {
+                Logger.Fatal(entry => entry.SetHandlerInfo(Id, FullName), exception, "Error while calling Initialize().");
+                result.SetError(AddJobScriptError.InitializationFalied, "Error while calling Initialize().");
+                return result;
+            }
             // Event when a job was added
             handlerInstance.EnqueueJobEvent += EnqueueJob;
             // Assign the handler
@@ -159,7 +183,7 @@ namespace NetDist.Server
             _controlTask = new Task(ControlThread, _controlTaskCancelToken.Token);
             _controlTask.ContinueWith(t =>
             {
-                Logger.Fatal(t.Exception, "Handler: '{0}' has exception", Id);
+                Logger.Fatal(entry => entry.SetHandlerInfo(Id, FullName), t.Exception, "Handler '{0}' failed.", Id);
                 TearDown(true);
                 OnStateChangedEvent(new RunningHandlerStateChangedEventArgs(RunningHandlerState.Failed));
             }, TaskContinuationOptions.OnlyOnFaulted);
@@ -267,7 +291,7 @@ namespace NetDist.Server
             return null;
         }
 
-        public bool ReceivedResult(JobResult result)
+        public bool ReceivedResult(JobResult result, ExtendedClientInfo clientInfo)
         {
             lock (_pendingJobs.GetSyncRoot())
             {
@@ -276,14 +300,14 @@ namespace NetDist.Server
                 // Check if the clientid mismatches
                 if (jobInProgress.AssignedCliendId != result.ClientId)
                 {
-                    Logger.Warn("Got job '{0}' result for differet client ('{1}' instead '{2}')", result.JobId, result.ClientId, jobInProgress.AssignedCliendId);
+                    Logger.Warn(entry => entry.SetHandlerInfo(result.HandlerId, FullName), "Got job '{0}' result for differet client ('{1}' instead '{2}')", result.JobId, result.ClientId, jobInProgress.AssignedCliendId);
                     return false;
                 }
 
                 // Check if there was an error processing the job
                 if (result.HasError)
                 {
-                    Logger.Error("Got failed result for job '{0}': {1}", result.JobId, result.Error.ToString());
+                    Logger.Error(entry => entry.SetHandlerInfo(result.HandlerId, FullName).SetClientInfo(clientInfo.ClientInfo.Id, clientInfo.ClientInfo.Name), "Got failed result for job '{0}' => {1}", result.JobId, result.Error.ToString());
                     Interlocked.Increment(ref _totalFailedJobs);
                     Interlocked.Increment(ref _sequencedFailedJobs);
                     // If so, remove it from the in-progress list
@@ -296,7 +320,7 @@ namespace NetDist.Server
                 }
 
                 var resultString = result.GetOutput();
-                Logger.Debug("Handler: Got result for job '{0}': {1}", result.JobId, resultString);
+                Logger.Debug(entry => entry.SetHandlerInfo(result.HandlerId, FullName).SetClientInfo(clientInfo.ClientInfo.Id, clientInfo.ClientInfo.Name), "Got result for job '{0}' => {1}", result.JobId, resultString);
                 Interlocked.Increment(ref _totalProcessedJobs);
                 Interlocked.Exchange(ref _sequencedFailedJobs, 0);
 
@@ -367,7 +391,7 @@ namespace NetDist.Server
                         }
                         foreach (var job in jobsToRequeue)
                         {
-                            Logger.Warn("Job '{0}' had a timeout", job.Id);
+                            Logger.Warn(entry => entry.SetHandlerInfo(Id, FullName), "Job '{0}' had a timeout", job.Id);
                             _pendingJobs.Remove(job.Id);
                             job.Reset();
                             _availableJobs.Enqueue(job);
@@ -378,16 +402,17 @@ namespace NetDist.Server
                 // Refill available jobs if needed
                 if (_availableJobs.IsEmpty)
                 {
-                    Logger.Debug("Job queue is empty, requesting new jobs");
+
+                    Logger.Debug(entry => entry.SetHandlerInfo(Id, FullName), "Job queue is empty. Requesting new jobs.");
                     // Fill with jobs
                     _handler.CreateMoreJobs();
-                    Logger.Debug("Job queue contains now {0} job(s)", _availableJobs.Count);
+                    Logger.Debug(entry => entry.SetHandlerInfo(Id, FullName), "Job queue contains now {0} jobs.", _availableJobs.Count);
                 }
 
                 // Stop if the handler was marked as finished
                 if (_handler.IsFinished)
                 {
-                    Logger.Info("Handler: '{0}' finished successfully", Id);
+                    Logger.Info(entry => entry.SetHandlerInfo(Id, FullName), "Handler finished successfully.");
                     lock (_lockObject)
                     {
                         _handler.OnFinished();

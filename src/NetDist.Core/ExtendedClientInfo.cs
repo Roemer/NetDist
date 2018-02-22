@@ -2,6 +2,7 @@
 
 namespace NetDist.Core
 {
+    [Serializable]
     public class ExtendedClientInfo
     {
         public ClientInfo ClientInfo { get; set; }

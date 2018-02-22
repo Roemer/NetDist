@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using Wpf.Shared;
@@ -110,7 +111,11 @@ namespace WpfServerAdmin.ViewModels
                     var fileContent = File.ReadAllText(selectedFile);
                     var jsInfo = new JobScriptInfo { JobScript = fileContent };
                     var result = ServerModel.Server.AddJobScript(jsInfo);
-                    if (result.Status == AddJobScriptStatus.Error)
+                    if (result == null)
+                    {
+                        MessageBox.Show("Bad response from server.", "Error");
+                    }
+                    else if (result.Status == AddJobScriptStatus.Error)
                     {
                         var msg = String.Format("Reason: {0}", result.ErrorCode);
                         msg += Environment.NewLine;
@@ -170,26 +175,31 @@ namespace WpfServerAdmin.ViewModels
                         switch (args.EventType)
                         {
                             case HandlerEventType.Start:
-                                ServerModel.Server.StartJobScript(args.HandlerId);
+                                Task.Run(() => ServerModel.Server.StartJobScript(args.HandlerId));
                                 break;
                             case HandlerEventType.Stop:
-                                ServerModel.Server.StopJobScript(args.HandlerId);
+                                Task.Run(() => ServerModel.Server.StopJobScript(args.HandlerId));
                                 break;
                             case HandlerEventType.Pause:
-                                ServerModel.Server.PauseJobScript(args.HandlerId);
+                                Task.Run(() => ServerModel.Server.PauseJobScript(args.HandlerId));
                                 break;
                             case HandlerEventType.Disable:
-                                ServerModel.Server.DisableJobScript(args.HandlerId);
+                                Task.Run(() => ServerModel.Server.DisableJobScript(args.HandlerId));
                                 break;
                             case HandlerEventType.Enable:
-                                ServerModel.Server.EnableJobScript(args.HandlerId);
+                                Task.Run(() => ServerModel.Server.EnableJobScript(args.HandlerId));
                                 break;
                             case HandlerEventType.Delete:
-                                ServerModel.Server.RemoveJobScript(args.HandlerId);
+                                Task.Run(() => ServerModel.Server.RemoveJobScript(args.HandlerId));
                                 break;
                             case HandlerEventType.ShowLog:
                                 var dialogViewModel = new ListPopupWindowViewModel();
-                                dialogViewModel.LogInfo = ServerModel.Server.GetJobLog(args.HandlerId).LogEntries.Select(x => new LogEntryViewModel(x)).ToList();
+                                var t = Task.Run(() =>
+                                {
+                                    var jobLog = ServerModel.Server.GetJobLog(args.HandlerId);
+                                    dialogViewModel.LogInfo = jobLog == null ? new List<LogEntryViewModel>() : jobLog.LogEntries.Select(x => new LogEntryViewModel(x)).ToList();
+                                });
+                                t.Wait();
                                 var dialog = new ListPopupWindow(dialogViewModel);
                                 dialog.ShowDialog();
                                 break;

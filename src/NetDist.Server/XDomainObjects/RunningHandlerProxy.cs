@@ -80,9 +80,9 @@ namespace NetDist.Server.XDomainObjects
         /// <summary>
         /// Received a result from a client, process it
         /// </summary>
-        public bool ReceivedResult(JobResult result)
+        public bool ReceivedResult(JobResult result, ExtendedClientInfo clientInfo)
         {
-            return _runningHandler.ReceivedResult(result);
+            return _runningHandler.ReceivedResult(result, clientInfo);
         }
 
         /// <summary>

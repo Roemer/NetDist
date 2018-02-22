@@ -81,13 +81,13 @@ namespace NetDist.Server
         {
             var logEntry = logEventArgs.LogEntry;
 
-            // Skip debug log messages
-            if (logEntry.HandlerId != Id || logEntry.LogLevel < LogLevel.Info)
+            // Skip debug / info log messages
+            if (logEntry.HandlerId != Id || logEntry.LogLevel < LogLevel.Warn)
             {
                 return;
             }
 
-            var message = logEntry.Message;
+            var message = logEntry.GetMessageWithAdditionalInformation();
             if (logEntry.Exceptions.Count > 0)
             {
                 message = String.Format("{0}\r\n  {1}\r\n{2}", message, logEntry.Exceptions[0].ExceptionMessage, logEntry.Exceptions[0].ExceptionStackTrace);
@@ -138,7 +138,7 @@ namespace NetDist.Server
                 }
                 catch (Exception ex)
                 {
-                    _logger.Warn("Handler: Failed to parse Crontab: '{0}' - Ex: {1}", HandlerSettings.Schedule, ex.Message);
+                    _logger.Warn(entry => entry.SetHandlerInfo(Id, FullName), "Failed to parse crontab expression '{0}' => {1}", HandlerSettings.Schedule, ex.Message);
                 }
             }
             // Initialize idle time
@@ -252,6 +252,13 @@ namespace NetDist.Server
                 // Do not start if handler is in failed state
                 if (_handlerState == HandlerState.Failed)
                 {
+                    _logger.Error(entry => entry.SetHandlerInfo(Id, FullName), "Starting handler failed because he was in Failed state.");
+                    return false;
+                }
+                // Do not start if handler is in disabled state
+                if (_handlerState == HandlerState.Disabled)
+                {
+                    _logger.Error(entry => entry.SetHandlerInfo(Id, FullName), "Starting handler failed because he was in Disabled state.");
                     return false;
                 }
                 if (_handlerProxy == null)
@@ -261,7 +268,7 @@ namespace NetDist.Server
                     var initResult = InitializeAndStartRunningHandler(out proxy);
                     if (initResult.HasError)
                     {
-                        _logger.Error("Handler: Init failed: {0}: {1}", initResult.ErrorReason, initResult.ErrorMessage);
+                        _logger.Error(entry => entry.SetHandlerInfo(Id, FullName), "Starting handler failed with reason '{0}' => {1}", initResult.ErrorReason, initResult.ErrorMessage);
                         SetFailed();
                         return false;
                     }
@@ -346,15 +353,21 @@ namespace NetDist.Server
             return _handlerProxy.GetJob(clientId);
         }
 
-        public bool ReceivedResult(JobResult result)
+        public bool ReceivedResult(JobResult result, ExtendedClientInfo clientInfo)
         {
-            // Catch case where we receive results for an already stopped handler
-            if (_handlerState == HandlerState.Stopped)
+            // Catch case where we receive results for an already stopped or disabled handler
+            if (_handlerState == HandlerState.Stopped || _handlerState == HandlerState.Disabled)
             {
-                _logger.Warn("Handler: Got job '{0}' result for stopped handler", result.JobId);
+                _logger.Warn(entry => entry.SetHandlerInfo(Id, FullName).SetClientInfo(clientInfo.ClientInfo.Id, clientInfo.ClientInfo.Name), "Got job result for stopped or disabled handler.");
                 return false;
             }
-            var success = _handlerProxy.ReceivedResult(result);
+            // Catch case where the RunningHandlerProxy is already null
+            if (_handlerProxy == null)
+            {
+                _logger.Warn(entry => entry.SetHandlerInfo(Id, FullName).SetClientInfo(clientInfo.ClientInfo.Id, clientInfo.ClientInfo.Name), "Got job result for inexisting RunningHandlerProxy.");
+                return false;
+            }
+            var success = _handlerProxy.ReceivedResult(result, clientInfo);
             if (!success && HandlerSettings.MaxSequencedErrors > 0 && _handlerProxy.GetInfo().SequencedJobsFailed > HandlerSettings.MaxSequencedErrors)
             {
                 _handlerMessage = "Too many sequenced errors";
@@ -392,19 +405,20 @@ namespace NetDist.Server
             // Create a interchangeable event sink to register cross-domain events to catch logging events
             var sink = new EventSink<LogEventArgs>();
             handlerProxy.RegisterLogEventSink(sink);
-            sink.NotificationFired += (sender, args) => _logger.Log(args.LogEntry.SetHandlerId(Id));
+            sink.NotificationFired += (sender, args) => _logger.Log(args.LogEntry.SetHandlerInfo(Id, FullName));
             // Register event sink to listen on state changes
             var stateSink = new EventSink<RunningHandlerStateChangedEventArgs>();
             handlerProxy.RegisterStateChangedEventSink(stateSink);
             stateSink.NotificationFired += (sender, args) =>
             {
-                if (args.State == RunningHandlerState.Failed)
+                switch (args.State)
                 {
-                    SetFailed();
-                }
-                else if (args.State == RunningHandlerState.Finished)
-                {
-                    SetFinished();
+                    case RunningHandlerState.Failed:
+                        SetFailed();
+                        break;
+                    case RunningHandlerState.Finished:
+                        SetFinished();
+                        break;
                 }
             };
             // Initialize the handler
@@ -438,7 +452,7 @@ namespace NetDist.Server
                 }
                 catch (AppDomainUnloadedException)
                 {
-                    _logger.Debug("AppDomain for handler '{0}' already unloaded.", Id);
+                    _logger.Debug(entry => entry.SetHandlerInfo(Id, FullName), "AppDomain already unloaded.");
                 }
                 _appDomain = null;
             }

@@ -38,7 +38,7 @@ namespace NetDist.Server
         private readonly PackageManager _packageManager;
         protected readonly HandlerManager _handlerManager;
         private readonly ClientManager _clientManager;
-        
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -52,9 +52,9 @@ namespace NetDist.Server
                 Logger.LogEvent += logEvent;
             }
             // Initialize others
+            _clientManager = new ClientManager();
             _packageManager = new PackageManager(Settings.PackagesFolder);
             _handlerManager = new HandlerManager(Logger, _packageManager);
-            _clientManager = new ClientManager();
             // Make sure the packages folder exists
             Directory.CreateDirectory(Settings.PackagesFolder);
 
@@ -75,13 +75,13 @@ namespace NetDist.Server
                 var success = InternalStart();
                 if (!success)
                 {
-                    Logger.Error("Failed to start");
+                    Logger.Error("Failed to start the server.");
                 }
                 _handlerManager.StartSchedulerTask();
             }
             catch (Exception exception)
             {
-                Logger.Error(exception, "Failed to start");
+                Logger.Error(exception, "Failed to start the server.");
             }
         }
 
@@ -95,14 +95,14 @@ namespace NetDist.Server
                 var success = InternalStop();
                 if (!success)
                 {
-                    Logger.Error("Failed to stop");
+                    Logger.Error("Failed to stop the server.");
                 }
                 _handlerManager.TearDown();
                 _clientManager.Clear();
             }
             catch (Exception exception)
             {
-                Logger.Error(exception, "Failed to stop");
+                Logger.Error(exception, "Failed to stop the server.");
             }
         }
 
@@ -219,7 +219,7 @@ namespace NetDist.Server
         public Job GetJob(Guid clientId)
         {
             var clientInfo = _clientManager.GetOrCreate(clientId);
-            Logger.Debug(entry => entry.SetClientId(clientId), "'{0}' requested a job", clientInfo.ClientInfo.Name);
+            Logger.Debug(entry => entry.SetClientInfo(clientInfo.ClientInfo.Id, clientInfo.ClientInfo.Name), "Requested a job.");
             var job = _handlerManager.GetJob(clientInfo);
             if (job != null)
             {
@@ -256,9 +256,11 @@ namespace NetDist.Server
         /// </summary>
         public void ReceiveResult(JobResult result)
         {
-            var success = _handlerManager.ProcessResult(result);
-            // Update statistics
             var clientInfo = _clientManager.GetOrCreate(result.ClientId);
+
+            var success = _handlerManager.ProcessResult(result, clientInfo);
+
+            // Update statistics
             clientInfo.JobsInProgress--;
             if (success)
             {

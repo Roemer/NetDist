@@ -369,7 +369,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
                 </TabItem>
-                <TabItem Header="{Binding Path=Packages.Count}" HeaderStringFormat="{}Packages ({0})">
+                <TabItem IsEnabled="False" Header="{Binding Path=Packages.Count}" HeaderStringFormat="{}Packages ({0})">
                     <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Path=Packages}" CanUserAddRows="False" HeadersVisibility="Column">
 
                     </DataGrid>

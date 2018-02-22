@@ -7,6 +7,7 @@ namespace NetDist.Core
         ParsingFailed,
         CompilationFailed,
         HandlerInitializerMissing,
+        InitializationFalied,
         JobScriptMissing,
         TypeException,
     }

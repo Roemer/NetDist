@@ -16,7 +16,7 @@ namespace WpfServer.Models
         public void Initialize()
         {
             var settings = _conf.Load<WebApiServerSettings>("ServerSettings");
-            Server = new WebApiServer(settings, new ConsoleLogger(LogLevel.Error).Log, new FileLogger("Server", LogLevel.Warn).Log, OnLogEvent);
+            Server = new WebApiServer(settings, new ConsoleLogger(LogLevel.Error).Log, new FileLogger("WpfServer").Log, OnLogEvent);
         }
 
         private void OnLogEvent(object sender, LogEventArgs logEventArgs)
