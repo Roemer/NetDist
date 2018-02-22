@@ -125,7 +125,7 @@ namespace NetDist.Server
             var readScuccess = JobFileHandlerSettingsReader.ReadSettingsInOwnDomain(compileResult.OutputAssembly, out handlerSettings);
             if (!readScuccess)
             {
-                Logger.Error("Initializer type not found for hob script '{0}'.", jobScriptFile.PackageName);
+                Logger.Error("Initializer type not found for job script '{0}'.", jobScriptFile.PackageName);
                 addResult.SetError(AddJobScriptError.HandlerInitializerMissing, "Handler initializer type not found.");
                 return addResult;
             }
